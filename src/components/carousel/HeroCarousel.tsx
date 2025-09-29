@@ -189,17 +189,6 @@ const HeroCarousel = ({
             )}
           </motion.div>
 
-          {/* Artwork counter */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-            className="absolute bottom-8 right-8 text-white"
-          >
-            <span className="text-sm opacity-80">
-              {currentSlide + 1} / {artworks.length}
-            </span>
-          </motion.div>
         </motion.div>
       </AnimatePresence>
 
@@ -238,20 +227,34 @@ const HeroCarousel = ({
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
 
-          {/* Dot indicators */}
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-3 z-10">
-            {artworks.map((_, index) => (
-              <button
-                key={index}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide
-                    ? 'bg-white scale-125'
-                    : 'bg-white/40 hover:bg-white/60'
-                }`}
-                onClick={() => goToSlide(index)}
-                aria-label={`Go to artwork ${index + 1}`}
-              />
-            ))}
+          {/* Dot indicators with counter below */}
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex flex-col items-center space-y-3 z-10">
+            <div className="flex space-x-3">
+              {artworks.map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === currentSlide
+                      ? 'bg-white scale-125'
+                      : 'bg-white/40 hover:bg-white/60'
+                  }`}
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Go to artwork ${index + 1}`}
+                />
+              ))}
+            </div>
+            
+            {/* Artwork counter below dots */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="text-white"
+            >
+              <span className="text-sm opacity-80">
+                {currentSlide + 1} of {artworks.length}
+              </span>
+            </motion.div>
           </div>
         </>
       )}
