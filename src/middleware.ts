@@ -66,9 +66,9 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith(route)
   )
 
-  // Redirect to login if accessing admin routes without authentication
-  if (isAdminRoute && !session) {
-    const redirectUrl = new URL('/login', req.url)
+  // Redirect to admin (with login modal) if accessing admin routes without authentication
+  if (isAdminRoute && !session && req.nextUrl.pathname !== '/admin') {
+    const redirectUrl = new URL('/admin', req.url)
     redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
