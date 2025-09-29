@@ -20,15 +20,12 @@ function AdminPageContent() {
   // Get redirect destination
   const redirectTo = searchParams.get('redirectTo') || '/admin/dashboard'
 
-  // Redirect to intended destination if already authenticated
+  // Show login modal for non-authenticated users
   useEffect(() => {
-    if (!loading && user) {
-      router.push(redirectTo)
-    } else if (!loading && !user) {
-      // Show login modal if not authenticated
+    if (!loading && !user) {
       setShowLoginModal(true)
     }
-  }, [user, loading, router, redirectTo])
+  }, [user, loading])
 
   // Fetch latest artworks for background
   useEffect(() => {
@@ -158,12 +155,33 @@ function AdminPageContent() {
         )}
       </AnimatePresence>
 
-      {/* Content for when authenticated (will redirect anyway) */}
-      {user && (
+      {/* Content for authenticated users */}
+      {!loading && user && (
         <div className="relative z-10 min-h-screen flex items-center justify-center">
-          <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-            <p>Redirecting to dashboard...</p>
+          <div className="text-center text-white max-w-md">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20">
+              <div className="text-green-400 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Welcome Back, Mai-Britt</h2>
+              <p className="text-white/80 mb-6">You're authenticated and ready to manage your portfolio.</p>
+              <div className="space-y-3">
+                <a 
+                  href={redirectTo}
+                  className="block w-full bg-white text-gray-900 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors font-medium"
+                >
+                  {redirectTo === '/admin/dashboard' ? 'Go to Dashboard' : 'Continue to Admin Area'}
+                </a>
+                <a 
+                  href="/" 
+                  className="block w-full bg-white/10 text-white px-4 py-2 rounded-md hover:bg-white/20 transition-colors border border-white/30"
+                >
+                  Return to Portfolio
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}
