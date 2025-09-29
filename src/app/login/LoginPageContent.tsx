@@ -19,15 +19,9 @@ export default function LoginPageContent() {
   // Get redirect URL from search params
   const redirectTo = searchParams.get('redirectTo') || '/admin/dashboard'
 
-  // Fallback client-side redirect if middleware doesn't work
+  // Debug: Log authentication state
   useEffect(() => {
-    if (!loading && user) {
-      // Add a small delay to let middleware handle it first
-      const timer = setTimeout(() => {
-        window.location.href = redirectTo
-      }, 100)
-      return () => clearTimeout(timer)
-    }
+    console.log('Auth state:', { user: !!user, loading, redirectTo })
   }, [user, loading, redirectTo])
 
   // Fetch latest artworks for carousel
@@ -80,17 +74,17 @@ export default function LoginPageContent() {
     )
   }
 
-  // If user is authenticated, middleware should redirect, so show nothing briefly
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-sm text-gray-600">Redirecting...</p>
-        </div>
-      </div>
-    )
-  }
+  // Temporarily show login form even if authenticated to debug
+  // if (user) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+  //         <p className="text-sm text-gray-600">Redirecting...</p>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   return (
     <div className="min-h-screen flex">
