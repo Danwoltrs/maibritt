@@ -189,19 +189,19 @@ export default function NewGalleryPage() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Basic Information */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Building className="h-4 w-4" />
               Basic Information
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Essential details about the gallery
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 pt-0">
             <div className="space-y-2">
               <Label htmlFor="name">Gallery Name *</Label>
               <Input
@@ -278,18 +278,18 @@ export default function NewGalleryPage() {
           </CardContent>
         </Card>
 
-        {/* Location Information */}
+        {/* Location & Contact Information */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Location
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MapPin className="h-4 w-4" />
+              Location & Contact
             </CardTitle>
-            <CardDescription>
-              Physical address and location details
+            <CardDescription className="text-sm">
+              Address details and contact information
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 pt-0">
             <div className="space-y-2">
               <Label htmlFor="address_line1">Address Line 1 *</Label>
               <Input
@@ -367,225 +367,195 @@ export default function NewGalleryPage() {
                 )}
               </div>
             </div>
+
+            {/* Contact Information */}
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Contact Details
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="contact_person">Contact Person</Label>
+                  <Input
+                    id="contact_person"
+                    {...register('contact_person')}
+                    placeholder="Gallery Director"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    {...register('phone')}
+                    placeholder="+55 11 1234-5678"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register('email')}
+                    placeholder="contact@gallery.com"
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-red-600">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    {...register('website')}
+                    placeholder="https://gallery.com"
+                  />
+                  {errors.website && (
+                    <p className="text-sm text-red-600">{errors.website.message}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2 mt-3">
+                <Label htmlFor="instagram">Instagram Handle</Label>
+                <Input
+                  id="instagram"
+                  {...register('instagram')}
+                  placeholder="@galleryname"
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Contact Information */}
+        {/* Business Terms & Settings */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Contact Information
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileText className="h-4 w-4" />
+              Business Terms & Settings
             </CardTitle>
-            <CardDescription>
-              How to reach the gallery
+            <CardDescription className="text-sm">
+              Partnership arrangements and display preferences
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="space-y-4 pt-0">
+            {/* Business Terms */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="contact_person">Contact Person</Label>
-                <Input
-                  id="contact_person"
-                  {...register('contact_person')}
-                  placeholder="Gallery Director"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  {...register('phone')}
-                  placeholder="+55 11 1234-5678"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register('email')}
-                  placeholder="contact@gallery.com"
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  {...register('website')}
-                  placeholder="https://gallery.com"
-                />
-                {errors.website && (
-                  <p className="text-sm text-red-600">{errors.website.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="instagram">Instagram Handle</Label>
-              <Input
-                id="instagram"
-                {...register('instagram')}
-                placeholder="@galleryname"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Business Terms */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Business Terms
-            </CardTitle>
-            <CardDescription>
-              Partnership and business arrangements
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="payment_terms">Payment Terms</Label>
-              <Textarea
-                id="payment_terms"
-                {...register('payment_terms')}
-                placeholder="Net 30 days, bank transfer..."
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="shipping_arrangements">Shipping Arrangements</Label>
-              <Textarea
-                id="shipping_arrangements"
-                {...register('shipping_arrangements')}
-                placeholder="Gallery handles shipping, artist provides packaging..."
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="insurance_provider">Insurance Provider</Label>
-              <Input
-                id="insurance_provider"
-                {...register('insurance_provider')}
-                placeholder="Art insurance company"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Descriptions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Gallery Description</CardTitle>
-            <CardDescription>
-              Descriptions for public display (optional)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="description_pt">Description (Portuguese)</Label>
+                <Label htmlFor="payment_terms">Payment Terms</Label>
                 <Textarea
-                  id="description_pt"
-                  {...register('description_pt')}
-                  placeholder="Descrição da galeria..."
-                  rows={4}
+                  id="payment_terms"
+                  {...register('payment_terms')}
+                  placeholder="Net 30 days, bank transfer..."
+                  rows={2}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description_en">Description (English)</Label>
+                <Label htmlFor="shipping_arrangements">Shipping Arrangements</Label>
                 <Textarea
-                  id="description_en"
-                  {...register('description_en')}
-                  placeholder="Gallery description..."
-                  rows={4}
+                  id="shipping_arrangements"
+                  {...register('shipping_arrangements')}
+                  placeholder="Gallery handles shipping..."
+                  rows={2}
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Display Settings</CardTitle>
-            <CardDescription>
-              How this gallery appears on your website
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="is_active">Active Gallery</Label>
-                <p className="text-sm text-gray-500">
-                  Whether this gallery is currently active in your system
-                </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="insurance_provider">Insurance Provider</Label>
+                <Input
+                  id="insurance_provider"
+                  {...register('insurance_provider')}
+                  placeholder="Art insurance company"
+                />
               </div>
-              <Switch
-                id="is_active"
-                checked={watchIsActive}
-                onCheckedChange={(checked) => setValue('is_active', checked)}
-              />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="show_on_website">Show on Website</Label>
-                <p className="text-sm text-gray-500">
-                  Display this gallery on the public &quot;Where to Find&quot; page
-                </p>
+            {/* Descriptions */}
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Gallery Description (optional)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="description_pt">Portuguese</Label>
+                  <Textarea
+                    id="description_pt"
+                    {...register('description_pt')}
+                    placeholder="Descrição da galeria..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description_en">English</Label>
+                  <Textarea
+                    id="description_en"
+                    {...register('description_en')}
+                    placeholder="Gallery description..."
+                    rows={3}
+                  />
+                </div>
               </div>
-              <Switch
-                id="show_on_website"
-                checked={watchShowOnWebsite}
-                onCheckedChange={(checked) => setValue('show_on_website', checked)}
-              />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="featured">Featured Gallery</Label>
-                <p className="text-sm text-gray-500">
-                  Highlight this gallery prominently on your website
-                </p>
-              </div>
-              <Switch
-                id="featured"
-                checked={watchFeatured}
-                onCheckedChange={(checked) => setValue('featured', checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            {/* Display Settings */}
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Display Settings</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label htmlFor="is_active" className="text-sm">Active Gallery</Label>
+                    <p className="text-xs text-gray-500">Active in system</p>
+                  </div>
+                  <Switch
+                    id="is_active"
+                    checked={watchIsActive}
+                    onCheckedChange={(checked) => setValue('is_active', checked)}
+                  />
+                </div>
 
-        {/* Notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Internal Notes</CardTitle>
-            <CardDescription>
-              Private notes about this gallery (not visible to public)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                {...register('notes')}
-                placeholder="Internal notes about this gallery partnership..."
-                rows={4}
-              />
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label htmlFor="show_on_website" className="text-sm">Show on Website</Label>
+                    <p className="text-xs text-gray-500">Public visibility</p>
+                  </div>
+                  <Switch
+                    id="show_on_website"
+                    checked={watchShowOnWebsite}
+                    onCheckedChange={(checked) => setValue('show_on_website', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label htmlFor="featured" className="text-sm">Featured Gallery</Label>
+                    <p className="text-xs text-gray-500">Prominent display</p>
+                  </div>
+                  <Switch
+                    id="featured"
+                    checked={watchFeatured}
+                    onCheckedChange={(checked) => setValue('featured', checked)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="pt-4 border-t">
+              <div className="space-y-2">
+                <Label htmlFor="notes">Internal Notes</Label>
+                <Textarea
+                  id="notes"
+                  {...register('notes')}
+                  placeholder="Private notes about this gallery partnership..."
+                  rows={3}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
