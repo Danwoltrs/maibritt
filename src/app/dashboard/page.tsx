@@ -11,35 +11,35 @@ const quickActions = [
     title: 'Upload New Artwork',
     description: 'Add a new piece to your portfolio',
     icon: Image,
-    href: '/admin/artworks/new',
+    href: '/artworks/new',
     color: 'bg-blue-500'
   },
   {
     title: 'Add Gallery',
     description: 'Register a new partner gallery',
     icon: Building,
-    href: '/admin/galleries/new',
+    href: '/galleries/new',
     color: 'bg-green-500'
   },
   {
     title: 'Record Sale',
     description: 'Log a recent artwork sale',
     icon: DollarSign,
-    href: '/admin/sales/new',
+    href: '/sales/new',
     color: 'bg-purple-500'
   },
   {
     title: 'Update Location',
     description: 'Move artwork to new location',
     icon: MapPin,
-    href: '/admin/artworks/locations',
+    href: '/artworks/locations',
     color: 'bg-orange-500'
   },
   {
     title: 'Write Journal Entry',
     description: 'Document your creative process',
     icon: PenTool,
-    href: '/admin/journal/new',
+    href: '/journal/new',
     color: 'bg-pink-500'
   }
 ]
