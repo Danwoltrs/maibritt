@@ -20,25 +20,13 @@ const getEnvVar = (key: string, fallback?: string): string => {
 
 // Create configuration with proper error handling
 const createConfig = (): AppConfig => {
-  try {
-    return {
-      supabase: {
-        url: getEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
-        anonKey: getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
-        serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
-      },
-      development: process.env.NODE_ENV === 'development'
-    }
-  } catch (error) {
-    console.error('Configuration error:', error)
-    // Return a safe fallback for development
-    return {
-      supabase: {
-        url: 'https://placeholder.supabase.co',
-        anonKey: 'placeholder-key'
-      },
-      development: true
-    }
+  return {
+    supabase: {
+      url: getEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
+      anonKey: getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+    },
+    development: process.env.NODE_ENV === 'development'
   }
 }
 
