@@ -19,12 +19,16 @@ export default function LoginPageContent() {
   // Get redirect URL from search params
   const redirectTo = searchParams.get('redirectTo') || '/admin/dashboard'
 
-  // No client-side redirect needed - middleware handles this
-  // useEffect(() => {
-  //   if (!loading && user) {
-  //     window.location.href = redirectTo
-  //   }
-  // }, [user, loading, redirectTo])
+  // Fallback client-side redirect if middleware doesn't work
+  useEffect(() => {
+    if (!loading && user) {
+      // Add a small delay to let middleware handle it first
+      const timer = setTimeout(() => {
+        window.location.href = redirectTo
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [user, loading, redirectTo])
 
   // Fetch latest artworks for carousel
   useEffect(() => {
