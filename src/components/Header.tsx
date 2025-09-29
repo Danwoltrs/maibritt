@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, User } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { user, loading } = useAuth()
 
   const navigationItems = [
     { name: 'Portfolio', href: '/#hero', namePt: 'Portfólio' },
@@ -46,8 +48,28 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Language Toggle */}
+          {/* Right side controls */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Authenticated User Indicator */}
+            {!loading && user && (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 group"
+                  title="Go to Artist Portal"
+                >
+                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center group-hover:bg-gray-300 transition-colors">
+                    <User className="h-3 w-3 text-gray-600" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700 group-hover:text-gray-900">
+                    {user.user_metadata?.name || user.email?.split('@')[0] || 'Artist'}
+                  </span>
+                </Link>
+                <span className="text-gray-300">|</span>
+              </>
+            )}
+            
+            {/* Language Toggle */}
             <button className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
               EN
             </button>
@@ -86,6 +108,25 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
+
+              {/* Mobile Authenticated User */}
+              {!loading && user && (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {user.user_metadata?.name || user.email?.split('@')[0] || 'Artist'}
+                    </div>
+                    <div className="text-xs text-gray-500">Artist Portal</div>
+                  </div>
+                </Link>
+              )}
 
               {/* Mobile Language Toggle */}
               <div className="flex items-center space-x-4 px-3 py-2">
