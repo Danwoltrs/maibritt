@@ -84,14 +84,6 @@ export default function ArtworkLocationsPage() {
     search: ''
   })
 
-  // Mock location data - in real app this would come from a location service
-  const [mockLocations] = useState({
-    gallery: 'Galeria Arte Moderna, São Paulo',
-    studio: 'Artist Studio, Santos',
-    collector: 'Private Collection',
-    storage: 'Climate Controlled Storage',
-    transit: 'Shipping to Exhibition'
-  })
 
   useEffect(() => {
     loadArtworks()
@@ -153,14 +145,11 @@ export default function ArtworkLocationsPage() {
     }
   }
 
-  const getArtworkLocation = (index: number) => {
-    // Mock location assignment for demo
-    const locations = ['studio', 'gallery', 'collector', 'storage', 'transit']
-    return locations[index % locations.length]
-  }
-
   const getLocationCount = (location: string) => {
-    return artworks.filter((_, index) => getArtworkLocation(index) === location).length
+    return artworks.filter(artwork => {
+      const artworkLocation = artwork.location?.toLowerCase() || 'studio'
+      return artworkLocation === location
+    }).length
   }
 
   const stats = {
@@ -344,8 +333,8 @@ export default function ArtworkLocationsPage() {
       {/* Artworks Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {artworks.map((artwork, index) => {
-          const currentLocation = getArtworkLocation(index)
-          const locationDetails = mockLocations[currentLocation as keyof typeof mockLocations]
+          const currentLocation = artwork.location?.toLowerCase() || 'studio'
+          const locationDetails = artwork.location || 'Studio'
 
           return (
             <Card key={artwork.id} className="group hover:shadow-lg transition-shadow">
