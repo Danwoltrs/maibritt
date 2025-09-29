@@ -23,9 +23,10 @@ export default function LoginPageContent() {
   // Redirect if already authenticated
   useEffect(() => {
     if (!loading && user) {
-      router.push(redirectTo)
+      // Use window.location.href for full page refresh to ensure server state is synced
+      window.location.href = redirectTo
     }
-  }, [user, loading, router, redirectTo])
+  }, [user, loading, redirectTo])
 
   // Fetch latest artworks for carousel
   useEffect(() => {

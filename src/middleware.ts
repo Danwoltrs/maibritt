@@ -73,9 +73,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirect to admin dashboard if accessing login while authenticated
+  // Redirect to intended destination if accessing login while authenticated
   if (req.nextUrl.pathname === '/login' && session) {
-    return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+    const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/admin/dashboard'
+    return NextResponse.redirect(new URL(redirectTo, req.url))
   }
 
   return response
