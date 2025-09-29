@@ -73,12 +73,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirect to intended destination if accessing login while authenticated
-  if (req.nextUrl.pathname === '/login' && session) {
-    const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/admin/dashboard'
-    console.log('Middleware redirecting authenticated user from /login to:', redirectTo)
-    return NextResponse.redirect(new URL(redirectTo, req.url))
-  }
+  // Let client-side handle login redirects for authenticated users
+  // Middleware redirects don't work reliably with client-side navigation in dev mode
+  // if (req.nextUrl.pathname === '/login' && session) {
+  //   const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/admin/dashboard'
+  //   return NextResponse.redirect(new URL(redirectTo, req.url))
+  // }
 
   return response
 }

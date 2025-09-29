@@ -19,9 +19,12 @@ export default function LoginPageContent() {
   // Get redirect URL from search params
   const redirectTo = searchParams.get('redirectTo') || '/admin/dashboard'
 
-  // Debug: Log authentication state
+  // Redirect authenticated users immediately
   useEffect(() => {
-    console.log('Auth state:', { user: !!user, loading, redirectTo })
+    if (!loading && user) {
+      console.log('Redirecting authenticated user to:', redirectTo)
+      window.location.replace(redirectTo)
+    }
   }, [user, loading, redirectTo])
 
   // Fetch latest artworks for carousel
@@ -74,17 +77,17 @@ export default function LoginPageContent() {
     )
   }
 
-  // Temporarily show login form even if authenticated to debug
-  // if (user) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="text-center">
-  //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-  //         <p className="text-sm text-gray-600">Redirecting...</p>
-  //       </div>
-  //     </div>
-  //   )
-  // }
+  // Show redirecting message for authenticated users
+  if (!loading && user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600">Redirecting to dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex">
