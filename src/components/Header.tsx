@@ -8,7 +8,10 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const navigationItems = [
-    { name: 'Login', href: '/login', namePt: 'Login' },
+    { name: 'Portfolio', href: '/#hero', namePt: 'Portfólio' },
+    { name: 'Exhibitions', href: '/#exhibitions', namePt: 'Exposições' },
+    { name: 'About', href: '/#statement', namePt: 'Sobre' },
+    { name: 'Contact', href: '/#contact', namePt: 'Contato' },
   ]
 
   return (
