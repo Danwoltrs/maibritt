@@ -159,7 +159,7 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
   - **4.5.6** ⏳ Search within blog
   - **4.5.7** ⏳ Reading time estimation
 
-### Contact & Where to Buy
+### Contact & Where to Find
 - **4.6** ⏳ Contact form
   - **4.6.1** ⏳ Create /contact route
   - **4.6.2** ⏳ Build contact form (shadcn/ui)
@@ -168,9 +168,9 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
   - **4.6.5** ⏳ Success/error handling
   - **4.6.6** ⏳ Artist contact info display
 
-### Where to Buy (Gallery Directory)
+### Where to Find (Gallery Directory)
 - **4.7** ⏳ Public gallery listings
-  - **4.7.1** ⏳ Create /where-to-buy route
+  - **4.7.1** ⏳ Create /where-to-find route
   - **4.7.2** ⏳ Gallery cards display:
     - Gallery name and photo
     - Full address with country flag
@@ -183,7 +183,7 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
     - Country/region
     - City
     - Has current artworks
-  - **4.7.5** ⏳ Individual gallery detail pages (/where-to-buy/[slug])
+  - **4.7.5** ⏳ Individual gallery detail pages (/where-to-find/[slug])
   - **4.7.6** ⏳ Distance calculator from user location
   - **4.7.7** ⏳ Mobile-optimized gallery finder
   - **4.7.8** ⏳ Gallery contact forms for inquiries
@@ -481,7 +481,7 @@ src/
 │   │   │   └── tag/[tag]/page.tsx
 │   │   ├── about/
 │   │   ├── contact/
-│   │   └── where-to-buy/ ⏳ (NEW)
+│   │   └── where-to-find/ ⏳ (NEW)
 │   │       ├── page.tsx
 │   │       └── [slug]/page.tsx
 │   ├── login/ ⏳ (NEW)
@@ -593,7 +593,7 @@ src/
 1. **Task 1** ✅ - Fix remaining issues and test styles (COMPLETED)
 2. **Task 2** ✅ - Set up core data layer and services (COMPLETED)
 3. **Task 3** ⏳ - Build main page components (IN PROGRESS)
-4. **Task 4** ⏳ - Create public pages including Where to Buy
+4. **Task 4** ⏳ - Create public pages including Where to Find
 5. **Task 5** ⏳ - Implement blog feature
 6. **Task 6** ⏳ - Build artist dashboard & admin system (HIGH PRIORITY)
 7. **Task 7** ⏳ - Add advanced features
@@ -608,7 +608,7 @@ src/
 CREATE TABLE galleries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  slug TEXT UNIQUE, -- for URLs like /where-to-buy/galeria-xyz
+  slug TEXT UNIQUE, -- for URLs like /where-to-find/galeria-xyz
 
   -- Full Address Fields
   address_line1 TEXT NOT NULL,
@@ -647,7 +647,7 @@ CREATE TABLE galleries (
 
   -- Public Display Settings
   is_active BOOLEAN DEFAULT true,
-  show_on_website BOOLEAN DEFAULT true, -- for Where to Buy page
+  show_on_website BOOLEAN DEFAULT true, -- for Where to Find page
   featured BOOLEAN DEFAULT false,
   display_order INTEGER DEFAULT 0,
 
@@ -780,7 +780,7 @@ CREATE TABLE gallery_metrics (
 - **Bilingual Content**: All content supports both Portuguese and English
 - **Admin Friendly**: Intuitive interface designed for artist workflow
 
-### Where to Buy Page Features
+### Where to Find Page Features
 - **Public Gallery Directory**: All active partner galleries displayed as cards
 - **Interactive Map**: Google Maps integration showing gallery locations worldwide
 - **Contact Integration**: Direct contact forms for each gallery
@@ -800,6 +800,6 @@ CREATE TABLE gallery_metrics (
 - Artist efficiency in business management
 - Reduced time for artwork location tracking
 - Improved gallery relationship management
-- Enhanced collector experience through Where to Buy page
+- Enhanced collector experience through Where to Find page
 - Increased international reach through gallery network
 - Better sales insights through comprehensive analytics

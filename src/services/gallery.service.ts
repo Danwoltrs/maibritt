@@ -294,7 +294,7 @@ export class GalleryService {
   }
 
   /**
-   * Get galleries for public display (Where to Buy page)
+   * Get galleries for public display (Where to Find page)
    */
   static async getPublicGalleries(options: GetGalleriesOptions = {}): Promise<ServiceResponse<Gallery[]>> {
     return this.getAll({

@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS galleries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  slug TEXT UNIQUE, -- for URLs like /where-to-buy/galeria-xyz
+  slug TEXT UNIQUE, -- for URLs like /where-to-find/galeria-xyz
 
   -- Full Address Fields
   address_line1 TEXT NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS galleries (
 
   -- Public Display Settings
   is_active BOOLEAN DEFAULT true,
-  show_on_website BOOLEAN DEFAULT true, -- for Where to Buy page
+  show_on_website BOOLEAN DEFAULT true, -- for Where to Find page
   featured BOOLEAN DEFAULT false,
   display_order INTEGER DEFAULT 0,
 

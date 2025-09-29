@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
+import { config } from './config'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Create Supabase client using the configuration
+export const supabase = createClient(config.supabase.url, config.supabase.anonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -12,13 +11,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 })
 
 // Admin client for server-side operations
-export const supabaseAdmin = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+export const supabaseAdmin = config.supabase.serviceRoleKey ? createClient(
+  config.supabase.url,
+  config.supabase.serviceRoleKey,
   {
     auth: {
       autoRefreshToken: false,
       persistSession: false
     }
   }
-)
+) : null
