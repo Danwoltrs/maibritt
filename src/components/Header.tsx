@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
@@ -9,12 +8,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const navigationItems = [
-    { name: 'Portfolio', href: '/portfolio', namePt: 'Portfólio' },
-    { name: 'Series', href: '/series', namePt: 'Séries' },
-    { name: 'Exhibitions', href: '/exhibitions', namePt: 'Exposições' },
-    { name: 'About', href: '/about', namePt: 'Sobre' },
-    { name: 'Available Works', href: '/available', namePt: 'Obras Disponíveis' },
-    { name: 'Contact', href: '/contact', namePt: 'Contato' },
+    { name: 'Login', href: '/login', namePt: 'Login' },
   ]
 
   return (
@@ -23,14 +17,9 @@ export default function Header() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <Image
-              src="/logo.svg"
-              alt="Mai-Britt Wolthers"
-              width={180}
-              height={40}
-              className="h-8 md:h-10 w-auto"
-              priority
-            />
+            <div className="text-xl md:text-2xl font-light text-gray-900">
+              Mai-Britt Wolthers
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
