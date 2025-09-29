@@ -17,8 +17,8 @@ function AdminPageContent() {
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [currentSlide, setCurrentSlide] = useState(0)
 
-  // Get redirect destination
-  const redirectTo = searchParams.get('redirectTo') || '/admin/dashboard'
+  // Get redirect destination  
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
   // Show login modal for non-authenticated users
   useEffect(() => {

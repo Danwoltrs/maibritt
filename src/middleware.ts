@@ -60,11 +60,11 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Define protected admin routes
+  // Define protected admin routes (exclude /dashboard as it's a public redirect)
   const adminRoutes = ['/admin']
   const isAdminRoute = adminRoutes.some(route =>
     req.nextUrl.pathname.startsWith(route)
-  )
+  ) && req.nextUrl.pathname !== '/admin' // Exclude /admin itself since it handles auth
 
   // Redirect to admin (with login modal) if accessing admin routes without authentication
   if (isAdminRoute && !session && req.nextUrl.pathname !== '/admin') {
