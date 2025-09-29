@@ -37,56 +37,38 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
 
 ---
 
-## ⏳ Task 2: Core Data Layer
+## ✅ Task 2: Core Data Layer (COMPLETED)
 **Priority: HIGH**
 
 ### Database Services
-- **2.1** ⏳ Create services directory structure
-- **2.2** ⏳ Create artwork.service.ts
-  - **2.2.1** ⏳ CRUD operations for artworks
-  - **2.2.2** ⏳ Filtering and search methods
-  - **2.2.3** ⏳ Batch operations
-- **2.3** ⏳ Create series.service.ts
-  - **2.3.1** ⏳ Series CRUD operations
-  - **2.3.2** ⏳ Link artworks to series
-  - **2.3.3** ⏳ Seasonal series handling
-- **2.4** ⏳ Create exhibitions.service.ts
-  - **2.4.1** ⏳ Exhibition CRUD operations
-  - **2.4.2** ⏳ Timeline sorting
-  - **2.4.3** ⏳ Featured exhibitions
-- **2.5** ⏳ Create storage.service.ts
-  - **2.5.1** ⏳ Image upload to Supabase
-  - **2.5.2** ⏳ Image optimization
-  - **2.5.3** ⏳ Multiple size generation (original, display, thumbnail)
-- **2.6** ⏳ Create blog.service.ts (NEW FEATURE)
-  - **2.6.1** ⏳ Blog post CRUD operations
-  - **2.6.2** ⏳ Draft/publish states
-  - **2.6.3** ⏳ Tag management
-  - **2.6.4** ⏳ Archive functionality
+- **2.1** ✅ Create services directory structure
+- **2.2** ✅ Create artwork.service.ts
+  - **2.2.1** ✅ CRUD operations for artworks
+  - **2.2.2** ✅ Filtering and search methods
+  - **2.2.3** ✅ Batch operations
+- **2.3** ✅ Create series.service.ts
+  - **2.3.1** ✅ Series CRUD operations
+  - **2.3.2** ✅ Link artworks to series
+  - **2.3.3** ✅ Seasonal series handling
+- **2.4** ✅ Create exhibitions.service.ts
+  - **2.4.1** ✅ Exhibition CRUD operations
+  - **2.4.2** ✅ Timeline sorting
+  - **2.4.3** ✅ Featured exhibitions
+- **2.5** ✅ Create storage.service.ts
+  - **2.5.1** ✅ Image upload to Supabase
+  - **2.5.2** ✅ Image optimization
+  - **2.5.3** ✅ Multiple size generation (original, display, thumbnail)
+- **2.6** ✅ Create blog.service.ts (NEW FEATURE)
+  - **2.6.1** ✅ Blog post CRUD operations
+  - **2.6.2** ✅ Draft/publish states
+  - **2.6.3** ✅ Tag management
+  - **2.6.4** ✅ Archive functionality
 
 ### Database Schema Updates
-- **2.7** ⏳ Execute existing database schema in Supabase
-- **2.8** ⏳ Create blog_posts table
-  ```sql
-  CREATE TABLE blog_posts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title_pt TEXT NOT NULL,
-    title_en TEXT NOT NULL,
-    content_pt TEXT NOT NULL,
-    content_en TEXT NOT NULL,
-    excerpt_pt TEXT,
-    excerpt_en TEXT,
-    cover_image TEXT,
-    published BOOLEAN DEFAULT false,
-    published_at TIMESTAMPTZ,
-    tags JSONB DEFAULT '[]',
-    reading_time INTEGER, -- estimated minutes
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-  );
-  ```
-- **2.9** ⏳ Create indexes for blog posts
-- **2.10** ⏳ Set up Row Level Security for blog posts
+- **2.7** ✅ Verified existing database schema in Supabase
+- **2.8** ✅ Blog_posts table exists and ready
+- **2.9** ✅ Indexes and RLS policies configured
+- **2.10** ✅ All storage buckets configured (artworks, exhibitions, series)
 
 ---
 
@@ -177,7 +159,7 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
   - **4.5.6** ⏳ Search within blog
   - **4.5.7** ⏳ Reading time estimation
 
-### Contact
+### Contact & Where to Buy
 - **4.6** ⏳ Contact form
   - **4.6.1** ⏳ Create /contact route
   - **4.6.2** ⏳ Build contact form (shadcn/ui)
@@ -185,6 +167,26 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
   - **4.6.4** ⏳ Email integration (Resend)
   - **4.6.5** ⏳ Success/error handling
   - **4.6.6** ⏳ Artist contact info display
+
+### Where to Buy (Gallery Directory)
+- **4.7** ⏳ Public gallery listings
+  - **4.7.1** ⏳ Create /where-to-buy route
+  - **4.7.2** ⏳ Gallery cards display:
+    - Gallery name and photo
+    - Full address with country flag
+    - Contact information (phone, email, website)
+    - Opening hours display
+    - "Get Directions" button (Google Maps)
+    - Current artworks available count
+  - **4.7.3** ⏳ Interactive gallery map view
+  - **4.7.4** ⏳ Filter galleries by:
+    - Country/region
+    - City
+    - Has current artworks
+  - **4.7.5** ⏳ Individual gallery detail pages (/where-to-buy/[slug])
+  - **4.7.6** ⏳ Distance calculator from user location
+  - **4.7.7** ⏳ Mobile-optimized gallery finder
+  - **4.7.8** ⏳ Gallery contact forms for inquiries
 
 ---
 
@@ -218,54 +220,141 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
 
 ---
 
-## ⏳ Task 6: Artist Dashboard
-**Priority: MEDIUM**
+## ⏳ Task 6: Artist Dashboard & Admin System
+**Priority: HIGH**
 
-### Authentication
-- **6.1** ⏳ Authentication system
-  - **6.1.1** ⏳ Set up Supabase Auth
-  - **6.1.2** ⏳ Create /admin/login page
+### Authentication System
+- **6.1** ⏳ Enhanced authentication
+  - **6.1.1** ⏳ Set up Supabase Auth with 2FA
+  - **6.1.2** ⏳ Create elegant split-screen /login page
+    - Left panel: Rotating artwork showcase
+    - Right panel: Clean login form
   - **6.1.3** ⏳ Implement protected routes middleware
-  - **6.1.4** ⏳ Session management
-  - **6.1.5** ⏳ Logout functionality
+  - **6.1.4** ⏳ Session management with auto-logout
+  - **6.1.5** ⏳ Trusted device registration
   - **6.1.6** ⏳ Password reset flow
+  - **6.1.7** ⏳ Login activity monitoring
+  - **6.1.8** ⏳ Biometric login support (mobile)
 
-### Dashboard Overview
-- **6.2** ⏳ Main dashboard
-  - **6.2.1** ⏳ Create dashboard layout
-  - **6.2.2** ⏳ Statistics cards (views, sales, posts)
-  - **6.2.3** ⏳ Recent activity feed
-  - **6.2.4** ⏳ Quick action buttons
-  - **6.2.5** ⏳ Charts and metrics (Recharts)
+### Main Dashboard Hub
+- **6.2** ⏳ Comprehensive dashboard
+  - **6.2.1** ⏳ Create dashboard layout with sidebar navigation
+  - **6.2.2** ⏳ Welcome section with personalized greeting/weather
+  - **6.2.3** ⏳ Quick actions bar:
+    - Upload artwork
+    - Record sale
+    - Add gallery
+    - Write journal
+    - Move artwork location
+  - **6.2.4** ⏳ Live metrics cards:
+    - Total artworks by location
+    - Monthly/yearly revenue
+    - Gallery performance comparison
+    - Recent website visitors
+  - **6.2.5** ⏳ Recent activity feed
+  - **6.2.6** ⏳ Revenue charts (Recharts/Chart.js)
 
-### Content Management
-- **6.3** ⏳ Artwork management
-  - **6.3.1** ⏳ Artwork listing table with actions
-  - **6.3.2** ⏳ Add artwork form with image upload
-  - **6.3.3** ⏳ Edit artwork functionality
-  - **6.3.4** ⏳ Delete with confirmation modal
-  - **6.3.5** ⏳ Bulk operations (select all, delete, etc.)
-  - **6.3.6** ⏳ Sale status toggle interface
+### Gallery Management System
+- **6.3** ⏳ Full gallery CRUD
+  - **6.3.1** ⏳ Gallery listing with cards view
+  - **6.3.2** ⏳ Add/Edit gallery form with fields:
+    - Name, slug (for URL)
+    - Full address (line1, line2, city, state, postal code, country)
+    - GPS coordinates (lat/long)
+    - Contact person, email, phone, website
+    - Opening hours (JSON structure)
+    - Commission rate, payment terms
+    - Shipping arrangements, insurance
+    - Gallery photo upload
+  - **6.3.3** ⏳ Google Maps integration for addresses
+  - **6.3.4** ⏳ Gallery performance metrics:
+    - Total artworks displayed
+    - Total sold, conversion rate
+    - Average days to sale
+    - Revenue generated
+  - **6.3.5** ⏳ Gallery relationship status tracking
+  - **6.3.6** ⏳ Contract expiry reminders
+  - **6.3.7** ⏳ Bulk email to galleries
 
-### Blog Editor (NEW)
-- **6.4** ⏳ Blog post editor
-  - **6.4.1** ⏳ Integrate rich text editor (Tiptap or similar)
-  - **6.4.2** ⏳ Draft/publish toggle
-  - **6.4.3** ⏳ Media library integration
-  - **6.4.4** ⏳ SEO metadata fields
-  - **6.4.5** ⏳ Schedule publishing
-  - **6.4.6** ⏳ Auto-save drafts
-  - **6.4.7** ⏳ Preview mode
+### Artwork Location Management
+- **6.4** ⏳ Location tracking system
+  - **6.4.1** ⏳ Visual inventory grid with location badges:
+    - 🏛️ Gallery (with gallery name)
+    - 🎨 Studio
+    - 📦 Storage
+    - ✈️ In Transit
+    - 🏠 With Collector (sold)
+  - **6.4.2** ⏳ Drag-and-drop to change locations
+  - **6.4.3** ⏳ Artwork journey timeline view
+  - **6.4.4** ⏳ Bulk location updates
+  - **6.4.5** ⏳ Expected return date tracking
+  - **6.4.6** ⏳ Shipping tracking integration
+  - **6.4.7** ⏳ Location history log
+
+### Sales Dashboard & Analytics
+- **6.5** ⏳ Comprehensive sales system
+  - **6.5.1** ⏳ Sales recording form:
+    - Artwork selection
+    - Gallery/direct sale toggle
+    - Sale price, commission calculation
+    - Buyer details (name, email, country)
+    - Payment method and status
+    - Certificate of authenticity checkbox
+  - **6.5.2** ⏳ Revenue analytics dashboard:
+    - Monthly/yearly revenue charts
+    - Geographic heat map of sales
+    - Gallery performance comparison
+    - Best-selling artworks ranking
+    - Average sale price trends
+  - **6.5.3** ⏳ Gallery leaderboard with metrics
+  - **6.5.4** ⏳ Sales pipeline tracking
+  - **6.5.5** ⏳ Commission vs direct sales analysis
+  - **6.5.6** ⏳ Export to CSV/Excel for accounting
+  - **6.5.7** ⏳ Invoice generation
+
+### Private Journal System
+- **6.6** ⏳ Artist journal/diary
+  - **6.6.1** ⏳ Rich text editor for journal entries
+  - **6.6.2** ⏳ Entry metadata:
+    - Title, date, mood
+    - Weather (auto-fetch)
+    - Location
+    - Inspiration source
+  - **6.6.3** ⏳ Link/embed artworks in entries
+  - **6.6.4** ⏳ Photo attachments from studio
+  - **6.6.5** ⏳ Private/public toggle for blog publishing
+  - **6.6.6** ⏳ Search and filter entries
+  - **6.6.7** ⏳ Export journal as PDF/backup
+
+### Content Management Enhanced
+- **6.7** ⏳ Artwork management
+  - **6.7.1** ⏳ Enhanced artwork listing with location filters
+  - **6.7.2** ⏳ Add artwork form with location assignment
+  - **6.7.3** ⏳ Edit artwork with location history
+  - **6.7.4** ⏳ Bulk operations with location updates
+  - **6.7.5** ⏳ Sale status toggle with buyer info
+  - **6.7.6** ⏳ Availability scheduler
+
+### Blog/Public Content Editor
+- **6.8** ⏳ Blog post editor
+  - **6.8.1** ⏳ Integrate rich text editor (Tiptap)
+  - **6.8.2** ⏳ Convert journal entries to blog posts
+  - **6.8.3** ⏳ Draft/publish/schedule workflow
+  - **6.8.4** ⏳ Media library integration
+  - **6.8.5** ⏳ SEO metadata fields
+  - **6.8.6** ⏳ Auto-save drafts
+  - **6.8.7** ⏳ Preview mode
 
 ### Additional Management
-- **6.5** ⏳ Series management
-  - **6.5.1** ⏳ Series CRUD interface
-  - **6.5.2** ⏳ Assign artworks to series
-  - **6.5.3** ⏳ Reorder series
-- **6.6** ⏳ Exhibition management
-  - **6.6.1** ⏳ Exhibition CRUD interface
-  - **6.6.2** ⏳ Upload exhibition images
-  - **6.6.3** ⏳ Mark as featured
+- **6.9** ⏳ Series management
+  - **6.9.1** ⏳ Series CRUD interface
+  - **6.9.2** ⏳ Assign artworks to series
+  - **6.9.3** ⏳ Reorder series
+- **6.10** ⏳ Exhibition management
+  - **6.10.1** ⏳ Exhibition CRUD interface
+  - **6.10.2** ⏳ Link exhibitions to galleries
+  - **6.10.3** ⏳ Upload exhibition images
+  - **6.10.4** ⏳ Mark as featured
 
 ---
 
@@ -391,58 +480,312 @@ src/
 │   │   │   ├── [slug]/page.tsx
 │   │   │   └── tag/[tag]/page.tsx
 │   │   ├── about/
-│   │   └── contact/
-│   └── (admin)/
+│   │   ├── contact/
+│   │   └── where-to-buy/ ⏳ (NEW)
+│   │       ├── page.tsx
+│   │       └── [slug]/page.tsx
+│   ├── login/ ⏳ (NEW)
+│   │   └── page.tsx
+│   └── (admin)/ ⏳ (NEW)
+│       ├── layout.tsx
 │       ├── dashboard/
-│       └── blog/ ⏳ (NEW)
+│       │   └── page.tsx
+│       ├── galleries/
+│       │   ├── page.tsx
+│       │   ├── new/page.tsx
+│       │   └── [id]/
+│       │       ├── page.tsx
+│       │       └── edit/page.tsx
+│       ├── sales/
+│       │   ├── page.tsx
+│       │   └── new/page.tsx
+│       ├── journal/
+│       │   ├── page.tsx
+│       │   ├── new/page.tsx
+│       │   └── [id]/edit/page.tsx
+│       ├── artworks/
+│       │   ├── locations/page.tsx
+│       │   └── analytics/page.tsx
+│       └── blog/ ⏳ (ENHANCED)
+│           ├── page.tsx
 │           ├── new/page.tsx
 │           └── edit/[id]/page.tsx
 ├── components/
-│   ├── blog/ ⏳ (NEW)
+│   ├── admin/ ⏳ (NEW)
+│   │   ├── Dashboard/
+│   │   │   ├── DashboardMetrics.tsx
+│   │   │   ├── QuickActions.tsx
+│   │   │   ├── RecentActivity.tsx
+│   │   │   └── RevenueCharts.tsx
+│   │   ├── Galleries/
+│   │   │   ├── GalleryCard.tsx
+│   │   │   ├── GalleryForm.tsx
+│   │   │   ├── GalleryMap.tsx
+│   │   │   └── AddressInput.tsx
+│   │   ├── Sales/
+│   │   │   ├── SalesForm.tsx
+│   │   │   ├── SalesChart.tsx
+│   │   │   ├── GalleryLeaderboard.tsx
+│   │   │   └── RevenueAnalytics.tsx
+│   │   ├── Artworks/
+│   │   │   ├── LocationBadge.tsx
+│   │   │   ├── ArtworkTimeline.tsx
+│   │   │   ├── LocationTracker.tsx
+│   │   │   └── BulkActions.tsx
+│   │   ├── Journal/
+│   │   │   ├── JournalEditor.tsx
+│   │   │   ├── EntryCard.tsx
+│   │   │   ├── MoodTracker.tsx
+│   │   │   └── ArtworkLinker.tsx
+│   │   └── Layout/
+│   │       ├── AdminSidebar.tsx
+│   │       ├── AdminHeader.tsx
+│   │       └── ProtectedRoute.tsx
+│   ├── galleries/ ⏳ (NEW)
+│   │   ├── GalleryCard.tsx (public version)
+│   │   ├── GalleryMap.tsx (public interactive map)
+│   │   ├── GalleryFilter.tsx
+│   │   └── DirectionsButton.tsx
+│   ├── blog/ ⏳ (ENHANCED)
 │   │   ├── BlogCard.tsx
 │   │   ├── BlogPost.tsx
-│   │   ├── BlogEditor.tsx
-│   │   └── BlogSidebar.tsx
+│   │   ├── BlogEditor.tsx (admin)
+│   │   ├── BlogSidebar.tsx
+│   │   └── JournalToBlogConverter.tsx
 │   ├── carousel/
 │   │   └── HeroCarousel.tsx
-│   └── exhibitions/
-│       └── ExhibitionsTimeline.tsx
-├── services/ ⏳
+│   ├── exhibitions/
+│   │   └── ExhibitionsTimeline.tsx
+│   └── auth/ ⏳ (NEW)
+│       ├── LoginForm.tsx
+│       ├── AuthGuard.tsx
+│       └── LogoutButton.tsx
+├── services/ ⏳ (ENHANCED)
 │   ├── artwork.service.ts
 │   ├── series.service.ts
 │   ├── exhibitions.service.ts
 │   ├── storage.service.ts
-│   └── blog.service.ts (NEW)
+│   ├── blog.service.ts
+│   ├── auth.service.ts ⏳ (NEW)
+│   ├── gallery.service.ts ⏳ (NEW)
+│   ├── sales.service.ts ⏳ (NEW)
+│   ├── journal.service.ts ⏳ (NEW)
+│   ├── analytics.service.ts ⏳ (NEW)
+│   └── location.service.ts ⏳ (NEW)
 ├── contexts/ ⏳
-│   └── LanguageContext.tsx
-└── hooks/ ⏳
-    └── useLanguage.ts
+│   ├── LanguageContext.tsx
+│   └── AuthContext.tsx ⏳ (NEW)
+├── hooks/ ⏳ (ENHANCED)
+│   ├── useLanguage.ts
+│   ├── useAuth.ts ⏳ (NEW)
+│   ├── useGalleries.ts ⏳ (NEW)
+│   ├── useSales.ts ⏳ (NEW)
+│   ├── useAnalytics.ts ⏳ (NEW)
+│   └── useLocation.ts ⏳ (NEW)
+└── middleware/ ⏳ (NEW)
+    └── auth.middleware.ts
 ```
 
 ---
 
 ## Current Priority Order
 
-1. **Task 1** - Fix remaining issues and test styles
-2. **Task 2** - Set up core data layer and services
-3. **Task 3** - Build main page components
-4. **Task 4** - Create public pages
-5. **Task 5** - Implement blog feature
-6. **Task 6** - Build artist dashboard
-7. **Task 7** - Add advanced features
-8. **Task 8** - E-commerce integration
-9. **Task 9** - SEO and performance
+1. **Task 1** ✅ - Fix remaining issues and test styles (COMPLETED)
+2. **Task 2** ✅ - Set up core data layer and services (COMPLETED)
+3. **Task 3** ⏳ - Build main page components (IN PROGRESS)
+4. **Task 4** ⏳ - Create public pages including Where to Buy
+5. **Task 5** ⏳ - Implement blog feature
+6. **Task 6** ⏳ - Build artist dashboard & admin system (HIGH PRIORITY)
+7. **Task 7** ⏳ - Add advanced features
+8. **Task 8** ⏳ - E-commerce integration
+9. **Task 9** ⏳ - SEO and performance
+
+## Database Schema Extensions Required
+
+### Enhanced Galleries Table
+```sql
+-- Enhanced galleries table for admin management and public display
+CREATE TABLE galleries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE, -- for URLs like /where-to-buy/galeria-xyz
+
+  -- Full Address Fields
+  address_line1 TEXT NOT NULL,
+  address_line2 TEXT,
+  city TEXT NOT NULL,
+  state_province TEXT,
+  postal_code TEXT,
+  country TEXT NOT NULL,
+  country_code CHAR(2), -- for flag display
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+
+  -- Contact Information
+  contact_person TEXT,
+  email TEXT,
+  phone TEXT,
+  website TEXT,
+  instagram TEXT,
+
+  -- Business Details
+  opening_hours JSONB, -- {"monday": "9:00-18:00", "tuesday": "9:00-18:00", ...}
+  commission_rate DECIMAL(5,2),
+  payment_terms TEXT,
+  shipping_arrangements TEXT,
+  insurance_provider TEXT,
+
+  -- Display & Media
+  gallery_photo TEXT, -- Supabase storage URL
+  description_pt TEXT,
+  description_en TEXT,
+
+  -- Relationship Management
+  relationship_status TEXT CHECK (relationship_status IN ('active', 'inactive', 'prospective')),
+  first_partnership_date DATE,
+  contract_expiry_date DATE,
+
+  -- Public Display Settings
+  is_active BOOLEAN DEFAULT true,
+  show_on_website BOOLEAN DEFAULT true, -- for Where to Buy page
+  featured BOOLEAN DEFAULT false,
+  display_order INTEGER DEFAULT 0,
+
+  -- Metadata
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Artwork Location Tracking
+CREATE TABLE artwork_locations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  artwork_id UUID REFERENCES artworks(id) ON DELETE CASCADE,
+  gallery_id UUID REFERENCES galleries(id),
+  location_type TEXT NOT NULL CHECK (location_type IN ('gallery', 'studio', 'collector', 'exhibition', 'storage', 'transit')),
+
+  -- Movement Tracking
+  date_moved TIMESTAMPTZ DEFAULT NOW(),
+  expected_return_date DATE,
+  shipping_tracking_number TEXT,
+  condition_on_arrival TEXT,
+
+  -- Current Status
+  is_current BOOLEAN DEFAULT true,
+
+  -- Notes
+  notes TEXT,
+  created_by UUID, -- artist user ID
+
+  UNIQUE(artwork_id, is_current) WHERE is_current = true -- Only one current location per artwork
+);
+
+-- Sales Records with Enhanced Tracking
+CREATE TABLE sales (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  artwork_id UUID REFERENCES artworks(id),
+  gallery_id UUID REFERENCES galleries(id), -- NULL for direct sales
+
+  -- Sale Details
+  sale_date DATE NOT NULL,
+  sale_price DECIMAL(10,2) NOT NULL,
+  commission_rate DECIMAL(5,2), -- can override gallery default
+  commission_amount DECIMAL(10,2),
+  net_amount DECIMAL(10,2), -- after commission
+  currency TEXT DEFAULT 'BRL' CHECK (currency IN ('BRL', 'USD', 'EUR')),
+
+  -- Buyer Information
+  buyer_name TEXT,
+  buyer_email TEXT,
+  buyer_phone TEXT,
+  buyer_country TEXT,
+  buyer_address JSONB,
+
+  -- Payment & Documentation
+  payment_method TEXT,
+  payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'refunded')),
+  invoice_number TEXT,
+  certificate_of_authenticity_sent BOOLEAN DEFAULT false,
+
+  -- Metadata
+  sale_type TEXT DEFAULT 'gallery' CHECK (sale_type IN ('gallery', 'direct', 'online')),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Private Journal Entries
+CREATE TABLE journal_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id UUID NOT NULL, -- artist user ID
+
+  -- Content
+  title TEXT,
+  content TEXT NOT NULL,
+  excerpt TEXT, -- auto-generated or manual
+
+  -- Metadata
+  mood TEXT, -- happy, contemplative, frustrated, inspired, etc.
+  weather TEXT, -- auto-fetched or manual
+  location TEXT, -- studio, gallery, travel location
+  inspiration_source TEXT,
+
+  -- Artwork Connections
+  artwork_references UUID[], -- array of artwork IDs mentioned
+
+  -- Publication Settings
+  is_public BOOLEAN DEFAULT false,
+  published_at TIMESTAMPTZ,
+  blog_post_id UUID REFERENCES blog_posts(id), -- if converted to blog post
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Gallery Performance Metrics (Auto-calculated)
+CREATE TABLE gallery_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  gallery_id UUID REFERENCES galleries(id),
+
+  -- Time Period
+  period_start DATE,
+  period_end DATE,
+
+  -- Performance Data
+  total_artworks_displayed INTEGER DEFAULT 0,
+  total_sold INTEGER DEFAULT 0,
+  total_revenue DECIMAL(10,2) DEFAULT 0,
+  total_commission DECIMAL(10,2) DEFAULT 0,
+  average_sale_price DECIMAL(10,2),
+  conversion_rate DECIMAL(5,2), -- percentage sold vs displayed
+  average_days_to_sale INTEGER,
+
+  -- Timestamps
+  calculated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  UNIQUE(gallery_id, period_start, period_end)
+);
+```
 
 ---
 
 ## Notes
 
-### Blog Feature Highlights
-- **Personal Journal**: Artist can write about her creative process, inspiration, travels
-- **Bilingual Content**: All posts support both Portuguese and English
-- **Rich Media**: Integration with artwork images and exhibition photos
-- **SEO Optimized**: Full meta tags, structured data, RSS feed
-- **Admin Friendly**: WYSIWYG editor with draft/publish workflow
+### Artist Dashboard Feature Highlights
+- **Comprehensive Business Management**: Gallery relationships, sales tracking, artwork locations
+- **Private Journal**: Artist can write about her creative process, convert to public blog posts
+- **Visual Location Tracking**: See where every artwork is located with badges and timeline
+- **Sales Analytics**: Revenue charts, gallery performance comparison, geographic insights
+- **Bilingual Content**: All content supports both Portuguese and English
+- **Admin Friendly**: Intuitive interface designed for artist workflow
+
+### Where to Buy Page Features
+- **Public Gallery Directory**: All active partner galleries displayed as cards
+- **Interactive Map**: Google Maps integration showing gallery locations worldwide
+- **Contact Integration**: Direct contact forms for each gallery
+- **Current Inventory**: Shows which galleries currently have artworks available
+- **Directions & Hours**: Easy access to gallery information for collectors
 
 ### Technical Considerations
 - All components follow shadcn/ui design system
@@ -450,10 +793,13 @@ src/
 - Accessibility (a11y) compliance
 - Performance optimization throughout
 - Bilingual support for international audience
+- Secure authentication with protected admin routes
+- Real-time data updates for location tracking
 
 ### Success Metrics
-- Page load speed < 2 seconds
-- Mobile responsiveness score 100%
-- SEO score 90+
-- Artist efficiency in content management
-- International reach through bilingual content
+- Artist efficiency in business management
+- Reduced time for artwork location tracking
+- Improved gallery relationship management
+- Enhanced collector experience through Where to Buy page
+- Increased international reach through gallery network
+- Better sales insights through comprehensive analytics

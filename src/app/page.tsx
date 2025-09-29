@@ -1,32 +1,53 @@
-export default function Home() {
-  return (
-    <div className="pt-16 md:pt-20">
-      <div className="max-w-4xl mx-auto px-8 py-24">
-        <div className="text-center">
-          <h1 className="text-4xl font-light text-gray-900 mb-6">
-            Mai-Britt Wolthers
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 font-light">
-            Contemporary Artist
-          </p>
-          <p className="text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto">
-            Danish-Brazilian artist exploring transcultural narratives through
-            landscape paintings, sculptures, and mixed media works. Four decades
-            of artistic journey between Europe and South America.
-          </p>
-        </div>
+'use client'
 
-        <div className="mt-16 text-center">
-          <div className="inline-block p-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-600 mb-4">
-              Platform under development
-            </p>
-            <div className="text-sm text-gray-500">
-              Portfolio • E-commerce • Artist Management
-            </div>
-          </div>
-        </div>
-      </div>
+import { useActiveSection } from '@/hooks/useScrollAnimation'
+import HeroCarousel from '@/components/carousel/HeroCarousel'
+import ExhibitionsTimeline from '@/components/exhibitions/ExhibitionsTimeline'
+import FeaturedSeries from '@/components/series/FeaturedSeries'
+import ArtistStatement from '@/components/sections/ArtistStatement'
+import CurrentAvailability from '@/components/sections/CurrentAvailability'
+import BlogPreview from '@/components/sections/BlogPreview'
+import ScrollNavigation from '@/components/navigation/ScrollNavigation'
+
+const sectionIds = [
+  'hero',
+  'exhibitions',
+  'series',
+  'statement',
+  'availability',
+  'blog'
+]
+
+export default function Home() {
+  const activeSection = useActiveSection(sectionIds)
+
+  return (
+    <div className="relative">
+      {/* Fixed Scroll Navigation */}
+      <ScrollNavigation
+        activeSection={activeSection}
+        sections={sectionIds}
+      />
+
+      {/* Hero Section - Rotating Carousel */}
+      <section id="hero">
+        <HeroCarousel />
+      </section>
+
+      {/* Exhibitions Timeline with Continuous Parallax */}
+      <ExhibitionsTimeline id="exhibitions" />
+
+      {/* Featured Series Preview */}
+      <FeaturedSeries id="series" />
+
+      {/* Artist Statement */}
+      <ArtistStatement id="statement" />
+
+      {/* Current Availability */}
+      <CurrentAvailability id="availability" />
+
+      {/* Blog Preview */}
+      <BlogPreview id="blog" />
     </div>
   )
 }
