@@ -20,10 +20,14 @@ const getEnvVar = (key: string, fallback?: string): string => {
 
 // Create configuration with proper error handling
 const createConfig = (): AppConfig => {
+  // Use process.env directly which should work with Next.js env config
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fpzhswuivxkrtyrxussw.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwemhzd3VpdnhrcnR5cnh1c3N3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwODM0NzMsImV4cCI6MjA3NDY1OTQ3M30.3yKVC4cEaJQAcix3WcdqWmWb-oNx28wev3pfOTaDJ2g'
+  
   return {
     supabase: {
-      url: getEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
-      anonKey: getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
       serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
     },
     development: process.env.NODE_ENV === 'development'
