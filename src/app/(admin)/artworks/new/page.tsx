@@ -34,10 +34,10 @@ const artworkSchema = z.object({
   descriptionEn: z.string().optional(),
   category: z.enum(['painting', 'sculpture', 'engraving', 'video', 'mixed-media']),
   seriesId: z.string().optional(),
-  forSale: z.boolean().default(false),
+  forSale: z.boolean(),
   price: z.number().optional(),
   currency: z.enum(['BRL', 'USD', 'EUR']).optional(),
-  featured: z.boolean().default(false)
+  featured: z.boolean()
 })
 
 type ArtworkFormData = z.infer<typeof artworkSchema>

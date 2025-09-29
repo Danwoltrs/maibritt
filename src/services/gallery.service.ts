@@ -54,6 +54,7 @@ export interface Gallery {
 
 export interface CreateGalleryData {
   name: string
+  slug?: string
   address_line1: string
   address_line2?: string
   city: string
