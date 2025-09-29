@@ -20,6 +20,8 @@ export interface Artwork {
   description: Content
   category: 'painting' | 'sculpture' | 'engraving' | 'video' | 'mixed-media'
   series?: string
+  location?: string
+  status?: 'available' | 'sold' | 'reserved' | 'archived'
   images: {
     original: string
     display: string
