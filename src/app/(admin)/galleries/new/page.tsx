@@ -1,0 +1,621 @@
+'use client'
+
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { ArrowLeft, Building, MapPin, Users, FileText, CheckCircle, AlertCircle } from 'lucide-react'
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+import { GalleryService, CreateGalleryData } from '@/services/gallery.service'
+
+// Form validation schema
+const gallerySchema = z.object({
+  name: z.string().min(1, 'Gallery name is required'),
+  address_line1: z.string().min(1, 'Address is required'),
+  address_line2: z.string().optional(),
+  city: z.string().min(1, 'City is required'),
+  state_province: z.string().optional(),
+  postal_code: z.string().optional(),
+  country: z.string().min(1, 'Country is required'),
+  country_code: z.string().optional(),
+  contact_person: z.string().optional(),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
+  instagram: z.string().optional(),
+  commission_rate: z.number().min(0).max(100).optional(),
+  payment_terms: z.string().optional(),
+  shipping_arrangements: z.string().optional(),
+  insurance_provider: z.string().optional(),
+  description_pt: z.string().optional(),
+  description_en: z.string().optional(),
+  relationship_status: z.enum(['active', 'inactive', 'prospective']),
+  first_partnership_date: z.string().optional(),
+  contract_expiry_date: z.string().optional(),
+  is_active: z.boolean(),
+  show_on_website: z.boolean(),
+  featured: z.boolean(),
+  notes: z.string().optional()
+})
+
+type GalleryFormData = z.infer<typeof gallerySchema>
+
+export default function NewGalleryPage() {
+  const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    reset
+  } = useForm<GalleryFormData>({
+    resolver: zodResolver(gallerySchema),
+    defaultValues: {
+      relationship_status: 'prospective',
+      is_active: true,
+      show_on_website: true,
+      featured: false
+    }
+  })
+
+  const watchRelationshipStatus = watch('relationship_status')
+  const watchIsActive = watch('is_active')
+  const watchShowOnWebsite = watch('show_on_website')
+  const watchFeatured = watch('featured')
+
+  const countries = [
+    { code: 'BR', name: 'Brazil' },
+    { code: 'US', name: 'United States' },
+    { code: 'DK', name: 'Denmark' },
+    { code: 'UK', name: 'United Kingdom' },
+    { code: 'DE', name: 'Germany' },
+    { code: 'FR', name: 'France' },
+    { code: 'IT', name: 'Italy' },
+    { code: 'ES', name: 'Spain' },
+    { code: 'CA', name: 'Canada' },
+    { code: 'AU', name: 'Australia' },
+    { code: 'JP', name: 'Japan' },
+    { code: 'AR', name: 'Argentina' },
+    { code: 'MX', name: 'Mexico' },
+    { code: 'CH', name: 'Switzerland' },
+    { code: 'NL', name: 'Netherlands' },
+    { code: 'BE', name: 'Belgium' },
+    { code: 'AT', name: 'Austria' },
+    { code: 'SE', name: 'Sweden' },
+    { code: 'NO', name: 'Norway' },
+    { code: 'FI', name: 'Finland' }
+  ]
+
+  const relationshipStatuses = [
+    { value: 'prospective', label: 'Prospective', description: 'Potential partner, in discussions' },
+    { value: 'active', label: 'Active', description: 'Current partner with active relationship' },
+    { value: 'inactive', label: 'Inactive', description: 'Former partner or paused relationship' }
+  ]
+
+  const onSubmit = async (data: GalleryFormData) => {
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      // Generate slug from name
+      const slug = data.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+
+      const galleryData: CreateGalleryData = {
+        ...data,
+        slug,
+        email: data.email || undefined,
+        website: data.website || undefined,
+        commission_rate: data.commission_rate || undefined,
+        first_partnership_date: data.first_partnership_date || undefined,
+        contract_expiry_date: data.contract_expiry_date || undefined
+      }
+
+      const response = await GalleryService.create(galleryData)
+      
+      if (response.success) {
+        setSuccess(true)
+        setTimeout(() => {
+          router.push('/admin/galleries')
+        }, 2000)
+      } else {
+        setError(response.error || 'Failed to create gallery')
+      }
+    } catch (error) {
+      console.error('Failed to create gallery:', error)
+      setError(error instanceof Error ? error.message : 'Failed to create gallery')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="pt-6">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold mb-2">Gallery Added Successfully!</h2>
+            <p className="text-gray-600 mb-4">
+              The gallery has been added to your partner network.
+            </p>
+            <p className="text-sm text-gray-500">Redirecting to galleries list...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.back()}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Add New Gallery</h1>
+          <p className="text-gray-600">Register a new gallery partner</p>
+        </div>
+      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="h-5 w-5" />
+              Basic Information
+            </CardTitle>
+            <CardDescription>
+              Essential details about the gallery
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Gallery Name *</Label>
+              <Input
+                id="name"
+                {...register('name')}
+                placeholder="Gallery Name"
+              />
+              {errors.name && (
+                <p className="text-sm text-red-600">{errors.name.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Relationship Status</Label>
+                <Select onValueChange={(value) => setValue('relationship_status', value as any)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select relationship status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {relationshipStatuses.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        <div>
+                          <div className="font-medium">{status.label}</div>
+                          <div className="text-sm text-gray-500">{status.description}</div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.relationship_status && (
+                  <p className="text-sm text-red-600">{errors.relationship_status.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="commission_rate">Commission Rate (%)</Label>
+                <Input
+                  id="commission_rate"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  {...register('commission_rate', { valueAsNumber: true })}
+                  placeholder="25.0"
+                />
+                {errors.commission_rate && (
+                  <p className="text-sm text-red-600">{errors.commission_rate.message}</p>
+                )}
+              </div>
+            </div>
+
+            {watchRelationshipStatus === 'active' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label htmlFor="first_partnership_date">Partnership Start Date</Label>
+                  <Input
+                    id="first_partnership_date"
+                    type="date"
+                    {...register('first_partnership_date')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contract_expiry_date">Contract Expiry Date</Label>
+                  <Input
+                    id="contract_expiry_date"
+                    type="date"
+                    {...register('contract_expiry_date')}
+                  />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Location Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Location
+            </CardTitle>
+            <CardDescription>
+              Physical address and location details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="address_line1">Address Line 1 *</Label>
+              <Input
+                id="address_line1"
+                {...register('address_line1')}
+                placeholder="123 Art Street"
+              />
+              {errors.address_line1 && (
+                <p className="text-sm text-red-600">{errors.address_line1.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address_line2">Address Line 2</Label>
+              <Input
+                id="address_line2"
+                {...register('address_line2')}
+                placeholder="Suite 200"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City *</Label>
+                <Input
+                  id="city"
+                  {...register('city')}
+                  placeholder="São Paulo"
+                />
+                {errors.city && (
+                  <p className="text-sm text-red-600">{errors.city.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="state_province">State/Province</Label>
+                <Input
+                  id="state_province"
+                  {...register('state_province')}
+                  placeholder="SP"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="postal_code">Postal Code</Label>
+                <Input
+                  id="postal_code"
+                  {...register('postal_code')}
+                  placeholder="01234-567"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Country *</Label>
+                <Select onValueChange={(value) => {
+                  const country = countries.find(c => c.name === value)
+                  setValue('country', value)
+                  setValue('country_code', country?.code)
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country.code} value={country.name}>
+                        {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.country && (
+                  <p className="text-sm text-red-600">{errors.country.message}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Contact Information
+            </CardTitle>
+            <CardDescription>
+              How to reach the gallery
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="contact_person">Contact Person</Label>
+                <Input
+                  id="contact_person"
+                  {...register('contact_person')}
+                  placeholder="Gallery Director"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  {...register('phone')}
+                  placeholder="+55 11 1234-5678"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder="contact@gallery.com"
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  {...register('website')}
+                  placeholder="https://gallery.com"
+                />
+                {errors.website && (
+                  <p className="text-sm text-red-600">{errors.website.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="instagram">Instagram Handle</Label>
+              <Input
+                id="instagram"
+                {...register('instagram')}
+                placeholder="@galleryname"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Business Terms */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Business Terms
+            </CardTitle>
+            <CardDescription>
+              Partnership and business arrangements
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="payment_terms">Payment Terms</Label>
+              <Textarea
+                id="payment_terms"
+                {...register('payment_terms')}
+                placeholder="Net 30 days, bank transfer..."
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="shipping_arrangements">Shipping Arrangements</Label>
+              <Textarea
+                id="shipping_arrangements"
+                {...register('shipping_arrangements')}
+                placeholder="Gallery handles shipping, artist provides packaging..."
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="insurance_provider">Insurance Provider</Label>
+              <Input
+                id="insurance_provider"
+                {...register('insurance_provider')}
+                placeholder="Art insurance company"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Descriptions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Gallery Description</CardTitle>
+            <CardDescription>
+              Descriptions for public display (optional)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="description_pt">Description (Portuguese)</Label>
+                <Textarea
+                  id="description_pt"
+                  {...register('description_pt')}
+                  placeholder="Descrição da galeria..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description_en">Description (English)</Label>
+                <Textarea
+                  id="description_en"
+                  {...register('description_en')}
+                  placeholder="Gallery description..."
+                  rows={4}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Display Settings</CardTitle>
+            <CardDescription>
+              How this gallery appears on your website
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="is_active">Active Gallery</Label>
+                <p className="text-sm text-gray-500">
+                  Whether this gallery is currently active in your system
+                </p>
+              </div>
+              <Switch
+                id="is_active"
+                checked={watchIsActive}
+                onCheckedChange={(checked) => setValue('is_active', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="show_on_website">Show on Website</Label>
+                <p className="text-sm text-gray-500">
+                  Display this gallery on the public &quot;Where to Find&quot; page
+                </p>
+              </div>
+              <Switch
+                id="show_on_website"
+                checked={watchShowOnWebsite}
+                onCheckedChange={(checked) => setValue('show_on_website', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="featured">Featured Gallery</Label>
+                <p className="text-sm text-gray-500">
+                  Highlight this gallery prominently on your website
+                </p>
+              </div>
+              <Switch
+                id="featured"
+                checked={watchFeatured}
+                onCheckedChange={(checked) => setValue('featured', checked)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Notes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Internal Notes</CardTitle>
+            <CardDescription>
+              Private notes about this gallery (not visible to public)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                {...register('notes')}
+                placeholder="Internal notes about this gallery partnership..."
+                rows={4}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <div className="flex justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="min-w-[120px]"
+          >
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Creating...
+              </div>
+            ) : (
+              'Add Gallery'
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
