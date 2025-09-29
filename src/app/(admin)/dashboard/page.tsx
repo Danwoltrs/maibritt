@@ -1,21 +1,10 @@
 'use client'
 
-import React from 'react'
-import { TrendingUp, Image, Building, DollarSign, MapPin, PenTool } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { TrendingUp, Image, Building, DollarSign, MapPin, PenTool, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-
-// Mock data - replace with real data from services
-const mockStats = {
-  totalArtworks: 127,
-  artworksInGalleries: 45,
-  artworksInStudio: 62,
-  artworksSold: 20,
-  monthlyRevenue: 12450,
-  totalGalleries: 8,
-  activeGalleries: 6,
-  journalEntries: 34
-}
+import { ArtworkService, GalleryService } from '@/services'
 
 const quickActions = [
   {
@@ -55,40 +44,94 @@ const quickActions = [
   }
 ]
 
-const recentActivity = [
-  {
-    id: 1,
-    type: 'artwork_uploaded',
-    message: 'New artwork "Atlantic Sunrise" uploaded',
-    time: '2 hours ago'
-  },
-  {
-    id: 2,
-    type: 'sale_recorded',
-    message: 'Sale recorded: "Blue Depths" sold for R$ 4,500',
-    time: '1 day ago'
-  },
-  {
-    id: 3,
-    type: 'location_updated',
-    message: '3 artworks moved to Galeria Arte Moderna',
-    time: '2 days ago'
-  },
-  {
-    id: 4,
-    type: 'journal_entry',
-    message: 'New journal entry: "Color experiments in the studio"',
-    time: '3 days ago'
-  }
-]
+interface DashboardStats {
+  totalArtworks: number
+  artworksInGalleries: number
+  artworksInStudio: number
+  artworksSold: number
+  monthlyRevenue: number
+  totalGalleries: number
+  activeGalleries: number
+  journalEntries: number
+}
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   })
+
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch artworks data
+        const artworksResponse = await ArtworkService.getArtworks({}, { page: 1, limit: 1000 })
+        const artworks = artworksResponse.artworks || []
+        
+        // Fetch galleries data  
+        const galleriesResponse = await GalleryService.getAll({})
+        const galleries = galleriesResponse.data || []
+        
+        // Calculate stats from real data
+        const totalArtworks = artworks.length
+        const artworksInGalleries = artworks.filter(artwork => 
+          artwork.location && artwork.location !== 'studio'
+        ).length
+        const artworksInStudio = artworks.filter(artwork => 
+          !artwork.location || artwork.location === 'studio'
+        ).length
+        const artworksSold = artworks.filter(artwork => 
+          artwork.status === 'sold'
+        ).length
+        
+        const activeGalleries = galleries.filter(gallery => 
+          gallery.is_active && gallery.relationship_status === 'active'
+        ).length
+        
+        setStats({
+          totalArtworks,
+          artworksInGalleries,
+          artworksInStudio,
+          artworksSold,
+          monthlyRevenue: 0, // TODO: Calculate from sales data
+          totalGalleries: galleries.length,
+          activeGalleries,
+          journalEntries: 0 // TODO: Fetch from journal entries
+        })
+        
+        // Set empty recent activity for now
+        setRecentActivity([])
+        
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error)
+        // Set zero stats if error
+        setStats({
+          totalArtworks: 0,
+          artworksInGalleries: 0,
+          artworksInStudio: 0,
+          artworksSold: 0,
+          monthlyRevenue: 0,
+          totalGalleries: 0,
+          activeGalleries: 0,
+          journalEntries: 0
+        })
+        setRecentActivity([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -102,15 +145,24 @@ export default function DashboardPage() {
             Today is {currentDate}. Here's what's happening in your art world.
           </p>
           <div className="flex flex-wrap gap-3">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {mockStats.artworksInStudio} artworks in studio
-            </span>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              {mockStats.artworksInGalleries} artworks in galleries
-            </span>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-              R$ {mockStats.monthlyRevenue.toLocaleString()} this month
-            </span>
+            {loading ? (
+              <div className="flex items-center space-x-3">
+                <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                <span className="text-sm text-gray-500">Loading stats...</span>
+              </div>
+            ) : (
+              <>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {stats?.artworksInStudio || 0} artworks in studio
+                </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {stats?.artworksInGalleries || 0} artworks in galleries
+                </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  {stats?.monthlyRevenue ? `R$ ${stats.monthlyRevenue.toLocaleString()}` : '-'} this month
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -123,10 +175,19 @@ export default function DashboardPage() {
             <Image className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockStats.totalArtworks}</div>
-            <p className="text-xs text-gray-600">
-              +2 from last month
-            </p>
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-gray-500">Loading...</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stats?.totalArtworks || 0}</div>
+                <p className="text-xs text-gray-600">
+                  Total pieces in collection
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -136,10 +197,21 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {mockStats.monthlyRevenue.toLocaleString()}</div>
-            <p className="text-xs text-gray-600">
-              +18% from last month
-            </p>
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-gray-500">Loading...</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {stats?.monthlyRevenue ? `R$ ${stats.monthlyRevenue.toLocaleString()}` : '-'}
+                </div>
+                <p className="text-xs text-gray-600">
+                  Sales tracking coming soon
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -149,23 +221,41 @@ export default function DashboardPage() {
             <Building className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockStats.activeGalleries}</div>
-            <p className="text-xs text-gray-600">
-              {mockStats.totalGalleries} total partners
-            </p>
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-gray-500">Loading...</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stats?.activeGalleries || 0}</div>
+                <p className="text-xs text-gray-600">
+                  {stats?.totalGalleries || 0} total partners
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales This Year</CardTitle>
+            <CardTitle className="text-sm font-medium">Artworks Sold</CardTitle>
             <TrendingUp className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockStats.artworksSold}</div>
-            <p className="text-xs text-gray-600">
-              +12% from last year
-            </p>
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-gray-500">Loading...</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stats?.artworksSold || 0}</div>
+                <p className="text-xs text-gray-600">
+                  Lifetime sales
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -210,19 +300,34 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {activity.message}
-                    </p>
-                    <p className="text-xs text-gray-600">{activity.time}</p>
-                  </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-gray-500">Loading activity...</span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : recentActivity.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {activity.message}
+                      </p>
+                      <p className="text-xs text-gray-600">{activity.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <TrendingUp className="h-8 w-8 text-gray-400 mb-2" />
+                <p className="text-sm text-gray-600 mb-1">No recent activity</p>
+                <p className="text-xs text-gray-500">Activity will appear here as you use the platform</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
