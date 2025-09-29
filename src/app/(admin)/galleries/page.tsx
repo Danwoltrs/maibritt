@@ -169,7 +169,7 @@ export default function GalleriesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Gallery Management</h1>
           <p className="text-gray-600">Manage your partner galleries and relationships</p>
         </div>
-        <Button onClick={() => router.push('/admin/galleries/new')} className="flex items-center gap-2">
+        <Button onClick={() => router.push('/galleries/new')} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Add Gallery
         </Button>
@@ -385,7 +385,7 @@ export default function GalleriesPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => router.push(`/admin/galleries/${gallery.id}`)}
+                    onClick={() => router.push(`/galleries/${gallery.id}`)}
                     className="h-8 px-2"
                   >
                     <Eye className="h-4 w-4" />
@@ -394,7 +394,7 @@ export default function GalleriesPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => router.push(`/admin/galleries/${gallery.id}/edit`)}
+                    onClick={() => router.push(`/galleries/${gallery.id}/edit`)}
                     className="h-8 px-2"
                   >
                     <Edit className="h-4 w-4" />
@@ -432,7 +432,7 @@ export default function GalleriesPage() {
                 ? 'Try adjusting your filters to see more galleries.'
                 : 'Add your first gallery partner to start managing relationships.'}
             </p>
-            <Button onClick={() => router.push('/admin/galleries/new')}>
+            <Button onClick={() => router.push('/galleries/new')}>
               Add First Gallery
             </Button>
           </CardContent>

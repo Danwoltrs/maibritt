@@ -133,7 +133,7 @@ export default function NewGalleryPage() {
       if (response.success) {
         setSuccess(true)
         setTimeout(() => {
-          router.push('/admin/galleries')
+          router.push('/galleries')
         }, 2000)
       } else {
         setError(response.error || 'Failed to create gallery')
