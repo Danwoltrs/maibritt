@@ -62,11 +62,15 @@ export function LoginForm({ onSuccess, className }: LoginFormProps) {
       const result = await signIn(formData.email, formData.password)
 
       if (result.success) {
-        onSuccess?.()
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          onSuccess?.()
+        }, 500)
       } else {
         setError(result.error || 'Login failed')
       }
     } catch (error) {
+      console.error('Login error:', error)
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)

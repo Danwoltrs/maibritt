@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import LoginForm from '@/components/auth/LoginForm'
@@ -11,17 +11,21 @@ import { Artwork } from '@/types'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, loading } = useAuth()
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [currentSlide, setCurrentSlide] = useState(0)
   const [artworksLoading, setArtworksLoading] = useState(true)
 
+  // Get redirect URL from search params
+  const redirectTo = searchParams.get('redirectTo') || '/admin/dashboard'
+
   // Redirect if already authenticated
   useEffect(() => {
     if (!loading && user) {
-      router.push('/admin/dashboard')
+      router.push(redirectTo)
     }
-  }, [user, loading, router])
+  }, [user, loading, router, redirectTo])
 
   // Fetch latest artworks for carousel
   useEffect(() => {
@@ -57,7 +61,8 @@ export default function LoginPage() {
   }, [artworks.length])
 
   const handleLoginSuccess = () => {
-    router.push('/admin/dashboard')
+    // Use window.location.href for a full page refresh to ensure server state is synced
+    window.location.href = redirectTo
   }
 
   // Show loading while checking auth
