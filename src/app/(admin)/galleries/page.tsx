@@ -385,7 +385,7 @@ export default function GalleriesPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => router.push(`/galleries/${gallery.id}`)}
+                    onClick={() => router.push(`/galleries/${gallery.slug}`)}
                     className="h-8 px-2"
                   >
                     <Eye className="h-4 w-4" />
@@ -394,7 +394,7 @@ export default function GalleriesPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => router.push(`/galleries/${gallery.id}/edit`)}
+                    onClick={() => router.push(`/galleries/${gallery.slug}/edit`)}
                     className="h-8 px-2"
                   >
                     <Edit className="h-4 w-4" />
@@ -414,7 +414,7 @@ export default function GalleriesPage() {
                 </div>
 
                 <p className="text-xs text-gray-400">
-                  ID: {gallery.id.slice(0, 8)}...
+                  {gallery.slug}
                 </p>
               </div>
             </CardContent>
