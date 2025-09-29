@@ -22,49 +22,49 @@ import { useAuth } from '@/hooks/useAuth'
 const navigationItems = [
   {
     name: 'Dashboard',
-    href: '/admin/dashboard',
+    href: '/dashboard',
     icon: LayoutDashboard,
     description: 'Overview & metrics'
   },
   {
     name: 'Artworks',
-    href: '/admin/artworks',
+    href: '/artworks',
     icon: Image,
     description: 'Manage portfolio'
   },
   {
     name: 'Galleries',
-    href: '/admin/galleries',
+    href: '/galleries',
     icon: Building,
     description: 'Partner galleries'
   },
   {
     name: 'Sales',
-    href: '/admin/sales',
+    href: '/sales',
     icon: TrendingUp,
     description: 'Sales & revenue'
   },
   {
     name: 'Locations',
-    href: '/admin/artworks/locations',
+    href: '/artworks/locations',
     icon: MapPin,
     description: 'Track artwork locations'
   },
   {
     name: 'Analytics',
-    href: '/admin/analytics',
+    href: '/analytics',
     icon: BarChart3,
     description: 'Performance insights'
   },
   {
     name: 'Journal',
-    href: '/admin/journal',
+    href: '/journal',
     icon: PenTool,
     description: 'Private journal'
   },
   {
     name: 'Blog',
-    href: '/admin/blog',
+    href: '/blog',
     icon: BookOpen,
     description: 'Public blog posts'
   }
@@ -86,7 +86,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
     <div className={cn('flex flex-col h-full bg-white border-r border-gray-200', className)}>
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
-        <Link href="/admin/dashboard" className="block">
+        <Link href="/dashboard" className="block">
           <h1 className="text-xl font-semibold text-gray-900">Artist Portal</h1>
           <p className="text-sm text-gray-600 mt-1">Mai-Britt Wolthers</p>
         </Link>
