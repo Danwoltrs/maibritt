@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import LoginForm from '@/components/auth/LoginForm'
@@ -10,7 +10,6 @@ import { ArtworkService } from '@/services'
 import { Artwork } from '@/types'
 
 export default function LoginPageContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading } = useAuth()
   const [artworks, setArtworks] = useState<Artwork[]>([])
@@ -20,13 +19,12 @@ export default function LoginPageContent() {
   // Get redirect URL from search params
   const redirectTo = searchParams.get('redirectTo') || '/admin/dashboard'
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!loading && user) {
-      // Use window.location.href for full page refresh to ensure server state is synced
-      window.location.href = redirectTo
-    }
-  }, [user, loading, redirectTo])
+  // No client-side redirect needed - middleware handles this
+  // useEffect(() => {
+  //   if (!loading && user) {
+  //     window.location.href = redirectTo
+  //   }
+  // }, [user, loading, redirectTo])
 
   // Fetch latest artworks for carousel
   useEffect(() => {
@@ -66,7 +64,7 @@ export default function LoginPageContent() {
     window.location.href = redirectTo
   }
 
-  // Show loading while checking auth
+  // Show loading only briefly while checking auth
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -78,9 +76,16 @@ export default function LoginPageContent() {
     )
   }
 
-  // Don't render if user is authenticated (will redirect)
+  // If user is authenticated, middleware should redirect, so show nothing briefly
   if (user) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
