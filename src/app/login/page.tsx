@@ -6,23 +6,13 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import LoginForm from '@/components/auth/LoginForm'
 import { useAuth } from '@/hooks/useAuth'
-import { artworkService } from '@/services'
-
-interface ArtworkForCarousel {
-  id: string
-  title_en: string
-  year: number
-  medium_en: string
-  images: {
-    display: string
-    thumbnail: string
-  }[]
-}
+import { ArtworkService } from '@/services'
+import { Artwork } from '@/types'
 
 export default function LoginPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
-  const [artworks, setArtworks] = useState<ArtworkForCarousel[]>([])
+  const [artworks, setArtworks] = useState<Artwork[]>([])
   const [currentSlide, setCurrentSlide] = useState(0)
   const [artworksLoading, setArtworksLoading] = useState(true)
 
@@ -37,14 +27,13 @@ export default function LoginPage() {
   useEffect(() => {
     const fetchArtworks = async () => {
       try {
-        const response = await artworkService.getAll({
-          limit: 6,
-          orderBy: 'created_at',
-          orderDirection: 'desc'
-        })
+        const response = await ArtworkService.getArtworks(
+          {},
+          { page: 1, limit: 6 }
+        )
 
-        if (response.success && response.data) {
-          setArtworks(response.data)
+        if (response.artworks) {
+          setArtworks(response.artworks)
         }
       } catch (error) {
         console.error('Failed to fetch artworks for login carousel:', error)
@@ -104,7 +93,7 @@ export default function LoginPage() {
             >
               <Image
                 src={artworks[currentSlide]?.images[0]?.display || ''}
-                alt={artworks[currentSlide]?.title_en || 'Artwork'}
+                alt={artworks[currentSlide]?.title?.en || 'Artwork'}
                 fill
                 className="object-cover"
                 priority={currentSlide === 0}
@@ -122,7 +111,7 @@ export default function LoginPage() {
                   transition={{ delay: 0.5, duration: 0.8 }}
                   className="text-3xl font-light mb-2"
                 >
-                  {artworks[currentSlide]?.title_en}
+                  {artworks[currentSlide]?.title?.en}
                 </motion.h2>
                 <motion.p
                   initial={{ y: 20, opacity: 0 }}
@@ -130,7 +119,7 @@ export default function LoginPage() {
                   transition={{ delay: 0.7, duration: 0.8 }}
                   className="text-lg opacity-90"
                 >
-                  {artworks[currentSlide]?.year} • {artworks[currentSlide]?.medium_en}
+                  {artworks[currentSlide]?.year} • {artworks[currentSlide]?.medium?.en}
                 </motion.p>
               </div>
 
@@ -200,7 +189,7 @@ export default function LoginPage() {
                     <div key={artwork.id} className="aspect-square rounded overflow-hidden">
                       <Image
                         src={artwork.images[0]?.thumbnail || ''}
-                        alt={artwork.title_en}
+                        alt={artwork.title?.en}
                         width={100}
                         height={100}
                         className="w-full h-full object-cover"

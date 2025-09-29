@@ -41,3 +41,20 @@ export type {
   BlogPostListResponse,
   BlogArchive
 } from './blog.service'
+
+export { default as AuthService } from './auth.service'
+export type {
+  LoginCredentials,
+  LoginResponse,
+  ResetPasswordRequest,
+  ChangePasswordRequest
+} from './auth.service'
+
+export { GalleryService } from './gallery.service'
+export type {
+  Gallery,
+  CreateGalleryData,
+  UpdateGalleryData,
+  GetGalleriesOptions,
+  ServiceResponse
+} from './gallery.service'
