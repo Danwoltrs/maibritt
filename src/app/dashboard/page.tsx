@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { TrendingUp, Image, Building, DollarSign, MapPin, PenTool, Loader2 } from 'lucide-react'
+import { TrendingUp, Image, Building, DollarSign, MapPin, PenTool, Loader2, Calendar } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArtworkService, GalleryService } from '@/services'
@@ -41,6 +41,13 @@ const quickActions = [
     icon: PenTool,
     href: '/journal/new',
     color: 'bg-pink-500'
+  },
+  {
+    title: 'Manage Exhibitions',
+    description: 'Add or update exhibition information',
+    icon: Calendar,
+    href: '/exhibitions',
+    color: 'bg-indigo-500'
   }
 ]
 

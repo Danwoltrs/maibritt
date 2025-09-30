@@ -177,14 +177,14 @@ const ScrollNavigation = ({
           initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 1.8 }}
-          className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-center"
+          className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 text-center"
         >
-          <div className="bg-white border border-gray-200 rounded-full w-8 h-8 flex items-center justify-center shadow-sm">
-            <span className="text-xs font-medium text-gray-600">
+          <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
+            <span className="text-sm font-medium text-gray-700">
               {sections.indexOf(activeSection) + 1}
             </span>
           </div>
-          <div className="text-xs text-gray-500 mt-1 font-medium">
+          <div className="text-xs text-gray-500 mt-2 font-medium bg-white/80 backdrop-blur-sm rounded-full px-2 py-1">
             of {sections.length}
           </div>
         </motion.div>

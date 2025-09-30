@@ -31,7 +31,7 @@ const mockBlogPosts: BlogPost[] = [
       ptBR: 'Explorando as nuances cromáticas da floresta brasileira através da pintura en plein air...',
       en: 'Exploring the chromatic nuances of the Brazilian forest through plein air painting...'
     },
-    coverImage: '/blog/atlantic-forest-1.jpg',
+    coverImage: 'https://picsum.photos/600/400?random=20',
     published: true,
     publishedAt: new Date('2024-03-15'),
     tags: ['nature', 'plein-air', 'color-theory', 'brazil'],
@@ -53,7 +53,7 @@ const mockBlogPosts: BlogPost[] = [
       ptBR: 'Como as influências dinamarquesas e brasileiras se entrelaçam no meu processo criativo...',
       en: 'How Danish and Brazilian influences intertwine in my creative process...'
     },
-    coverImage: '/blog/cultural-memory-1.jpg',
+    coverImage: 'https://picsum.photos/600/400?random=21',
     published: true,
     publishedAt: new Date('2024-03-08'),
     tags: ['culture', 'memory', 'identity', 'artistic-process'],

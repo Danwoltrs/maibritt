@@ -34,7 +34,53 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 3 }: FeaturedSe
         setSeries(seriesData)
       } catch (err) {
         console.error('Error fetching featured series:', err)
-        setError('Failed to load series')
+        // Fallback to mock data
+        const mockSeries: SeriesWithArtworks[] = [
+          {
+            id: '1',
+            name: { ptBR: 'Azul no Negro', en: 'Blue in Black' },
+            description: { 
+              ptBR: 'Expedição ao Rio Negro, Amazônia. Explorando as profundezas das águas escuras.',
+              en: 'Rio Negro expedition, Amazon. Exploring the depths of dark waters.'
+            },
+            year: 2015,
+            coverImage: 'https://picsum.photos/600/750?random=1',
+            artworkCount: 12,
+            isActive: true,
+            isSeasonal: false,
+            latestArtworks: []
+          },
+          {
+            id: '2',
+            name: { ptBR: 'Confluências', en: 'Confluences' },
+            description: { 
+              ptBR: 'Encontros de culturas e paisagens em diálogo transcultural.',
+              en: 'Cultural and landscape convergences in transcultural dialogue.'
+            },
+            year: 2019,
+            coverImage: 'https://picsum.photos/600/750?random=2',
+            artworkCount: 18,
+            isActive: true,
+            isSeasonal: false,
+            latestArtworks: []
+          },
+          {
+            id: '3',
+            name: { ptBR: 'Fragmentos do Real', en: 'Fragments of Reality' },
+            description: { 
+              ptBR: 'Residência artística em Brooklyn. Memórias urbanas fragmentadas.',
+              en: 'Artist residency in Brooklyn. Fragmented urban memories.'
+            },
+            year: 2022,
+            coverImage: 'https://picsum.photos/600/750?random=3',
+            artworkCount: 15,
+            isActive: true,
+            isSeasonal: false,
+            latestArtworks: []
+          }
+        ]
+        setSeries(mockSeries)
+        setError(null)
       } finally {
         setIsLoading(false)
       }

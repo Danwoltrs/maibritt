@@ -15,7 +15,7 @@ interface HeroCarouselProps {
 }
 
 const HeroCarousel = ({
-  autoRotateInterval = 5000,
+  autoRotateInterval = 8000, // Slower: 8 seconds instead of 5
   showControls = true,
   className = ""
 }: HeroCarouselProps) => {
@@ -228,7 +228,7 @@ const HeroCarousel = ({
           </Button>
 
           {/* Dot indicators with counter below */}
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex flex-col items-center space-y-3 z-10">
+          <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex flex-col items-center space-y-4 z-10">
             <div className="flex space-x-3">
               {artworks.map((_, index) => (
                 <button
@@ -249,9 +249,9 @@ const HeroCarousel = ({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.8 }}
-              className="text-white"
+              className="text-white bg-black/20 backdrop-blur-sm rounded-full px-3 py-1"
             >
-              <span className="text-sm opacity-80">
+              <span className="text-xs font-medium">
                 {currentSlide + 1} of {artworks.length}
               </span>
             </motion.div>

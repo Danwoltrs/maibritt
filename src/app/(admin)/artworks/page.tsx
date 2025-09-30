@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, Filter, Grid3X3, List, Eye, Edit, Trash2, Star, DollarSign, Calendar, Tag, Image as ImageIcon, AlertCircle } from 'lucide-react'
+import { Plus, Search, Filter, Grid3X3, List, Eye, Edit, Trash2, Star, DollarSign, Calendar, Tag, Image as ImageIcon, AlertCircle, FolderPlus } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,11 +10,13 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 
 import { ArtworkService, ArtworkFilters } from '@/services/artwork.service'
-import { Artwork } from '@/types'
+import { SeriesService } from '@/services/series.service'
+import { Artwork, ArtSeries } from '@/types'
 
 interface ArtworkPageFilters extends ArtworkFilters {
   sortBy: 'created_at' | 'year' | 'title' | 'display_order'
@@ -30,6 +32,14 @@ export default function ArtworksPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Series management state
+  const [selectedArtworks, setSelectedArtworks] = useState<string[]>([])
+  const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false)
+  const [availableSeries, setAvailableSeries] = useState<ArtSeries[]>([])
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string>('')
+  const [isAddingToSeries, setIsAddingToSeries] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
   
   const [filters, setFilters] = useState<ArtworkPageFilters>({
     searchTerm: '',
@@ -52,6 +62,19 @@ export default function ArtworksPage() {
   useEffect(() => {
     loadArtworks()
   }, [filters.category, filters.year, filters.forSale, filters.featured, filters.searchTerm, filters.sortBy, filters.sortOrder])
+
+  // Load available series
+  useEffect(() => {
+    const loadSeries = async () => {
+      try {
+        const series = await SeriesService.getSeries(true) // Include inactive
+        setAvailableSeries(series)
+      } catch (error) {
+        console.error('Error loading series:', error)
+      }
+    }
+    loadSeries()
+  }, [])
 
   const loadArtworks = async () => {
     try {
@@ -108,6 +131,55 @@ export default function ArtworksPage() {
       setError('Failed to delete artwork')
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode)
+    setSelectedArtworks([])
+  }
+
+  const toggleArtworkSelection = (artworkId: string) => {
+    setSelectedArtworks(prev => 
+      prev.includes(artworkId) 
+        ? prev.filter(id => id !== artworkId)
+        : [...prev, artworkId]
+    )
+  }
+
+  const selectAllArtworks = () => {
+    setSelectedArtworks(artworks.map(a => a.id))
+  }
+
+  const clearSelection = () => {
+    setSelectedArtworks([])
+  }
+
+  const openAddToSeriesModal = () => {
+    setIsSeriesModalOpen(true)
+    setSelectedSeriesId('')
+  }
+
+  const handleAddToSeries = async () => {
+    if (!selectedSeriesId || selectedArtworks.length === 0) return
+
+    setIsAddingToSeries(true)
+    try {
+      await SeriesService.addArtworksToSeries(selectedSeriesId, selectedArtworks)
+      
+      // Refresh artworks to show updated series info
+      await loadArtworks()
+      
+      // Reset state
+      setIsSeriesModalOpen(false)
+      setSelectedArtworks([])
+      setSelectionMode(false)
+      setSelectedSeriesId('')
+    } catch (error) {
+      console.error('Error adding artworks to series:', error)
+      setError('Failed to add artworks to series')
+    } finally {
+      setIsAddingToSeries(false)
     }
   }
 
@@ -192,14 +264,73 @@ export default function ArtworksPage() {
           <h1 className="text-2xl font-bold text-gray-900">Artworks</h1>
           <p className="text-gray-600">Manage your art portfolio</p>
         </div>
-        <Button 
-          onClick={() => router.push('/artworks/new')} 
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Upload New Artwork
-        </Button>
+        <div className="flex items-center gap-3">
+          {selectionMode ? (
+            <>
+              <span className="text-sm text-gray-600">
+                {selectedArtworks.length} selected
+              </span>
+              {selectedArtworks.length > 0 && (
+                <Button
+                  onClick={openAddToSeriesModal}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <FolderPlus className="h-4 w-4" />
+                  Add to Series
+                </Button>
+              )}
+              <Button
+                onClick={toggleSelectionMode}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={toggleSelectionMode}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <FolderPlus className="h-4 w-4" />
+                Select for Series
+              </Button>
+              <Button 
+                onClick={() => router.push('/artworks/new')} 
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Upload New Artwork
+              </Button>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Selection Mode Controls */}
+      {selectionMode && (
+        <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+          <span className="text-sm font-medium text-blue-900">
+            Selection Mode Active
+          </span>
+          <Button
+            onClick={selectAllArtworks}
+            variant="outline"
+            size="sm"
+          >
+            Select All
+          </Button>
+          <Button
+            onClick={clearSelection}
+            variant="outline"
+            size="sm"
+          >
+            Clear Selection
+          </Button>
+        </div>
+      )}
 
       {error && (
         <Alert variant="destructive">
@@ -392,11 +523,11 @@ export default function ArtworksPage() {
       }>
         {sortedArtworks.map((artwork) => (
           <Card key={artwork.id} className="group hover:shadow-lg transition-shadow">
-            <div className={
+            <div className={`relative ${
               filters.viewMode === 'grid' 
                 ? "aspect-square overflow-hidden rounded-t-lg"
                 : "aspect-video md:aspect-[2/1] overflow-hidden rounded-t-lg"
-            }>
+            }`}>
               {artwork.images.length > 0 ? (
                 <img
                   src={artwork.images[0]?.thumbnail || artwork.images[0]?.display}
@@ -406,6 +537,17 @@ export default function ArtworksPage() {
               ) : (
                 <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                   <ImageIcon className="h-12 w-12 text-gray-400" />
+                </div>
+              )}
+              
+              {/* Selection Mode Checkbox */}
+              {selectionMode && (
+                <div className="absolute top-2 left-2">
+                  <Checkbox
+                    checked={selectedArtworks.includes(artwork.id)}
+                    onCheckedChange={() => toggleArtworkSelection(artwork.id)}
+                    className="bg-white/90 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                  />
                 </div>
               )}
             </div>
@@ -540,6 +682,70 @@ export default function ArtworksPage() {
               {isDeleting ? 'Deleting...' : 'Delete Artwork'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add to Series Modal */}
+      <Dialog open={isSeriesModalOpen} onOpenChange={setIsSeriesModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Artworks to Series</DialogTitle>
+            <DialogDescription>
+              Select a series to add the {selectedArtworks.length} selected artwork{selectedArtworks.length !== 1 ? 's' : ''} to.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Select Series
+              </label>
+              <Select value={selectedSeriesId} onValueChange={setSelectedSeriesId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a series..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSeries.map((series) => (
+                    <SelectItem key={series.id} value={series.id}>
+                      {series.name.en} / {series.name.ptBR} ({series.year})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedArtworks.length > 0 && (
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Selected artworks:</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedArtworks.map((artworkId) => {
+                    const artwork = artworks.find(a => a.id === artworkId)
+                    return artwork ? (
+                      <Badge key={artworkId} variant="outline" className="text-xs">
+                        {artwork.title.en}
+                      </Badge>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsSeriesModalOpen(false)}
+              disabled={isAddingToSeries}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddToSeries}
+              disabled={!selectedSeriesId || selectedArtworks.length === 0 || isAddingToSeries}
+            >
+              {isAddingToSeries ? 'Adding...' : 'Add to Series'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

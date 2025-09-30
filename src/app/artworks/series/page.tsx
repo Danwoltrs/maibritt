@@ -1,11 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, FolderOpen, Calendar, Image } from 'lucide-react'
+import { Plus, Edit2, Trash2, FolderOpen, Calendar, Image, Users, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,42 +16,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { SeriesService } from '@/services/series.service'
+import { ArtworkService } from '@/services/artwork.service'
+import { ArtSeries, Artwork } from '@/types'
+import ArtworkUploadForm from '@/components/artwork/ArtworkUploadForm'
 
-// Mock data - replace with actual service calls
-const mockSeries = [
-  {
-    id: '1',
-    name: { ptBR: 'Azul no Negro', en: 'Blue in Black' },
-    description: { ptBR: 'Expedição ao Rio Negro, Amazônia', en: 'Rio Negro Expedition, Amazon' },
-    year: 2015,
-    artworkCount: 12,
-    coverImage: '/placeholder-artwork.jpg',
-    isActive: true,
-    isSeasonal: false
-  },
-  {
-    id: '2',
-    name: { ptBR: 'Confluências', en: 'Confluences' },
-    description: { ptBR: 'Encontros de culturas e paisagens', en: 'Cultural and landscape convergences' },
-    year: 2019,
-    artworkCount: 18,
-    coverImage: '/placeholder-artwork.jpg',
-    isActive: true,
-    isSeasonal: false
-  },
-  {
-    id: '3',
-    name: { ptBR: 'Fragmentos do Real', en: 'Fragments of Reality' },
-    description: { ptBR: 'Residência artística em Brooklyn', en: 'Artist residency in Brooklyn' },
-    year: 2022,
-    artworkCount: 15,
-    coverImage: '/placeholder-artwork.jpg',
-    isActive: true,
-    isSeasonal: true,
-    seasonStart: '2022-06-01',
-    seasonEnd: '2022-12-31'
-  }
-]
 
 // Form validation schema
 const seriesSchema = z.object({
@@ -66,25 +37,25 @@ const seriesSchema = z.object({
 
 type SeriesFormData = z.infer<typeof seriesSchema>
 
-interface Series {
-  id: string
-  name: { ptBR: string; en: string }
-  description: { ptBR: string; en: string }
-  year: number
+interface SeriesWithCount extends ArtSeries {
   artworkCount: number
-  coverImage?: string
-  isActive: boolean
-  isSeasonal: boolean
-  seasonStart?: string
-  seasonEnd?: string
 }
 
 export default function SeriesManagementPage() {
-  const [series, setSeries] = useState<Series[]>(mockSeries)
+  const [series, setSeries] = useState<SeriesWithCount[]>([])
+  const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingSeries, setEditingSeries] = useState<Series | null>(null)
+  const [editingSeries, setEditingSeries] = useState<SeriesWithCount | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Artwork management modal state
+  const [isArtworkModalOpen, setIsArtworkModalOpen] = useState(false)
+  const [managingSeries, setManagingSeries] = useState<SeriesWithCount | null>(null)
+  const [allArtworks, setAllArtworks] = useState<Artwork[]>([])
+  const [seriesArtworks, setSeriesArtworks] = useState<Artwork[]>([])
+  const [selectedArtworks, setSelectedArtworks] = useState<string[]>([])
+  const [artworkLoading, setArtworkLoading] = useState(false)
 
   const {
     register,
@@ -104,6 +75,32 @@ export default function SeriesManagementPage() {
 
   const watchIsSeasonal = watch('isSeasonal')
 
+  // Load series data
+  useEffect(() => {
+    const loadSeries = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await SeriesService.getSeries(true) // Include inactive
+        
+        // Transform to include artwork count (we'll get this from artworks table)
+        const seriesWithCount: SeriesWithCount[] = data.map(s => ({
+          ...s,
+          artworkCount: 0 // TODO: Get actual count from artworks
+        }))
+        
+        setSeries(seriesWithCount)
+      } catch (err) {
+        console.error('Error loading series:', err)
+        setError('Failed to load series')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadSeries()
+  }, [])
+
   const openCreateDialog = () => {
     setEditingSeries(null)
     reset({
@@ -114,13 +111,13 @@ export default function SeriesManagementPage() {
     setIsDialogOpen(true)
   }
 
-  const openEditDialog = (series: Series) => {
+  const openEditDialog = (series: SeriesWithCount) => {
     setEditingSeries(series)
     reset({
       namePt: series.name.ptBR,
       nameEn: series.name.en,
-      descriptionPt: series.description.ptBR,
-      descriptionEn: series.description.en,
+      descriptionPt: series.description?.ptBR || '',
+      descriptionEn: series.description?.en || '',
       year: series.year,
       isActive: series.isActive,
       isSeasonal: series.isSeasonal,
@@ -135,11 +132,7 @@ export default function SeriesManagementPage() {
     setError(null)
 
     try {
-      // Mock API call - replace with actual service
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const seriesData: Series = {
-        id: editingSeries?.id || Date.now().toString(),
+      const seriesData = {
         name: {
           ptBR: data.namePt,
           en: data.nameEn
@@ -149,23 +142,34 @@ export default function SeriesManagementPage() {
           en: data.descriptionEn || ''
         },
         year: data.year,
-        artworkCount: editingSeries?.artworkCount || 0,
-        coverImage: editingSeries?.coverImage,
         isActive: data.isActive,
         isSeasonal: data.isSeasonal,
-        seasonStart: data.isSeasonal ? data.seasonStart : undefined,
-        seasonEnd: data.isSeasonal ? data.seasonEnd : undefined
+        seasonStart: data.isSeasonal && data.seasonStart ? new Date(data.seasonStart) : undefined,
+        seasonEnd: data.isSeasonal && data.seasonEnd ? new Date(data.seasonEnd) : undefined
       }
 
+      let savedSeries: ArtSeries
+      
       if (editingSeries) {
-        setSeries(prev => prev.map(s => s.id === editingSeries.id ? seriesData : s))
+        // Update existing series
+        savedSeries = await SeriesService.updateSeries(editingSeries.id, seriesData)
+        setSeries(prev => prev.map(s => s.id === editingSeries.id ? {
+          ...savedSeries,
+          artworkCount: s.artworkCount
+        } : s))
       } else {
-        setSeries(prev => [seriesData, ...prev])
+        // Create new series
+        savedSeries = await SeriesService.createSeries(seriesData)
+        setSeries(prev => [{
+          ...savedSeries,
+          artworkCount: 0
+        }, ...prev])
       }
 
       setIsDialogOpen(false)
       reset()
     } catch (error) {
+      console.error('Error saving series:', error)
       setError('Failed to save series')
     } finally {
       setIsSubmitting(false)
@@ -178,11 +182,88 @@ export default function SeriesManagementPage() {
     }
 
     try {
-      // Mock API call - replace with actual service
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await SeriesService.deleteSeries(id)
       setSeries(prev => prev.filter(s => s.id !== id))
     } catch (error) {
+      console.error('Error deleting series:', error)
       setError('Failed to delete series')
+    }
+  }
+
+  const openArtworkManagementModal = async (series: SeriesWithCount) => {
+    setManagingSeries(series)
+    setIsArtworkModalOpen(true)
+    setArtworkLoading(true)
+    
+    try {
+      // Load all artworks and series artworks in parallel
+      const [allArtworksResponse, seriesArtworksResponse] = await Promise.all([
+        ArtworkService.getArtworks({}, { page: 1, limit: 100 }), // Get all artworks
+        ArtworkService.getArtworks({ seriesId: series.id }, { page: 1, limit: 100 }) // Get series artworks
+      ])
+      
+      setAllArtworks(allArtworksResponse.artworks)
+      setSeriesArtworks(seriesArtworksResponse.artworks)
+      setSelectedArtworks([]) // Reset selection
+    } catch (error) {
+      console.error('Error loading artworks:', error)
+      setError('Failed to load artworks')
+    } finally {
+      setArtworkLoading(false)
+    }
+  }
+
+  const handleAddArtworksToSeries = async () => {
+    if (!managingSeries || selectedArtworks.length === 0) return
+    
+    try {
+      await SeriesService.addArtworksToSeries(managingSeries.id, selectedArtworks)
+      
+      // Refresh the data
+      const seriesArtworksResponse = await ArtworkService.getArtworks(
+        { seriesId: managingSeries.id }, 
+        { page: 1, limit: 100 }
+      )
+      setSeriesArtworks(seriesArtworksResponse.artworks)
+      setSelectedArtworks([])
+      
+      // Update series artwork count
+      setSeries(prev => prev.map(s => 
+        s.id === managingSeries.id 
+          ? { ...s, artworkCount: seriesArtworksResponse.artworks.length }
+          : s
+      ))
+    } catch (error) {
+      console.error('Error adding artworks to series:', error)
+      setError('Failed to add artworks to series')
+    }
+  }
+
+  const handleRemoveArtworkFromSeries = async (artworkId: string) => {
+    if (!managingSeries) return
+    
+    try {
+      await SeriesService.removeArtworksFromSeries([artworkId])
+      
+      // Update local state
+      setSeriesArtworks(prev => prev.filter(a => a.id !== artworkId))
+      
+      // Update series artwork count
+      setSeries(prev => prev.map(s => 
+        s.id === managingSeries.id 
+          ? { ...s, artworkCount: s.artworkCount - 1 }
+          : s
+      ))
+    } catch (error) {
+      console.error('Error removing artwork from series:', error)
+      setError('Failed to remove artwork from series')
+    }
+  }
+
+  const handleArtworkUploadSuccess = (artworkId: string) => {
+    // Refresh the series artworks
+    if (managingSeries) {
+      openArtworkManagementModal(managingSeries)
     }
   }
 
@@ -206,8 +287,15 @@ export default function SeriesManagementPage() {
         </Alert>
       )}
 
-      {/* Series Grid */}
-      {series.length === 0 ? (
+      {/* Loading State */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading series...</p>
+          </div>
+        </div>
+      ) : series.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <FolderOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -286,6 +374,15 @@ export default function SeriesManagementPage() {
                   >
                     <Edit2 className="h-4 w-4 mr-2" />
                     Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openArtworkManagementModal(series)}
+                    className="flex-1"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Manage
                   </Button>
                   <Button
                     variant="outline"
@@ -447,6 +544,141 @@ export default function SeriesManagementPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Artwork Management Modal */}
+      <Dialog open={isArtworkModalOpen} onOpenChange={setIsArtworkModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>
+              Manage Artworks - {managingSeries?.name.en}
+            </DialogTitle>
+            <DialogDescription>
+              Add existing artworks to this series or create new ones
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="existing" className="h-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="existing">Add Existing Artwork</TabsTrigger>
+              <TabsTrigger value="create">Create New Artwork</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="existing" className="space-y-4 h-full overflow-y-auto">
+              {artworkLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading artworks...</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Current Series Artworks */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      Current Artworks in Series ({seriesArtworks.length})
+                    </h4>
+                    {seriesArtworks.length === 0 ? (
+                      <p className="text-gray-500 text-sm">No artworks in this series yet.</p>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                        {seriesArtworks.map((artwork) => (
+                          <div key={artwork.id} className="relative group">
+                            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                              {artwork.images.length > 0 && (
+                                <img
+                                  src={artwork.images[0].thumbnail}
+                                  alt={artwork.title.en}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleRemoveArtworkFromSeries(artwork.id)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                            <p className="text-xs text-gray-600 mt-1 truncate">
+                              {artwork.title.en}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Available Artworks */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      Available Artworks
+                    </h4>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-4">
+                      {allArtworks
+                        .filter(artwork => !seriesArtworks.some(sa => sa.id === artwork.id))
+                        .map((artwork) => (
+                          <div key={artwork.id} className="relative">
+                            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer">
+                              {artwork.images.length > 0 && (
+                                <img
+                                  src={artwork.images[0].thumbnail}
+                                  alt={artwork.title.en}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                              <div className="absolute top-2 left-2">
+                                <Checkbox
+                                  checked={selectedArtworks.includes(artwork.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedArtworks(prev => [...prev, artwork.id])
+                                    } else {
+                                      setSelectedArtworks(prev => prev.filter(id => id !== artwork.id))
+                                    }
+                                  }}
+                                  className="bg-white"
+                                />
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1 truncate">
+                              {artwork.title.en}
+                            </p>
+                          </div>
+                        ))}
+                    </div>
+
+                    {selectedArtworks.length > 0 && (
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-600">
+                          {selectedArtworks.length} artwork{selectedArtworks.length !== 1 ? 's' : ''} selected
+                        </span>
+                        <Button onClick={handleAddArtworksToSeries}>
+                          Add to Series
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setSelectedArtworks([])}
+                        >
+                          Clear Selection
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="create" className="h-full overflow-y-auto">
+              <ArtworkUploadForm
+                defaultSeriesId={managingSeries?.id}
+                onSuccess={handleArtworkUploadSuccess}
+                isModal={true}
+                className="border-none shadow-none"
+              />
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>

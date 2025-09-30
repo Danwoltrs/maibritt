@@ -384,7 +384,7 @@ export default function ArtworkLocationsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => router.push(`/admin/artworks/${artwork.id}`)}
+                      onClick={() => router.push(`/artworks/${artwork.id}/edit`)}
                       className="h-8 w-8 p-0"
                     >
                       <Eye className="h-4 w-4" />
@@ -407,7 +407,7 @@ export default function ArtworkLocationsPage() {
                 ? 'Try adjusting your filters to see more artworks.'
                 : 'Upload your first artwork to start tracking locations.'}
             </p>
-            <Button onClick={() => router.push('/admin/artworks/new')}>
+            <Button onClick={() => router.push('/artworks/new')}>
               Upload New Artwork
             </Button>
           </CardContent>

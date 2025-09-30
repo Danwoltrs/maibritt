@@ -180,7 +180,7 @@ export default function NewSalePage() {
 
       setSuccess(true)
       setTimeout(() => {
-        router.push('/admin/sales')
+        router.push('/sales')
       }, 2000)
 
     } catch (error) {

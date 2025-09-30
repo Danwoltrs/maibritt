@@ -132,7 +132,7 @@ export default function NewJournalPage() {
 
       setSuccess(true)
       setTimeout(() => {
-        router.push('/admin/journal')
+        router.push('/journal')
       }, 2000)
 
     } catch (error) {

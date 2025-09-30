@@ -60,15 +60,15 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Define protected admin routes (exclude /dashboard as it's a public redirect)
-  const adminRoutes = ['/admin']
+  // Define protected admin routes
+  const adminRoutes = ['/dashboard', '/artworks', '/galleries', '/sales', '/journal']
   const isAdminRoute = adminRoutes.some(route =>
     req.nextUrl.pathname.startsWith(route)
-  ) && req.nextUrl.pathname !== '/admin' // Exclude /admin itself since it handles auth
+  )
 
-  // Redirect to admin (with login modal) if accessing admin routes without authentication
-  if (isAdminRoute && !session && req.nextUrl.pathname !== '/admin') {
-    const redirectUrl = new URL('/admin', req.url)
+  // Redirect to login if accessing admin routes without authentication
+  if (isAdminRoute && !session) {
+    const redirectUrl = new URL('/login', req.url)
     redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
@@ -76,7 +76,7 @@ export async function middleware(req: NextRequest) {
   // Let client-side handle login redirects for authenticated users
   // Middleware redirects don't work reliably with client-side navigation in dev mode
   // if (req.nextUrl.pathname === '/login' && session) {
-  //   const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/admin/dashboard'
+  //   const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/dashboard'
   //   return NextResponse.redirect(new URL(redirectTo, req.url))
   // }
 
