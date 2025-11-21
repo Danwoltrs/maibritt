@@ -164,7 +164,7 @@ const HeroCarousel = ({
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="absolute bottom-8 left-8 text-white max-w-md"
+            className="absolute bottom-32 left-8 text-white max-w-md"
           >
             <h2 className="text-3xl md:text-4xl font-light mb-3">
               {currentArtwork.title.en}
@@ -194,7 +194,7 @@ const HeroCarousel = ({
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.8 }}
-            className="absolute bottom-8 right-8 text-white"
+            className="absolute bottom-40 right-8 text-white"
           >
             <span className="text-sm opacity-80">
               {currentSlide + 1} / {artworks.length}
@@ -239,19 +239,21 @@ const HeroCarousel = ({
           </Button>
 
           {/* Dot indicators */}
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-3 z-10">
-            {artworks.map((_, index) => (
-              <button
-                key={index}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide
-                    ? 'bg-white scale-125'
-                    : 'bg-white/40 hover:bg-white/60'
-                }`}
-                onClick={() => goToSlide(index)}
-                aria-label={`Go to artwork ${index + 1}`}
-              />
-            ))}
+          <div className="absolute bottom-36 z-10" style={{left: 'calc(50% + 20px)'}}>
+            <div className="flex space-x-3">
+              {artworks.map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === currentSlide
+                      ? 'bg-white scale-125'
+                      : 'bg-white/40 hover:bg-white/60'
+                  }`}
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Go to artwork ${index + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </>
       )}
@@ -278,7 +280,7 @@ const HeroCarousel = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.5, duration: 0.8 }}
-        className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white z-10"
+        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-white z-10"
       >
         <div className="flex flex-col items-center space-y-2">
           <span className="text-xs opacity-70 uppercase tracking-wide">

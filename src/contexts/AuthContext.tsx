@@ -25,7 +25,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentUser = await AuthService.getCurrentUser()
         setUser(currentUser)
       } catch (error) {
-        console.error('Error getting initial user:', error)
+        // Silently handle auth session missing for public pages
+        if (!error.message?.includes('Auth session missing')) {
+          console.error('Error getting initial user:', error)
+        }
       } finally {
         setLoading(false)
       }
