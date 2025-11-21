@@ -255,7 +255,7 @@ const HeroCarousel = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.5, duration: 0.8 }}
-            className="absolute bottom-20 left-[calc(50%+80px)] transform -translate-x-1/2 text-white z-10"
+            className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-white z-10"
           >
             <div className="flex flex-col items-center space-y-6">
               {/* Dot indicators */}
