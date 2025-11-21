@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser)
       } catch (error) {
         // Silently handle auth session missing for public pages
-        if (!error.message?.includes('Auth session missing')) {
+        if (!(error instanceof Error && error.message?.includes('Auth session missing'))) {
           console.error('Error getting initial user:', error)
         }
       } finally {
