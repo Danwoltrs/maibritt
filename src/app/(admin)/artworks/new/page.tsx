@@ -161,9 +161,6 @@ export default function NewArtworkPage() {
           en: ''
         },
         year: newSeriesYear,
-        coverImage: '',
-        displayOrder: 0,
-        isActive: true,
         isSeasonal: false
       })
 
