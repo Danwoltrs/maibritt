@@ -2,10 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { ArrowLeft, Upload, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Upload, X, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,64 +14,90 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 import { ArtworkService } from '@/services/artwork.service'
 import { SeriesService } from '@/services/series.service'
-import { StorageService } from '@/services/storage.service'
 
-// Form validation schema
-const artworkSchema = z.object({
-  titlePt: z.string().min(1, 'Portuguese title is required'),
-  titleEn: z.string().min(1, 'English title is required'),
-  year: z.number().min(1800).max(new Date().getFullYear() + 1),
-  mediumPt: z.string().min(1, 'Portuguese medium is required'),
-  mediumEn: z.string().min(1, 'English medium is required'),
-  dimensions: z.string().min(1, 'Dimensions are required'),
-  descriptionPt: z.string().optional(),
-  descriptionEn: z.string().optional(),
-  category: z.enum(['painting', 'sculpture', 'engraving', 'video', 'mixed-media']),
-  seriesId: z.string().optional(),
-  forSale: z.boolean(),
-  price: z.number().optional(),
-  currency: z.enum(['BRL', 'USD', 'EUR']).optional(),
-  featured: z.boolean()
-})
+interface UploadedImage {
+  file: File
+  preview: string
+}
 
-type ArtworkFormData = z.infer<typeof artworkSchema>
+interface CommonMetadata {
+  seriesId?: string
+  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'mixed-media'
+  year?: number
+}
+
+interface ArtworkDetails {
+  titlePt: string
+  titleEn: string
+  mediumPt: string
+  mediumEn: string
+  dimensions: string
+  descriptionPt: string
+  descriptionEn: string
+  forSale: boolean
+  price?: number
+  currency: 'BRL' | 'USD' | 'EUR'
+  featured: boolean
+}
 
 interface SeriesOption {
   id: string
   name: { ptBR: string; en: string }
 }
 
+const categories = [
+  { value: 'painting', label: 'Painting / Pintura' },
+  { value: 'sculpture', label: 'Sculpture / Escultura' },
+  { value: 'engraving', label: 'Engraving / Gravura' },
+  { value: 'video', label: 'Video / Vídeo' },
+  { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' }
+]
+
+const currencies = [
+  { value: 'BRL', label: 'R$ BRL' },
+  { value: 'USD', label: '$ USD' },
+  { value: 'EUR', label: '€ EUR' }
+]
+
+// Generate year options (current year + 40 years back)
+const generateYearOptions = () => {
+  const currentYear = new Date().getFullYear()
+  const years = []
+  for (let i = 0; i <= 40; i++) {
+    years.push(currentYear - i)
+  }
+  return years
+}
+
 export default function NewArtworkPage() {
   const router = useRouter()
+  const [step, setStep] = useState<'upload' | 'details' | 'success'>('upload')
+
+  // Step 1: Upload & Common Metadata
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
+  const [commonMetadata, setCommonMetadata] = useState<CommonMetadata>({
+    year: new Date().getFullYear()
+  })
+  const [applyToAll, setApplyToAll] = useState(true)
+  const [series, setSeries] = useState<SeriesOption[]>([])
+  const [showNewSeriesDialog, setShowNewSeriesDialog] = useState(false)
+  const [newSeriesNamePt, setNewSeriesNamePt] = useState('')
+  const [newSeriesNameEn, setNewSeriesNameEn] = useState('')
+  const [newSeriesYear, setNewSeriesYear] = useState(new Date().getFullYear())
+
+  // Step 2: Individual Details
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [artworkDetails, setArtworkDetails] = useState<Record<number, ArtworkDetails>>({})
+
+  // Submission
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [previewUrls, setPreviewUrls] = useState<string[]>([])
-  const [series, setSeries] = useState<SeriesOption[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-    reset
-  } = useForm<ArtworkFormData>({
-    resolver: zodResolver(artworkSchema),
-    defaultValues: {
-      forSale: false,
-      featured: false,
-      currency: 'BRL',
-      year: new Date().getFullYear()
-    }
-  })
-
-  const watchForSale = watch('forSale')
 
   // Load series options
   React.useEffect(() => {
@@ -99,105 +122,211 @@ export default function NewArtworkPage() {
       'image/png': ['.png'],
       'image/webp': ['.webp']
     },
-    maxFiles: 5,
+    maxFiles: 20,
     maxSize: 50 * 1024 * 1024, // 50MB
     onDrop: (acceptedFiles) => {
-      setSelectedFiles(prev => [...prev, ...acceptedFiles])
-      
-      // Create preview URLs
-      const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file))
-      setPreviewUrls(prev => [...prev, ...newPreviews])
+      const newImages = acceptedFiles.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }))
+      setUploadedImages(prev => [...prev, ...newImages])
     },
     onDropRejected: (rejectedFiles) => {
-      const errors = rejectedFiles.map(file => file.errors.map(error => error.message).join(', '))
+      const errors = rejectedFiles.map(file =>
+        file.errors.map(error => error.message).join(', ')
+      )
       setError(`File rejected: ${errors.join('; ')}`)
     }
   })
 
-  const removeFile = (index: number) => {
-    const newFiles = selectedFiles.filter((_, i) => i !== index)
-    const newPreviews = previewUrls.filter((_, i) => i !== index)
-    
-    // Revoke URL to prevent memory leaks
-    URL.revokeObjectURL(previewUrls[index])
-    
-    setSelectedFiles(newFiles)
-    setPreviewUrls(newPreviews)
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(uploadedImages[index].preview)
+    setUploadedImages(prev => prev.filter((_, i) => i !== index))
   }
 
-  const onSubmit = async (data: ArtworkFormData) => {
-    if (selectedFiles.length === 0) {
+  const handleCreateNewSeries = async () => {
+    if (!newSeriesNamePt || !newSeriesNameEn) {
+      setError('Please fill in both Portuguese and English series names')
+      return
+    }
+
+    try {
+      const newSeries = await SeriesService.createSeries({
+        name: {
+          ptBR: newSeriesNamePt,
+          en: newSeriesNameEn
+        },
+        description: {
+          ptBR: '',
+          en: ''
+        },
+        year: newSeriesYear,
+        coverImage: '',
+        displayOrder: 0,
+        isActive: true,
+        isSeasonal: false
+      })
+
+      setSeries(prev => [...prev, {
+        id: newSeries.id,
+        name: newSeries.name
+      }])
+      setCommonMetadata(prev => ({ ...prev, seriesId: newSeries.id }))
+      setShowNewSeriesDialog(false)
+      setNewSeriesNamePt('')
+      setNewSeriesNameEn('')
+    } catch (error) {
+      console.error('Failed to create series:', error)
+      setError('Failed to create new series')
+    }
+  }
+
+  const handleProceedToDetails = () => {
+    if (uploadedImages.length === 0) {
       setError('Please upload at least one image')
+      return
+    }
+
+    if (applyToAll && (!commonMetadata.category || !commonMetadata.year)) {
+      setError('Please select category and year when applying to all images')
+      return
+    }
+
+    // Initialize artwork details with common metadata
+    const initialDetails: Record<number, ArtworkDetails> = {}
+    uploadedImages.forEach((_, index) => {
+      initialDetails[index] = {
+        titlePt: '',
+        titleEn: '',
+        mediumPt: '',
+        mediumEn: '',
+        dimensions: '',
+        descriptionPt: '',
+        descriptionEn: '',
+        forSale: false,
+        currency: 'BRL',
+        featured: false
+      }
+    })
+    setArtworkDetails(initialDetails)
+    setStep('details')
+  }
+
+  const handlePrevImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1)
+    }
+  }
+
+  const handleNextImage = () => {
+    if (currentImageIndex < uploadedImages.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1)
+    }
+  }
+
+  const updateCurrentArtworkDetails = (updates: Partial<ArtworkDetails>) => {
+    setArtworkDetails(prev => ({
+      ...prev,
+      [currentImageIndex]: {
+        ...prev[currentImageIndex],
+        ...updates
+      }
+    }))
+  }
+
+  const currentDetails = artworkDetails[currentImageIndex] || {
+    titlePt: '',
+    titleEn: '',
+    mediumPt: '',
+    mediumEn: '',
+    dimensions: '',
+    descriptionPt: '',
+    descriptionEn: '',
+    forSale: false,
+    currency: 'BRL' as const,
+    featured: false
+  }
+
+  const handleSubmitAll = async () => {
+    // Validate all artworks have required fields
+    for (let i = 0; i < uploadedImages.length; i++) {
+      const details = artworkDetails[i]
+      if (!details?.titlePt || !details?.titleEn || !details?.mediumPt ||
+          !details?.mediumEn || !details?.dimensions) {
+        setError(`Please fill in all required fields for image ${i + 1}`)
+        setCurrentImageIndex(i)
+        return
+      }
+    }
+
+    if (!applyToAll && !commonMetadata.category) {
+      setError('Please select a category')
       return
     }
 
     setIsSubmitting(true)
     setError(null)
-    setUploadProgress(0)
 
     try {
-      await ArtworkService.createArtwork({
-        title: {
-          ptBR: data.titlePt,
-          en: data.titleEn
-        },
-        year: data.year,
-        medium: {
-          ptBR: data.mediumPt,
-          en: data.mediumEn
-        },
-        dimensions: data.dimensions,
-        description: {
-          ptBR: data.descriptionPt || '',
-          en: data.descriptionEn || ''
-        },
-        category: data.category,
-        seriesId: data.seriesId,
-        images: selectedFiles,
-        forSale: data.forSale,
-        price: data.forSale ? data.price : undefined,
-        currency: data.forSale ? data.currency : undefined,
-        featured: data.featured
-      }, (progress) => {
-        setUploadProgress(progress.percentage)
-      })
+      // Create all artworks
+      const totalArtworks = uploadedImages.length
+      for (let i = 0; i < totalArtworks; i++) {
+        const image = uploadedImages[i]
+        const details = artworkDetails[i]
 
-      setSuccess(true)
+        await ArtworkService.createArtwork({
+          title: {
+            ptBR: details.titlePt,
+            en: details.titleEn
+          },
+          year: commonMetadata.year!,
+          medium: {
+            ptBR: details.mediumPt,
+            en: details.mediumEn
+          },
+          dimensions: details.dimensions,
+          description: {
+            ptBR: details.descriptionPt,
+            en: details.descriptionEn
+          },
+          category: commonMetadata.category!,
+          seriesId: commonMetadata.seriesId,
+          images: [image.file],
+          forSale: details.forSale,
+          price: details.forSale ? details.price : undefined,
+          currency: details.forSale ? details.currency : undefined,
+          featured: details.featured
+        }, (progress) => {
+          const overallProgress = ((i / totalArtworks) * 100) + (progress.percentage / totalArtworks)
+          setUploadProgress(Math.round(overallProgress))
+        })
+      }
+
+      setStep('success')
       setTimeout(() => {
-        router.push('/admin/dashboard')
+        router.push('/dashboard')
       }, 2000)
 
     } catch (error) {
-      console.error('Failed to create artwork:', error)
-      setError(error instanceof Error ? error.message : 'Failed to create artwork')
+      console.error('Failed to create artworks:', error)
+      setError(error instanceof Error ? error.message : 'Failed to create artworks')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const categories = [
-    { value: 'painting', label: 'Painting / Pintura' },
-    { value: 'sculpture', label: 'Sculpture / Escultura' },
-    { value: 'engraving', label: 'Engraving / Gravura' },
-    { value: 'video', label: 'Video / Vídeo' },
-    { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' }
-  ]
-
-  const currencies = [
-    { value: 'BRL', label: 'R$ BRL' },
-    { value: 'USD', label: '$ USD' },
-    { value: 'EUR', label: '€ EUR' }
-  ]
-
-  if (success) {
+  // Success Screen
+  if (step === 'success') {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Card className="w-full max-w-md text-center">
           <CardContent className="pt-6">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">Artwork Created Successfully!</h2>
+            <h2 className="text-2xl font-semibold mb-2">
+              {uploadedImages.length} Artwork{uploadedImages.length > 1 ? 's' : ''} Created Successfully!
+            </h2>
             <p className="text-gray-600 mb-4">
-              Your artwork has been uploaded and added to your portfolio.
+              Your artworks have been uploaded and added to your portfolio.
             </p>
             <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
           </CardContent>
@@ -206,40 +335,41 @@ export default function NewArtworkPage() {
     )
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.back()}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Upload New Artwork</h1>
-          <p className="text-gray-600">Add a new piece to your portfolio</p>
+  // Step 1: Upload & Common Metadata
+  if (step === 'upload') {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Upload Artworks</h1>
+            <p className="text-gray-600">Upload multiple artworks at once</p>
+          </div>
         </div>
-      </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Image Upload */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Images</CardTitle>
               <CardDescription>
-                Upload high-quality images of your artwork. The first image will be used as the cover.
+                Upload high-quality images of your artworks. You can upload up to 20 images at once.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -263,305 +393,495 @@ export default function NewArtworkPage() {
                       Drag & drop images here, or click to select files
                     </p>
                     <p className="text-sm text-gray-500">
-                      JPG, PNG, WebP up to 50MB each (max 5 files)
+                      JPG, PNG, WebP up to 50MB each (max 20 files)
                     </p>
                   </div>
                 )}
               </div>
 
               {/* Image Previews */}
-              {previewUrls.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {previewUrls.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile(index)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full 
-                                 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                      {index === 0 && (
-                        <Badge className="absolute bottom-2 left-2 bg-blue-500">
-                          Cover
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Upload Progress */}
-              {isSubmitting && uploadProgress > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Uploading images...</span>
-                    <span>{uploadProgress}%</span>
+              {uploadedImages.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-700">
+                      {uploadedImages.length} image{uploadedImages.length > 1 ? 's' : ''} selected
+                    </p>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
+                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                    {uploadedImages.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={image.preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full
+                                   opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                          {index + 1}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Basic Information */}
+          {/* Common Metadata */}
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>Common Information</CardTitle>
+              <CardDescription>
+                Set properties that apply to all uploaded artworks
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="titlePt">Title (Portuguese)</Label>
-                <Input
-                  id="titlePt"
-                  {...register('titlePt')}
-                  placeholder="Título da obra"
+              {/* Apply to All Checkbox */}
+              <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg">
+                <Checkbox
+                  id="applyToAll"
+                  checked={applyToAll}
+                  onCheckedChange={(checked) => setApplyToAll(checked as boolean)}
                 />
-                {errors.titlePt && (
-                  <p className="text-sm text-red-600">{errors.titlePt.message}</p>
-                )}
+                <Label htmlFor="applyToAll" className="text-sm font-medium cursor-pointer">
+                  Same category, series, and year for all
+                </Label>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="titleEn">Title (English)</Label>
-                <Input
-                  id="titleEn"
-                  {...register('titleEn')}
-                  placeholder="Artwork title"
-                />
-                {errors.titleEn && (
-                  <p className="text-sm text-red-600">{errors.titleEn.message}</p>
-                )}
-              </div>
+              {applyToAll && (
+                <>
+                  {/* Series & Collections */}
+                  <div className="space-y-2">
+                    <Label>Series & Collections (Optional)</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={commonMetadata.seriesId}
+                        onValueChange={(value) =>
+                          setCommonMetadata(prev => ({ ...prev, seriesId: value }))
+                        }
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select series" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {series.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name.en} / {s.name.ptBR}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Dialog open={showNewSeriesDialog} onOpenChange={setShowNewSeriesDialog}>
+                        <DialogTrigger asChild>
+                          <Button type="button" variant="outline" size="icon">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Create New Series</DialogTitle>
+                            <DialogDescription>
+                              Add a new series/collection to organize your artworks
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label>Series Name (Portuguese)</Label>
+                              <Input
+                                value={newSeriesNamePt}
+                                onChange={(e) => setNewSeriesNamePt(e.target.value)}
+                                placeholder="Nome da série"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Series Name (English)</Label>
+                              <Input
+                                value={newSeriesNameEn}
+                                onChange={(e) => setNewSeriesNameEn(e.target.value)}
+                                placeholder="Series name"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Year</Label>
+                              <Select
+                                value={newSeriesYear.toString()}
+                                onValueChange={(value) => setNewSeriesYear(parseInt(value))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {generateYearOptions().map(year => (
+                                    <SelectItem key={year} value={year.toString()}>
+                                      {year}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Button onClick={handleCreateNewSeries} className="w-full">
+                              Create Series
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="year">Year</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  {...register('year', { valueAsNumber: true })}
-                  placeholder="2024"
-                />
-                {errors.year && (
-                  <p className="text-sm text-red-600">{errors.year.message}</p>
-                )}
-              </div>
+                  {/* Category */}
+                  <div className="space-y-2">
+                    <Label>Category *</Label>
+                    <Select
+                      value={commonMetadata.category}
+                      onValueChange={(value) =>
+                        setCommonMetadata(prev => ({
+                          ...prev,
+                          category: value as any
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.value} value={category.value}>
+                            {category.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select onValueChange={(value) => setValue('category', value as any)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.category && (
-                  <p className="text-sm text-red-600">{errors.category.message}</p>
-                )}
-              </div>
+                  {/* Year */}
+                  <div className="space-y-2">
+                    <Label>Year *</Label>
+                    <Select
+                      value={commonMetadata.year?.toString()}
+                      onValueChange={(value) =>
+                        setCommonMetadata(prev => ({
+                          ...prev,
+                          year: parseInt(value)
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {generateYearOptions().map(year => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="dimensions">Dimensions</Label>
-                <Input
-                  id="dimensions"
-                  {...register('dimensions')}
-                  placeholder="100 x 80 cm"
-                />
-                {errors.dimensions && (
-                  <p className="text-sm text-red-600">{errors.dimensions.message}</p>
-                )}
-              </div>
-
-              {series.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Series (Optional)</Label>
-                  <Select onValueChange={(value) => setValue('seriesId', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select series" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {series.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name.en} / {s.name.ptBR}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {!applyToAll && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    You'll be able to set individual categories, series, and years for each artwork in the next step.
+                  </AlertDescription>
+                </Alert>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Medium & Description */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Medium & Description</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="mediumPt">Medium (Portuguese)</Label>
-                <Input
-                  id="mediumPt"
-                  {...register('mediumPt')}
-                  placeholder="Acrílica sobre tela"
-                />
-                {errors.mediumPt && (
-                  <p className="text-sm text-red-600">{errors.mediumPt.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="mediumEn">Medium (English)</Label>
-                <Input
-                  id="mediumEn"
-                  {...register('mediumEn')}
-                  placeholder="Acrylic on canvas"
-                />
-                {errors.mediumEn && (
-                  <p className="text-sm text-red-600">{errors.mediumEn.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="descriptionPt">Description (Portuguese)</Label>
-                <Textarea
-                  id="descriptionPt"
-                  {...register('descriptionPt')}
-                  placeholder="Descrição da obra..."
-                  rows={4}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="descriptionEn">Description (English)</Label>
-                <Textarea
-                  id="descriptionEn"
-                  {...register('descriptionEn')}
-                  placeholder="Artwork description..."
-                  rows={4}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sale Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sale Information</CardTitle>
-            <CardDescription>
-              Configure if this artwork is available for purchase
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="forSale">Available for Sale</Label>
-                <p className="text-sm text-gray-500">
-                  Mark this artwork as available for purchase
-                </p>
-              </div>
-              <Switch
-                id="forSale"
-                checked={watchForSale}
-                onCheckedChange={(checked) => setValue('forSale', checked)}
-              />
-            </div>
-
-            {watchForSale && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    {...register('price', { valueAsNumber: true })}
-                    placeholder="5000.00"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Currency</Label>
-                  <Select onValueChange={(value) => setValue('currency', value as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((currency) => (
-                        <SelectItem key={currency.value} value={currency.value}>
-                          {currency.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div>
-                <Label htmlFor="featured">Featured Artwork</Label>
-                <p className="text-sm text-gray-500">
-                  Highlight this artwork on the homepage
-                </p>
-              </div>
-              <Switch
-                id="featured"
-                {...register('featured')}
-                onCheckedChange={(checked) => setValue('featured', checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4">
+        {/* Continue Button */}
+        <div className="flex justify-end">
           <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={isSubmitting}
+            onClick={handleProceedToDetails}
+            disabled={uploadedImages.length === 0}
+            size="lg"
           >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || selectedFiles.length === 0}
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Creating...
-              </div>
-            ) : (
-              'Create Artwork'
-            )}
+            Continue to Details
+            <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
-      </form>
+      </div>
+    )
+  }
+
+  // Step 2: Individual Details
+  return (
+    <div className="space-y-6">
+      {/* Header with Progress */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setStep('upload')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Upload
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Artwork Details ({currentImageIndex + 1} of {uploadedImages.length})
+            </h1>
+            <p className="text-gray-600">Fill in the details for each artwork</p>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Progress</span>
+            <span>{Math.round(((currentImageIndex + 1) / uploadedImages.length) * 100)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentImageIndex + 1) / uploadedImages.length) * 100}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Image Preview */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Image Preview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <img
+              src={uploadedImages[currentImageIndex].preview}
+              alt={`Artwork ${currentImageIndex + 1}`}
+              className="w-full aspect-square object-cover rounded-lg"
+            />
+            <div className="mt-4 flex justify-between items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrevImage}
+                disabled={currentImageIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="text-sm text-gray-600">
+                {currentImageIndex + 1} / {uploadedImages.length}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextImage}
+                disabled={currentImageIndex === uploadedImages.length - 1}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Artwork Details Form */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Artwork Information</CardTitle>
+            <CardDescription>
+              {applyToAll
+                ? `Category: ${commonMetadata.category}, Year: ${commonMetadata.year}`
+                : 'Enter details for this artwork'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Titles */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Title (Portuguese) *</Label>
+                <Input
+                  value={currentDetails.titlePt}
+                  onChange={(e) => updateCurrentArtworkDetails({ titlePt: e.target.value })}
+                  placeholder="Título da obra"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Title (English) *</Label>
+                <Input
+                  value={currentDetails.titleEn}
+                  onChange={(e) => updateCurrentArtworkDetails({ titleEn: e.target.value })}
+                  placeholder="Artwork title"
+                />
+              </div>
+            </div>
+
+            {/* Medium */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Medium (Portuguese) *</Label>
+                <Input
+                  value={currentDetails.mediumPt}
+                  onChange={(e) => updateCurrentArtworkDetails({ mediumPt: e.target.value })}
+                  placeholder="Acrílica sobre tela"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Medium (English) *</Label>
+                <Input
+                  value={currentDetails.mediumEn}
+                  onChange={(e) => updateCurrentArtworkDetails({ mediumEn: e.target.value })}
+                  placeholder="Acrylic on canvas"
+                />
+              </div>
+            </div>
+
+            {/* Dimensions */}
+            <div className="space-y-2">
+              <Label>Dimensions *</Label>
+              <Input
+                value={currentDetails.dimensions}
+                onChange={(e) => updateCurrentArtworkDetails({ dimensions: e.target.value })}
+                placeholder="100 x 80 cm"
+              />
+            </div>
+
+            {/* Descriptions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Description (Portuguese)</Label>
+                <Textarea
+                  value={currentDetails.descriptionPt}
+                  onChange={(e) => updateCurrentArtworkDetails({ descriptionPt: e.target.value })}
+                  placeholder="Descrição da obra..."
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description (English)</Label>
+                <Textarea
+                  value={currentDetails.descriptionEn}
+                  onChange={(e) => updateCurrentArtworkDetails({ descriptionEn: e.target.value })}
+                  placeholder="Artwork description..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Sale Information */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Available for Sale</Label>
+                  <p className="text-sm text-gray-500">Mark this artwork as available for purchase</p>
+                </div>
+                <Switch
+                  checked={currentDetails.forSale}
+                  onCheckedChange={(checked) => updateCurrentArtworkDetails({ forSale: checked })}
+                />
+              </div>
+
+              {currentDetails.forSale && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Price</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={currentDetails.price || ''}
+                      onChange={(e) => updateCurrentArtworkDetails({
+                        price: parseFloat(e.target.value) || undefined
+                      })}
+                      placeholder="5000.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Currency</Label>
+                    <Select
+                      value={currentDetails.currency}
+                      onValueChange={(value) => updateCurrentArtworkDetails({
+                        currency: value as any
+                      })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((currency) => (
+                          <SelectItem key={currency.value} value={currency.value}>
+                            {currency.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Featured Artwork</Label>
+                  <p className="text-sm text-gray-500">Highlight this on the homepage</p>
+                </div>
+                <Switch
+                  checked={currentDetails.featured}
+                  onCheckedChange={(checked) => updateCurrentArtworkDetails({ featured: checked })}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Navigation and Submit */}
+      <div className="flex justify-between items-center">
+        <Button
+          variant="outline"
+          onClick={handlePrevImage}
+          disabled={currentImageIndex === 0}
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Previous Artwork
+        </Button>
+
+        <div className="flex gap-3">
+          {currentImageIndex < uploadedImages.length - 1 ? (
+            <Button onClick={handleNextImage}>
+              Next Artwork
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmitAll}
+              disabled={isSubmitting}
+              size="lg"
+              className="min-w-[180px]"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Uploading {uploadProgress}%
+                </div>
+              ) : (
+                `Upload All ${uploadedImages.length} Artworks`
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
