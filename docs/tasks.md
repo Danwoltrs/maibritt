@@ -72,17 +72,20 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
 
 ---
 
-## ⏳ Task 3: Main Page Development
+## ✅ Task 3: Main Page Development (IN PROGRESS)
 **Priority: HIGH**
 
 ### Hero Section
-- **3.1** ⏳ Build rotating hero carousel component
-  - **3.1.1** ⏳ Create HeroCarousel component
-  - **3.1.2** ⏳ Implement auto-rotation (4-5 seconds)
-  - **3.1.3** ⏳ Add manual navigation controls (arrows, dots)
-  - **3.1.4** ⏳ Make responsive for all devices
-  - **3.1.5** ⏳ Add pause on hover functionality
-  - **3.1.6** ⏳ Smooth fade/slide transitions
+- **3.1** ✅ Build rotating hero carousel component
+  - **3.1.1** ✅ Create HeroCarousel component
+  - **3.1.2** ✅ Implement auto-rotation (configurable via settings)
+  - **3.1.3** ✅ Add manual navigation controls (arrows, dots)
+  - **3.1.4** ✅ Make responsive for all devices
+  - **3.1.5** ✅ Add pause on hover functionality
+  - **3.1.6** ✅ Smooth fade transitions
+  - **3.1.7** ✅ Dynamic settings from database (rotation speed, auto-play, pause on hover)
+  - **3.1.8** ✅ Display up to 20 featured artworks
+  - **3.1.9** ✅ Centered carousel dots with scroll indicator
 
 ### Timeline Section
 - **3.2** ⏳ Create exhibitions timeline section
@@ -220,13 +223,13 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
 
 ---
 
-## ⏳ Task 6: Artist Dashboard & Admin System
+## 🚧 Task 6: Artist Dashboard & Admin System
 **Priority: HIGH**
 
 ### Authentication System
-- **6.1** ⏳ Enhanced authentication
-  - **6.1.1** ⏳ Set up Supabase Auth with 2FA
-  - **6.1.2** ⏳ Create elegant split-screen /login page
+- **6.1** ✅ Enhanced authentication
+  - **6.1.1** ✅ Set up Supabase Auth
+  - **6.1.2** ✅ Create /login page
     - Left panel: Rotating artwork showcase
     - Right panel: Clean login form
   - **6.1.3** ⏳ Implement protected routes middleware
@@ -327,13 +330,16 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
   - **6.6.7** ⏳ Export journal as PDF/backup
 
 ### Content Management Enhanced
-- **6.7** ⏳ Artwork management
-  - **6.7.1** ⏳ Enhanced artwork listing with location filters
-  - **6.7.2** ⏳ Add artwork form with location assignment
-  - **6.7.3** ⏳ Edit artwork with location history
-  - **6.7.4** ⏳ Bulk operations with location updates
-  - **6.7.5** ⏳ Sale status toggle with buyer info
-  - **6.7.6** ⏳ Availability scheduler
+- **6.7** 🚧 Artwork management
+  - **6.7.1** ✅ Enhanced artwork listing with filters
+  - **6.7.2** ✅ Add artwork form with bulk upload (up to 20 artworks)
+  - **6.7.3** ✅ Two-step upload: common metadata + individual details
+  - **6.7.4** ✅ Create new series on the fly during upload
+  - **6.7.5** ✅ Sale status toggle with price/currency
+  - **6.7.6** ✅ Featured artwork toggle
+  - **6.7.7** ⏳ Edit artwork with location history
+  - **6.7.8** ⏳ Bulk operations with location updates
+  - **6.7.9** ⏳ Availability scheduler
 
 ### Blog/Public Content Editor
 - **6.8** ⏳ Blog post editor
@@ -346,15 +352,24 @@ Sophisticated, minimalistic portfolio and e-commerce website for Mai-Britt Wolth
   - **6.8.7** ⏳ Preview mode
 
 ### Additional Management
-- **6.9** ⏳ Series management
-  - **6.9.1** ⏳ Series CRUD interface
-  - **6.9.2** ⏳ Assign artworks to series
+- **6.9** ✅ Series management
+  - **6.9.1** ✅ Series CRUD interface
+  - **6.9.2** ✅ Assign artworks to series during upload
   - **6.9.3** ⏳ Reorder series
 - **6.10** ⏳ Exhibition management
   - **6.10.1** ⏳ Exhibition CRUD interface
   - **6.10.2** ⏳ Link exhibitions to galleries
   - **6.10.3** ⏳ Upload exhibition images
   - **6.10.4** ⏳ Mark as featured
+- **6.11** ✅ Site Settings
+  - **6.11.1** ✅ Site settings database table
+  - **6.11.2** ✅ Settings service for CRUD operations
+  - **6.11.3** ✅ Settings page in admin dashboard (/settings)
+  - **6.11.4** ✅ Carousel rotation speed control (8s to 60s)
+  - **6.11.5** ✅ Carousel auto-play toggle
+  - **6.11.6** ✅ Pause on hover toggle
+  - **6.11.7** ⏳ Transition style selector (fade/slide/zoom)
+  - **6.11.8** ✅ Reset to defaults functionality
 
 ---
 
