@@ -87,6 +87,12 @@ const navigationItems = [
     href: '/blog',
     icon: BookOpen,
     description: 'Public blog posts'
+  },
+  {
+    name: 'Settings',
+    href: '/settings',
+    icon: Settings,
+    description: 'Site settings'
   }
 ]
 

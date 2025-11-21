@@ -6,54 +6,66 @@ import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ArtworkService } from '@/services'
+import { SettingsService, SiteSettings } from '@/services/settings.service'
 import { Artwork } from '@/types'
 
 interface HeroCarouselProps {
-  autoRotateInterval?: number
   showControls?: boolean
   className?: string
 }
 
 const HeroCarousel = ({
-  autoRotateInterval = 5000,
   showControls = true,
   className = ""
 }: HeroCarouselProps) => {
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [settings, setSettings] = useState<SiteSettings>({
+    carouselRotationSpeed: 30000,
+    carouselAutoPlay: true,
+    carouselTransitionStyle: 'fade',
+    carouselPauseOnHover: true
+  })
   const [isPlaying, setIsPlaying] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch latest artworks for carousel
+  // Fetch carousel settings and artworks
   useEffect(() => {
-    const fetchArtworks = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true)
+
+        // Fetch settings
+        const carouselSettings = await SettingsService.getCarouselSettings()
+        setSettings(carouselSettings)
+        setIsPlaying(carouselSettings.carouselAutoPlay)
+
+        // Fetch artworks
         const response = await ArtworkService.getArtworks(
           { featured: true }, // Show featured artworks first
-          { page: 1, limit: 6 }
+          { page: 1, limit: 20 } // Show up to 20 featured artworks
         )
 
         if (response.artworks.length === 0) {
           // Fallback to latest artworks if no featured ones
           const fallbackResponse = await ArtworkService.getArtworks(
             {},
-            { page: 1, limit: 6 }
+            { page: 1, limit: 20 }
           )
           setArtworks(fallbackResponse.artworks)
         } else {
           setArtworks(response.artworks)
         }
       } catch (err) {
-        console.error('Error fetching artworks for carousel:', err)
+        console.error('Error fetching carousel data:', err)
         setError('Failed to load artworks')
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchArtworks()
+    fetchData()
   }, [])
 
   // Auto-rotation effect
@@ -62,10 +74,10 @@ const HeroCarousel = ({
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % artworks.length)
-    }, autoRotateInterval)
+    }, settings.carouselRotationSpeed)
 
     return () => clearInterval(interval)
-  }, [isPlaying, artworks.length, autoRotateInterval])
+  }, [isPlaying, artworks.length, settings.carouselRotationSpeed])
 
   // Keyboard navigation
   useEffect(() => {
@@ -129,8 +141,8 @@ const HeroCarousel = ({
   return (
     <div
       className={`relative h-screen w-full overflow-hidden ${className}`}
-      onMouseEnter={() => setIsPlaying(false)}
-      onMouseLeave={() => setIsPlaying(true)}
+      onMouseEnter={() => settings.carouselPauseOnHover && setIsPlaying(false)}
+      onMouseLeave={() => settings.carouselPauseOnHover && settings.carouselAutoPlay && setIsPlaying(true)}
     >
       {/* Main carousel content */}
       <AnimatePresence mode="wait">
@@ -239,7 +251,7 @@ const HeroCarousel = ({
           </Button>
 
           {/* Dot indicators */}
-          <div className="absolute bottom-36 z-10" style={{left: 'calc(50% + 20px)'}}>
+          <div className="absolute bottom-36 left-1/2 transform -translate-x-1/2 z-10">
             <div className="flex space-x-3">
               {artworks.map((_, index) => (
                 <button
@@ -266,7 +278,7 @@ const HeroCarousel = ({
             initial={{ width: '0%' }}
             animate={{ width: '100%' }}
             transition={{
-              duration: autoRotateInterval / 1000,
+              duration: settings.carouselRotationSpeed / 1000,
               ease: 'linear',
               repeat: Infinity
             }}

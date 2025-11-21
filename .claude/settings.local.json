@@ -19,7 +19,11 @@
       "Bash(cat:*)",
       "Bash(source:*)",
       "Bash(curl:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm i:*)",
+      "mcp__supabase__list_tables",
+      "Bash(timeout 5 sleep:*)",
+      "mcp__supabase__apply_migration"
     ],
     "deny": [],
     "ask": []

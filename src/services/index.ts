@@ -58,3 +58,8 @@ export type {
   GetGalleriesOptions,
   ServiceResponse
 } from './gallery.service'
+
+export { SettingsService } from './settings.service'
+export type {
+  SiteSettings
+} from './settings.service'
