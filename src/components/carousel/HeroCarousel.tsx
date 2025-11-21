@@ -250,23 +250,47 @@ const HeroCarousel = ({
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
 
-          {/* Dot indicators */}
-          <div className="absolute bottom-36 left-1/2 transform -translate-x-1/2 z-10">
-            <div className="flex space-x-3">
-              {artworks.map((_, index) => (
-                <button
-                  key={index}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    index === currentSlide
-                      ? 'bg-white scale-125'
-                      : 'bg-white/40 hover:bg-white/60'
-                  }`}
-                  onClick={() => goToSlide(index)}
-                  aria-label={`Go to artwork ${index + 1}`}
+          {/* Scroll indicator with dots */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5, duration: 0.8 }}
+            className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-white z-10"
+          >
+            <div className="flex flex-col items-center space-y-6">
+              {/* Dot indicators */}
+              <div className="flex space-x-3">
+                {artworks.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentSlide
+                        ? 'bg-white scale-125'
+                        : 'bg-white/40 hover:bg-white/60'
+                    }`}
+                    onClick={() => goToSlide(index)}
+                    aria-label={`Go to artwork ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Scroll text and line */}
+              <div className="flex flex-col items-center space-y-2">
+                <span className="text-xs opacity-70 uppercase tracking-wide">
+                  Scroll to explore
+                </span>
+                <motion.div
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  className="w-px h-8 bg-white/60"
                 />
-              ))}
+              </div>
             </div>
-          </div>
+          </motion.div>
         </>
       )}
 
@@ -286,29 +310,6 @@ const HeroCarousel = ({
           />
         </div>
       )}
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.5, duration: 0.8 }}
-        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-white z-10"
-      >
-        <div className="flex flex-col items-center space-y-2">
-          <span className="text-xs opacity-70 uppercase tracking-wide">
-            Scroll to explore
-          </span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="w-px h-8 bg-white/60"
-          />
-        </div>
-      </motion.div>
     </div>
   )
 }
