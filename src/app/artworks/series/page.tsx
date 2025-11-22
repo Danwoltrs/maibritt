@@ -15,41 +15,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
-// Mock data - replace with actual service calls
-const mockSeries = [
-  {
-    id: '1',
-    name: { ptBR: 'Azul no Negro', en: 'Blue in Black' },
-    description: { ptBR: 'Expedição ao Rio Negro, Amazônia', en: 'Rio Negro Expedition, Amazon' },
-    year: 2015,
-    artworkCount: 12,
-    coverImage: '/placeholder-artwork.jpg',
-    isActive: true,
-    isSeasonal: false
-  },
-  {
-    id: '2',
-    name: { ptBR: 'Confluências', en: 'Confluences' },
-    description: { ptBR: 'Encontros de culturas e paisagens', en: 'Cultural and landscape convergences' },
-    year: 2019,
-    artworkCount: 18,
-    coverImage: '/placeholder-artwork.jpg',
-    isActive: true,
-    isSeasonal: false
-  },
-  {
-    id: '3',
-    name: { ptBR: 'Fragmentos do Real', en: 'Fragments of Reality' },
-    description: { ptBR: 'Residência artística em Brooklyn', en: 'Artist residency in Brooklyn' },
-    year: 2022,
-    artworkCount: 15,
-    coverImage: '/placeholder-artwork.jpg',
-    isActive: true,
-    isSeasonal: true,
-    seasonStart: '2022-06-01',
-    seasonEnd: '2022-12-31'
-  }
-]
+import { SeriesService } from '@/services/series.service'
 
 // Form validation schema
 const seriesSchema = z.object({
@@ -80,7 +46,8 @@ interface Series {
 }
 
 export default function SeriesManagementPage() {
-  const [series, setSeries] = useState<Series[]>(mockSeries)
+  const [series, setSeries] = useState<Series[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingSeries, setEditingSeries] = useState<Series | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -103,6 +70,40 @@ export default function SeriesManagementPage() {
   })
 
   const watchIsSeasonal = watch('isSeasonal')
+
+  // Load series data on mount
+  useEffect(() => {
+    loadSeries()
+  }, [])
+
+  const loadSeries = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const data = await SeriesService.getSeries()
+
+      // Transform data to match our Series interface
+      const transformedData: Series[] = data.map(s => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        year: s.year,
+        artworkCount: s.artworkCount || 0,
+        coverImage: s.coverImage,
+        isActive: s.isActive,
+        isSeasonal: s.isSeasonal,
+        seasonStart: s.seasonStart,
+        seasonEnd: s.seasonEnd
+      }))
+
+      setSeries(transformedData)
+    } catch (error) {
+      console.error('Failed to load series:', error)
+      setError('Failed to load series. Please try refreshing the page.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const openCreateDialog = () => {
     setEditingSeries(null)
@@ -135,11 +136,7 @@ export default function SeriesManagementPage() {
     setError(null)
 
     try {
-      // Mock API call - replace with actual service
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const seriesData: Series = {
-        id: editingSeries?.id || Date.now().toString(),
+      const seriesInput = {
         name: {
           ptBR: data.namePt,
           en: data.nameEn
@@ -149,8 +146,6 @@ export default function SeriesManagementPage() {
           en: data.descriptionEn || ''
         },
         year: data.year,
-        artworkCount: editingSeries?.artworkCount || 0,
-        coverImage: editingSeries?.coverImage,
         isActive: data.isActive,
         isSeasonal: data.isSeasonal,
         seasonStart: data.isSeasonal ? data.seasonStart : undefined,
@@ -158,15 +153,19 @@ export default function SeriesManagementPage() {
       }
 
       if (editingSeries) {
-        setSeries(prev => prev.map(s => s.id === editingSeries.id ? seriesData : s))
+        await SeriesService.updateSeries(editingSeries.id, seriesInput)
       } else {
-        setSeries(prev => [seriesData, ...prev])
+        await SeriesService.createSeries(seriesInput)
       }
+
+      // Reload series list to get fresh data
+      await loadSeries()
 
       setIsDialogOpen(false)
       reset()
     } catch (error) {
-      setError('Failed to save series')
+      console.error('Failed to save series:', error)
+      setError(error instanceof Error ? error.message : 'Failed to save series')
     } finally {
       setIsSubmitting(false)
     }
@@ -178,11 +177,14 @@ export default function SeriesManagementPage() {
     }
 
     try {
-      // Mock API call - replace with actual service
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await SeriesService.deleteSeries(id)
+      // Remove from local state immediately for better UX
       setSeries(prev => prev.filter(s => s.id !== id))
     } catch (error) {
-      setError('Failed to delete series')
+      console.error('Failed to delete series:', error)
+      setError(error instanceof Error ? error.message : 'Failed to delete series')
+      // Reload to restore the series if delete failed
+      await loadSeries()
     }
   }
 
@@ -207,7 +209,16 @@ export default function SeriesManagementPage() {
       )}
 
       {/* Series Grid */}
-      {series.length === 0 ? (
+      {isLoading ? (
+        <Card className="text-center py-12">
+          <CardContent>
+            <div className="flex flex-col items-center justify-center">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-gray-900 mb-4" />
+              <p className="text-gray-600">Loading series...</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : series.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <FolderOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />

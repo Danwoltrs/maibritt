@@ -31,6 +31,12 @@ interface CommonMetadata {
   year?: number
 }
 
+interface ApplyToAllOptions {
+  category: boolean
+  series: boolean
+  year: boolean
+}
+
 interface ArtworkDetails {
   titlePt: string
   titleEn: string
@@ -83,7 +89,11 @@ export default function NewArtworkPage() {
   const [commonMetadata, setCommonMetadata] = useState<CommonMetadata>({
     year: new Date().getFullYear()
   })
-  const [applyToAll, setApplyToAll] = useState(true)
+  const [applyToAll, setApplyToAll] = useState<ApplyToAllOptions>({
+    category: false,
+    series: false,
+    year: false
+  })
   const [series, setSeries] = useState<SeriesOption[]>([])
   const [showNewSeriesDialog, setShowNewSeriesDialog] = useState(false)
   const [newSeriesNamePt, setNewSeriesNamePt] = useState('')
@@ -184,8 +194,13 @@ export default function NewArtworkPage() {
       return
     }
 
-    if (applyToAll && (!commonMetadata.category || !commonMetadata.year)) {
-      setError('Please select category and year when applying to all images')
+    // Validate required fields when "apply to all" is checked
+    if (applyToAll.category && !commonMetadata.category) {
+      setError('Please select a category since "Same category for all" is checked')
+      return
+    }
+    if (applyToAll.year && !commonMetadata.year) {
+      setError('Please select a year since "Same year for all" is checked')
       return
     }
 
@@ -256,8 +271,13 @@ export default function NewArtworkPage() {
       }
     }
 
-    if (!applyToAll && !commonMetadata.category) {
-      setError('Please select a category')
+    // Validate category and year are set (either via apply to all or common metadata)
+    if (!applyToAll.category && !commonMetadata.category) {
+      setError('Please select a category or enable "Same category for all"')
+      return
+    }
+    if (!applyToAll.year && !commonMetadata.year) {
+      setError('Please select a year or enable "Same year for all"')
       return
     }
 
@@ -287,7 +307,7 @@ export default function NewArtworkPage() {
             en: details.descriptionEn
           },
           category: commonMetadata.category!,
-          seriesId: commonMetadata.seriesId,
+          seriesId: applyToAll.series ? commonMetadata.seriesId : undefined,
           images: [image.file],
           forSale: details.forSale,
           price: details.forSale ? details.price : undefined,
@@ -440,155 +460,187 @@ export default function NewArtworkPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Apply to All Checkbox */}
-              <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg">
-                <Checkbox
-                  id="applyToAll"
-                  checked={applyToAll}
-                  onCheckedChange={(checked) => setApplyToAll(checked as boolean)}
-                />
-                <Label htmlFor="applyToAll" className="text-sm font-medium cursor-pointer">
-                  Same category, series, and year for all
-                </Label>
+              {/* Series & Collections */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Series & Collections (Optional)</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="applySeriesAll"
+                      checked={applyToAll.series}
+                      onCheckedChange={(checked) =>
+                        setApplyToAll(prev => ({ ...prev, series: checked as boolean }))
+                      }
+                    />
+                    <Label htmlFor="applySeriesAll" className="text-xs text-gray-600 cursor-pointer font-normal">
+                      Same for all
+                    </Label>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Select
+                    value={commonMetadata.seriesId}
+                    onValueChange={(value) =>
+                      setCommonMetadata(prev => ({ ...prev, seriesId: value }))
+                    }
+                    disabled={!applyToAll.series}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder={applyToAll.series ? "Select series" : "Enable 'Same for all' to select"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {series.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name.en} / {s.name.ptBR}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Dialog open={showNewSeriesDialog} onOpenChange={setShowNewSeriesDialog}>
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="outline" size="icon" disabled={!applyToAll.series}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create New Series</DialogTitle>
+                        <DialogDescription>
+                          Add a new series/collection to organize your artworks
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label>Series Name (Portuguese)</Label>
+                          <Input
+                            value={newSeriesNamePt}
+                            onChange={(e) => setNewSeriesNamePt(e.target.value)}
+                            placeholder="Nome da série"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Series Name (English)</Label>
+                          <Input
+                            value={newSeriesNameEn}
+                            onChange={(e) => setNewSeriesNameEn(e.target.value)}
+                            placeholder="Series name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Year</Label>
+                          <Select
+                            value={newSeriesYear.toString()}
+                            onValueChange={(value) => setNewSeriesYear(parseInt(value))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {generateYearOptions().map(year => (
+                                <SelectItem key={year} value={year.toString()}>
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button onClick={handleCreateNewSeries} className="w-full">
+                          Create Series
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
 
-              {applyToAll && (
-                <>
-                  {/* Series & Collections */}
-                  <div className="space-y-2">
-                    <Label>Series & Collections (Optional)</Label>
-                    <div className="flex gap-2">
-                      <Select
-                        value={commonMetadata.seriesId}
-                        onValueChange={(value) =>
-                          setCommonMetadata(prev => ({ ...prev, seriesId: value }))
-                        }
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select series" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {series.map((s) => (
-                            <SelectItem key={s.id} value={s.id}>
-                              {s.name.en} / {s.name.ptBR}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Dialog open={showNewSeriesDialog} onOpenChange={setShowNewSeriesDialog}>
-                        <DialogTrigger asChild>
-                          <Button type="button" variant="outline" size="icon">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Create New Series</DialogTitle>
-                            <DialogDescription>
-                              Add a new series/collection to organize your artworks
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                              <Label>Series Name (Portuguese)</Label>
-                              <Input
-                                value={newSeriesNamePt}
-                                onChange={(e) => setNewSeriesNamePt(e.target.value)}
-                                placeholder="Nome da série"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Series Name (English)</Label>
-                              <Input
-                                value={newSeriesNameEn}
-                                onChange={(e) => setNewSeriesNameEn(e.target.value)}
-                                placeholder="Series name"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Year</Label>
-                              <Select
-                                value={newSeriesYear.toString()}
-                                onValueChange={(value) => setNewSeriesYear(parseInt(value))}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {generateYearOptions().map(year => (
-                                    <SelectItem key={year} value={year.toString()}>
-                                      {year}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <Button onClick={handleCreateNewSeries} className="w-full">
-                              Create Series
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
-
-                  {/* Category */}
-                  <div className="space-y-2">
-                    <Label>Category *</Label>
-                    <Select
-                      value={commonMetadata.category}
-                      onValueChange={(value) =>
-                        setCommonMetadata(prev => ({
-                          ...prev,
-                          category: value as any
-                        }))
+              {/* Category */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Category *</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="applyCategoryAll"
+                      checked={applyToAll.category}
+                      onCheckedChange={(checked) =>
+                        setApplyToAll(prev => ({ ...prev, category: checked as boolean }))
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.value} value={category.value}>
-                            {category.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
+                    <Label htmlFor="applyCategoryAll" className="text-xs text-gray-600 cursor-pointer font-normal">
+                      Same for all
+                    </Label>
                   </div>
+                </div>
+                <Select
+                  value={commonMetadata.category}
+                  onValueChange={(value) =>
+                    setCommonMetadata(prev => ({
+                      ...prev,
+                      category: value as any
+                    }))
+                  }
+                  disabled={!applyToAll.category}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={applyToAll.category ? "Select category" : "Enable 'Same for all' to select"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  {/* Year */}
-                  <div className="space-y-2">
-                    <Label>Year *</Label>
-                    <Select
-                      value={commonMetadata.year?.toString()}
-                      onValueChange={(value) =>
-                        setCommonMetadata(prev => ({
-                          ...prev,
-                          year: parseInt(value)
-                        }))
+              {/* Year */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Year *</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="applyYearAll"
+                      checked={applyToAll.year}
+                      onCheckedChange={(checked) =>
+                        setApplyToAll(prev => ({ ...prev, year: checked as boolean }))
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {generateYearOptions().map(year => (
-                          <SelectItem key={year} value={year.toString()}>
-                            {year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
+                    <Label htmlFor="applyYearAll" className="text-xs text-gray-600 cursor-pointer font-normal">
+                      Same for all
+                    </Label>
                   </div>
-                </>
-              )}
+                </div>
+                <Select
+                  value={commonMetadata.year?.toString()}
+                  onValueChange={(value) =>
+                    setCommonMetadata(prev => ({
+                      ...prev,
+                      year: parseInt(value)
+                    }))
+                  }
+                  disabled={!applyToAll.year}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={applyToAll.year ? "Select year" : "Enable 'Same for all' to select"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {generateYearOptions().map(year => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              {!applyToAll && (
+              {(!applyToAll.category || !applyToAll.series || !applyToAll.year) && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-sm">
-                    You'll be able to set individual categories, series, and years for each artwork in the next step.
+                    {!applyToAll.category && !applyToAll.series && !applyToAll.year
+                      ? "You'll be able to set individual categories, series, and years for each artwork in the next step."
+                      : "Fields without 'Same for all' checked can be set individually for each artwork in the next step."
+                    }
                   </AlertDescription>
                 </Alert>
               )}
@@ -699,10 +751,18 @@ export default function NewArtworkPage() {
           <CardHeader>
             <CardTitle>Artwork Information</CardTitle>
             <CardDescription>
-              {applyToAll
-                ? `Category: ${commonMetadata.category}, Year: ${commonMetadata.year}`
-                : 'Enter details for this artwork'
-              }
+              {(applyToAll.category || applyToAll.series || applyToAll.year) ? (
+                <span>
+                  Common properties:{' '}
+                  {applyToAll.category && `Category: ${commonMetadata.category}`}
+                  {applyToAll.category && applyToAll.series && ', '}
+                  {applyToAll.series && commonMetadata.seriesId && `Series: ${series.find(s => s.id === commonMetadata.seriesId)?.name.en}`}
+                  {(applyToAll.category || applyToAll.series) && applyToAll.year && ', '}
+                  {applyToAll.year && `Year: ${commonMetadata.year}`}
+                </span>
+              ) : (
+                'Enter details for this artwork'
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
