@@ -159,8 +159,9 @@ export default function SeriesManagementPage() {
         year: data.year,
         isActive: data.isActive,
         isSeasonal: data.isSeasonal,
-        seasonStart: data.isSeasonal ? data.seasonStart : undefined,
-        seasonEnd: data.isSeasonal ? data.seasonEnd : undefined
+        // Convert string dates to Date objects for the service
+        seasonStart: data.isSeasonal && data.seasonStart ? new Date(data.seasonStart) : undefined,
+        seasonEnd: data.isSeasonal && data.seasonEnd ? new Date(data.seasonEnd) : undefined
       }
 
       if (editingSeries) {
