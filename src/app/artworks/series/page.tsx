@@ -92,13 +92,32 @@ export default function SeriesManagementPage() {
             .select('*', { count: 'exact', head: true })
             .eq('series_id', s.id)
 
+          // If no cover image is set, fetch a random artwork image from the series
+          let coverImage = s.coverImage
+          if (!coverImage && count && count > 0) {
+            const { data: artworks } = await supabase
+              .from('artworks')
+              .select('images')
+              .eq('series_id', s.id)
+              .limit(10) // Get up to 10 artworks
+
+            if (artworks && artworks.length > 0) {
+              // Pick a random artwork from the results
+              const randomArtwork = artworks[Math.floor(Math.random() * artworks.length)]
+              // Get the first image from the artwork's images array
+              if (randomArtwork.images && randomArtwork.images.length > 0) {
+                coverImage = randomArtwork.images[0].display || randomArtwork.images[0].thumbnail
+              }
+            }
+          }
+
           return {
             id: s.id,
             name: s.name,
             description: s.description,
             year: s.year,
             artworkCount: count || 0,
-            coverImage: s.coverImage,
+            coverImage,
             isActive: s.isActive,
             isSeasonal: s.isSeasonal,
             seasonStart: s.seasonStart ? (s.seasonStart instanceof Date ? s.seasonStart.toISOString().split('T')[0] : s.seasonStart) : undefined,
