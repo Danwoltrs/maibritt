@@ -16,6 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { SeriesService } from '@/services/series.service'
+import { supabase } from '@/lib/supabase'
 
 // Form validation schema
 const seriesSchema = z.object({
@@ -80,21 +81,31 @@ export default function SeriesManagementPage() {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await SeriesService.getSeries()
+      const data = await SeriesService.getSeries(true) // Include inactive series for admin
 
       // Transform data to match our Series interface
-      const transformedData: Series[] = data.map(s => ({
-        id: s.id,
-        name: s.name,
-        description: s.description,
-        year: s.year,
-        artworkCount: s.artworkCount || 0,
-        coverImage: s.coverImage,
-        isActive: s.isActive,
-        isSeasonal: s.isSeasonal,
-        seasonStart: s.seasonStart ? (s.seasonStart instanceof Date ? s.seasonStart.toISOString().split('T')[0] : s.seasonStart) : undefined,
-        seasonEnd: s.seasonEnd ? (s.seasonEnd instanceof Date ? s.seasonEnd.toISOString().split('T')[0] : s.seasonEnd) : undefined
-      }))
+      const transformedData: Series[] = await Promise.all(
+        data.map(async (s) => {
+          // Fetch artwork count for this series
+          const { count } = await supabase
+            .from('artworks')
+            .select('*', { count: 'exact', head: true })
+            .eq('series_id', s.id)
+
+          return {
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            year: s.year,
+            artworkCount: count || 0,
+            coverImage: s.coverImage,
+            isActive: s.isActive,
+            isSeasonal: s.isSeasonal,
+            seasonStart: s.seasonStart ? (s.seasonStart instanceof Date ? s.seasonStart.toISOString().split('T')[0] : s.seasonStart) : undefined,
+            seasonEnd: s.seasonEnd ? (s.seasonEnd instanceof Date ? s.seasonEnd.toISOString().split('T')[0] : s.seasonEnd) : undefined
+          }
+        })
+      )
 
       setSeries(transformedData)
     } catch (error) {
