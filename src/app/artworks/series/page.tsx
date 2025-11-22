@@ -92,8 +92,8 @@ export default function SeriesManagementPage() {
         coverImage: s.coverImage,
         isActive: s.isActive,
         isSeasonal: s.isSeasonal,
-        seasonStart: s.seasonStart,
-        seasonEnd: s.seasonEnd
+        seasonStart: s.seasonStart ? (s.seasonStart instanceof Date ? s.seasonStart.toISOString().split('T')[0] : s.seasonStart) : undefined,
+        seasonEnd: s.seasonEnd ? (s.seasonEnd instanceof Date ? s.seasonEnd.toISOString().split('T')[0] : s.seasonEnd) : undefined
       }))
 
       setSeries(transformedData)
