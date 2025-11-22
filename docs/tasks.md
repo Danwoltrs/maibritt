@@ -826,3 +826,61 @@ CREATE TABLE gallery_metrics (
 - Enhanced collector experience through Where to Find page
 - Increased international reach through gallery network
 - Better sales insights through comprehensive analytics
+
+---
+
+## Recent Updates & Progress Log
+
+### 2025-11-21: Upload Form & Series Management Improvements
+
+#### Upload Form Enhancement ✅
+- **6.7.10** ✅ Replace single "apply to all" checkbox with individual checkboxes
+  - Added separate "Same for all" checkbox for Category field
+  - Added separate "Same for all" checkbox for Series field
+  - Added separate "Same for all" checkbox for Year field
+  - Allows mix-and-match configurations (e.g., same series but different years)
+  - Fields are disabled until their respective checkbox is enabled
+  - Better UX with clear visual feedback for which fields apply to all images
+
+#### Series & Collections Management Improvements ✅
+- **6.9.4** ✅ Replace mock data with real SeriesService API calls
+  - Implemented real data fetching using SeriesService.getSeries()
+  - Added loading state with spinner during data fetch
+  - Integrated create/update/delete operations with Supabase
+  - Series now properly persist to database
+  - New series immediately appear in both management page and upload dropdown
+
+- **6.9.5** ✅ Fetch actual artwork counts for each series
+  - Query artworks table to get real count per series
+  - Display accurate artwork counts on series cards
+  - Use Promise.all for parallel count fetching (performance optimization)
+
+- **6.9.6** ✅ Auto-display random artwork as series cover image
+  - When series has no cover image set, automatically fetch random artwork
+  - Queries up to 10 artworks from series and picks one randomly
+  - Uses artwork's display or thumbnail image
+  - Provides visual variety on page refresh
+  - Falls back to placeholder icon if no artworks exist
+
+#### TypeScript Build Fixes ✅
+- Fixed date type conversions between form strings and Date objects
+- Converted Date objects to ISO date strings (YYYY-MM-DD) for display
+- Ensured type safety across SeriesService interface
+- All Vercel builds now passing successfully
+
+#### Technical Details
+- **Files Modified**:
+  - `src/app/(admin)/artworks/new/page.tsx` - Upload form with individual checkboxes
+  - `src/app/artworks/series/page.tsx` - Real data integration and random cover images
+
+- **Database Integration**:
+  - Direct Supabase queries for artwork counts
+  - Real-time series CRUD operations
+  - Efficient parallel data fetching with Promise.all
+
+#### Next Steps for Tomorrow
+- **Task 3.4** - Implement blog preview section on main page
+- **Task 4.5** - Build full blog/journal pages
+- **Task 6.6** - Implement private journal system for artist
+- Consider adding cover image upload functionality to series editor
+- Add ability to manually select series cover from existing artworks
