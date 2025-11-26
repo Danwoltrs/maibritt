@@ -30,6 +30,8 @@ export default function ArtworksPage() {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [previewArtwork, setPreviewArtwork] = useState<Artwork | null>(null)
+  const [previewImageIndex, setPreviewImageIndex] = useState(0)
   
   const [filters, setFilters] = useState<ArtworkPageFilters>({
     searchTerm: '',
@@ -460,7 +462,10 @@ export default function ArtworksPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => router.push(`/artworks/${artwork.id}`)}
+                    onClick={() => {
+                      setPreviewArtwork(artwork)
+                      setPreviewImageIndex(0)
+                    }}
                     className="h-8 px-2"
                   >
                     <Eye className="h-4 w-4" />
@@ -523,7 +528,7 @@ export default function ArtworksPage() {
               Are you sure you want to delete &quot;{selectedArtwork?.title.en}&quot;? This action cannot be undone and will also delete all associated images.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="flex justify-end gap-3">
             <Button
               variant="outline"
@@ -540,6 +545,121 @@ export default function ArtworksPage() {
               {isDeleting ? 'Deleting...' : 'Delete Artwork'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Artwork Preview Dialog */}
+      <Dialog open={!!previewArtwork} onOpenChange={() => setPreviewArtwork(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {previewArtwork && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl">
+                  {previewArtwork.title.en}
+                </DialogTitle>
+                <DialogDescription>
+                  {previewArtwork.title.ptBR}
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Main Image */}
+              <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+                {previewArtwork.images.length > 0 ? (
+                  <img
+                    src={previewArtwork.images[previewImageIndex]?.display || previewArtwork.images[previewImageIndex]?.original}
+                    alt={previewArtwork.title.en}
+                    className="w-full h-auto max-h-[60vh] object-contain mx-auto"
+                  />
+                ) : (
+                  <div className="h-64 flex items-center justify-center">
+                    <ImageIcon className="h-16 w-16 text-gray-400" />
+                  </div>
+                )}
+              </div>
+
+              {/* Image Thumbnails */}
+              {previewArtwork.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto py-2">
+                  {previewArtwork.images.map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setPreviewImageIndex(index)}
+                      className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden transition-all ${
+                        previewImageIndex === index
+                          ? 'border-blue-500 ring-2 ring-blue-200'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <img
+                        src={img.thumbnail || img.display}
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Artwork Details */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-500">Year:</span>
+                  <span className="ml-2">{previewArtwork.year}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-500">Category:</span>
+                  <span className="ml-2 capitalize">{previewArtwork.category}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="font-medium text-gray-500">Medium:</span>
+                  <span className="ml-2">{previewArtwork.medium.en}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="font-medium text-gray-500">Dimensions:</span>
+                  <span className="ml-2">{previewArtwork.dimensions}</span>
+                </div>
+                {previewArtwork.description?.en && (
+                  <div className="col-span-2">
+                    <span className="font-medium text-gray-500 block mb-1">Description:</span>
+                    <p className="text-gray-700">{previewArtwork.description.en}</p>
+                  </div>
+                )}
+                <div className="col-span-2 flex gap-2">
+                  {previewArtwork.forSale && (
+                    <Badge className="bg-green-100 text-green-800">
+                      <DollarSign className="h-3 w-3 mr-1" />
+                      Available at Gallery
+                    </Badge>
+                  )}
+                  {previewArtwork.featured && (
+                    <Badge className="bg-yellow-100 text-yellow-800">
+                      <Star className="h-3 w-3 mr-1" />
+                      Featured
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setPreviewArtwork(null)}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    router.push(`/artworks/${previewArtwork.id}/edit`)
+                    setPreviewArtwork(null)
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Artwork
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
