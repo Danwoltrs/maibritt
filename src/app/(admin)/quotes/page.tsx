@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { Plus, Search, Quote as QuoteIcon, Edit, Trash2, Star, StarOff, Eye, EyeOff, Newspaper, User, Users, GripVertical, ExternalLink, ImageIcon, Upload, X } from 'lucide-react'
+import { Plus, Search, Quote as QuoteIcon, Edit, Trash2, Star, StarOff, Eye, EyeOff, Newspaper, User, Users, GripVertical, ExternalLink, ImageIcon, Upload, X, RefreshCw, Globe, CheckCircle, AlertCircle } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,6 +18,20 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { QuotesService, Quote, QuoteType, QuoteCreateData, QuoteUpdateData, StorageService } from '@/services'
+
+// Scraped mention interface
+interface ScrapedMention {
+  source: string
+  sourceUrl: string
+  title: string
+  excerpt: string
+  quoteEn?: string
+  quotePt?: string
+  author?: string
+  authorTitle?: string
+  date?: string
+  imageUrl?: string
+}
 
 // Quote type configuration
 const quoteTypeConfig: Record<QuoteType, { label: string; labelPt: string; icon: React.ReactNode; color: string }> = {
@@ -62,10 +76,24 @@ export default function QuotesPage() {
   const [formData, setFormData] = useState(emptyFormData)
   const [uploadingImage, setUploadingImage] = useState(false)
 
-  // Load quotes
+  // Press discovery state
+  const [discoveredMentions, setDiscoveredMentions] = useState<ScrapedMention[]>([])
+  const [isDiscovering, setIsDiscovering] = useState(false)
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null)
+  const [lastDiscoveryTime, setLastDiscoveryTime] = useState<string | null>(null)
+  const [importedUrls, setImportedUrls] = useState<Set<string>>(new Set())
+
+  // Load quotes and discover press mentions on mount
   useEffect(() => {
     loadQuotes()
+    discoverPressMentions()
   }, [])
+
+  // Track which URLs are already in our quotes (to avoid duplicates)
+  useEffect(() => {
+    const existingUrls = new Set(quotes.map(q => q.sourceUrl).filter(Boolean) as string[])
+    setImportedUrls(existingUrls)
+  }, [quotes])
 
   const loadQuotes = async () => {
     try {
@@ -79,6 +107,49 @@ export default function QuotesPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Discover press mentions via web scraping
+  const discoverPressMentions = async () => {
+    setIsDiscovering(true)
+    setDiscoveryError(null)
+
+    try {
+      const response = await fetch('/api/scrape-press')
+      const data = await response.json()
+
+      if (data.success) {
+        setDiscoveredMentions(data.mentions || [])
+        setLastDiscoveryTime(data.scrapedAt)
+      } else {
+        setDiscoveryError(data.error || 'Failed to discover press mentions')
+      }
+    } catch (err) {
+      console.error('Error discovering press mentions:', err)
+      setDiscoveryError('Failed to connect to discovery service')
+    } finally {
+      setIsDiscovering(false)
+    }
+  }
+
+  // Import a discovered mention as a new quote
+  const importMention = (mention: ScrapedMention) => {
+    setSelectedQuote(null)
+    setFormData({
+      ...emptyFormData,
+      quoteEn: mention.quoteEn || mention.excerpt || '',
+      quotePt: mention.quotePt || '', // Will need manual translation
+      author: mention.author || '',
+      authorTitle: mention.authorTitle || '',
+      source: mention.source,
+      sourceUrl: mention.sourceUrl,
+      sourceDate: mention.date || '',
+      quoteType: 'press',
+      imageUrl: mention.imageUrl || '',
+      isActive: false, // Start as inactive until reviewed
+      featured: false
+    })
+    setIsFormOpen(true)
   }
 
   // Filter quotes
@@ -307,6 +378,123 @@ export default function QuotesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Press Discovery Section */}
+      <Card className="border-blue-200 bg-blue-50/50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">Press Discovery</CardTitle>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={discoverPressMentions}
+              disabled={isDiscovering}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isDiscovering ? 'animate-spin' : ''}`} />
+              {isDiscovering ? 'Scanning...' : 'Scan Web'}
+            </Button>
+          </div>
+          <CardDescription>
+            Automatically discovers mentions of Mai-Britt Wolthers across art platforms and galleries.
+            {lastDiscoveryTime && (
+              <span className="block mt-1 text-xs">
+                Last scanned: {new Date(lastDiscoveryTime).toLocaleString()}
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {discoveryError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{discoveryError}</AlertDescription>
+            </Alert>
+          )}
+
+          {isDiscovering ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <RefreshCw className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-2" />
+                <p className="text-sm text-gray-600">Scanning art platforms for mentions...</p>
+                <p className="text-xs text-gray-500 mt-1">This may take a few seconds</p>
+              </div>
+            </div>
+          ) : discoveredMentions.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 mb-3">
+                Found {discoveredMentions.length} potential sources. Click "Import" to add as a quote.
+              </p>
+              <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-2">
+                {discoveredMentions.map((mention, index) => {
+                  const isAlreadyImported = importedUrls.has(mention.sourceUrl)
+
+                  return (
+                    <div
+                      key={index}
+                      className={`p-4 rounded-lg border ${
+                        isAlreadyImported
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-white border-gray-200 hover:border-blue-300'
+                      } transition-colors`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="bg-white">
+                              {mention.source}
+                            </Badge>
+                            {isAlreadyImported && (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Imported
+                              </Badge>
+                            )}
+                          </div>
+                          <h4 className="font-medium text-gray-900 truncate">
+                            {mention.title}
+                          </h4>
+                          {mention.excerpt && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {mention.excerpt}
+                            </p>
+                          )}
+                          <a
+                            href={mention.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-flex items-center gap-1"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            View Source
+                          </a>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={isAlreadyImported ? 'outline' : 'default'}
+                          onClick={() => importMention(mention)}
+                          className="flex-shrink-0"
+                        >
+                          {isAlreadyImported ? 'Re-import' : 'Import'}
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-gray-500">
+              <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No mentions discovered yet.</p>
+              <p className="text-xs mt-1">Click "Scan Web" to search for press mentions.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <Card>
