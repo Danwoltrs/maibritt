@@ -17,7 +17,7 @@ export default function LoginPageContent() {
   const [artworksLoading, setArtworksLoading] = useState(true)
 
   // Get redirect URL from search params
-  const redirectTo = searchParams.get('redirectTo') || '/admin/dashboard'
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
   // Simple approach: don't redirect from login page, just show message
   // Let user manually navigate to admin or use direct URL
@@ -85,8 +85,8 @@ export default function LoginPageContent() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">You're Already Logged In</h2>
           <p className="text-gray-600 mb-6">You're already authenticated as an admin user.</p>
           <div className="space-y-3">
-            <a 
-              href="/admin/dashboard" 
+            <a
+              href="/dashboard"
               className="block w-full bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
             >
               Go to Admin Dashboard
