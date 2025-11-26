@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, FolderOpen, Calendar, Image } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Plus, Edit2, Trash2, FolderOpen, Calendar, Image, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -47,6 +48,7 @@ interface Series {
 }
 
 export default function SeriesManagementPage() {
+  const router = useRouter()
   const [series, setSeries] = useState<Series[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -264,7 +266,11 @@ export default function SeriesManagementPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {series.map((series) => (
-            <Card key={series.id} className="overflow-hidden">
+            <Card
+              key={series.id}
+              className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => router.push(`/series/${series.id}`)}
+            >
               <div className="aspect-video bg-gray-100 relative">
                 {series.coverImage ? (
                   <img
@@ -324,16 +330,32 @@ export default function SeriesManagementPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => openEditDialog(series)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/series/${series.id}`)
+                    }}
                     className="flex-1"
                   >
-                    <Edit2 className="h-4 w-4 mr-2" />
-                    Edit
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => deleteSeries(series.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openEditDialog(series)
+                    }}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteSeries(series.id)
+                    }}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4" />
