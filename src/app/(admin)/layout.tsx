@@ -14,9 +14,9 @@ export default function AdminLayout({
 
   return (
     <AuthGuard redirectTo="/login">
-      <div className="h-screen flex bg-gray-50">
-        {/* Sidebar for desktop */}
-        <div className="hidden lg:flex lg:w-64 lg:flex-col">
+      <div className="min-h-screen bg-gray-50">
+        {/* Fixed Sidebar for desktop */}
+        <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
           <AdminSidebar />
         </div>
 
@@ -33,8 +33,8 @@ export default function AdminLayout({
           </>
         )}
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Main content - offset by sidebar width on desktop */}
+        <div className="lg:pl-64 flex flex-col min-h-screen">
           <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
 
           <main className="flex-1 overflow-y-auto">

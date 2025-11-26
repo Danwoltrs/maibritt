@@ -17,7 +17,8 @@ import {
   ChevronRight,
   ChevronDown,
   FolderOpen,
-  Quote
+  Quote,
+  Calendar
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -58,6 +59,12 @@ const navigationItems = [
         description: 'Track locations'
       }
     ]
+  },
+  {
+    name: 'Exhibitions',
+    href: '/exhibitions/manage',
+    icon: Calendar,
+    description: 'Manage exhibitions'
   },
   {
     name: 'Galleries',
