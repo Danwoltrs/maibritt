@@ -16,7 +16,8 @@ import {
   LogOut,
   ChevronRight,
   ChevronDown,
-  FolderOpen
+  FolderOpen,
+  Quote
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -63,6 +64,12 @@ const navigationItems = [
     href: '/galleries',
     icon: Building,
     description: 'Partner galleries'
+  },
+  {
+    name: 'Quotes & Press',
+    href: '/quotes',
+    icon: Quote,
+    description: 'Quotes & reviews'
   },
   {
     name: 'Sales',

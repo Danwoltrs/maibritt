@@ -421,6 +421,85 @@ export class GalleryService {
       return { success: false, error: 'Failed to calculate gallery metrics' }
     }
   }
+
+  /**
+   * Get galleries with their associated artworks (for Gallery Locations section)
+   */
+  static async getGalleriesWithArtworks(limit = 6): Promise<ServiceResponse<(Gallery & { artworks: any[] })[]>> {
+    try {
+      // Get public galleries
+      const { data: galleries, error: galleryError } = await supabase
+        .from('galleries')
+        .select('*')
+        .eq('is_active', true)
+        .eq('show_on_website', true)
+        .order('featured', { ascending: false })
+        .order('display_order', { ascending: true })
+        .limit(limit)
+
+      if (galleryError) {
+        console.error('Error fetching galleries:', galleryError)
+        return { success: false, error: galleryError.message }
+      }
+
+      if (!galleries || galleries.length === 0) {
+        return { success: true, data: [] }
+      }
+
+      // For each gallery, fetch artworks with location_type = 'gallery' and location_id = gallery.id
+      const galleriesWithArtworks = await Promise.all(
+        galleries.map(async (gallery) => {
+          const { data: artworks, error: artworkError } = await supabase
+            .from('artworks')
+            .select('id, title_en, title_pt, images, year')
+            .eq('location_type', 'gallery')
+            .eq('location_id', gallery.id)
+            .limit(4)
+
+          if (artworkError) {
+            console.warn(`Error fetching artworks for gallery ${gallery.id}:`, artworkError)
+            return { ...gallery, artworks: [] }
+          }
+
+          return {
+            ...gallery,
+            artworks: artworks || []
+          }
+        })
+      )
+
+      return { success: true, data: galleriesWithArtworks }
+    } catch (error) {
+      console.error('Gallery service error:', error)
+      return { success: false, error: 'Failed to fetch galleries with artworks' }
+    }
+  }
+
+  /**
+   * Get featured galleries for homepage display
+   */
+  static async getFeaturedGalleries(limit = 3): Promise<ServiceResponse<Gallery[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('galleries')
+        .select('*')
+        .eq('is_active', true)
+        .eq('show_on_website', true)
+        .eq('featured', true)
+        .order('display_order', { ascending: true })
+        .limit(limit)
+
+      if (error) {
+        console.error('Error fetching featured galleries:', error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, data: data || [] }
+    } catch (error) {
+      console.error('Gallery service error:', error)
+      return { success: false, error: 'Failed to fetch featured galleries' }
+    }
+  }
 }
 
 export default GalleryService

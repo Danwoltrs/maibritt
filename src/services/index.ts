@@ -63,3 +63,11 @@ export { SettingsService } from './settings.service'
 export type {
   SiteSettings
 } from './settings.service'
+
+export { QuotesService } from './quotes.service'
+export type {
+  Quote,
+  QuoteType,
+  QuoteCreateData,
+  QuoteUpdateData
+} from './quotes.service'

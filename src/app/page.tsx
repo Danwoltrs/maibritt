@@ -5,7 +5,7 @@ import HeroCarousel from '@/components/carousel/HeroCarousel'
 import ExhibitionsTimeline from '@/components/exhibitions/ExhibitionsTimeline'
 import FeaturedSeries from '@/components/series/FeaturedSeries'
 import ArtistStatement from '@/components/sections/ArtistStatement'
-import CurrentAvailability from '@/components/sections/CurrentAvailability'
+import GalleryLocations from '@/components/sections/GalleryLocations'
 import BlogPreview from '@/components/sections/BlogPreview'
 import ScrollNavigation from '@/components/navigation/ScrollNavigation'
 
@@ -43,8 +43,8 @@ export default function Home() {
       {/* Artist Statement */}
       <ArtistStatement id="statement" />
 
-      {/* Current Availability */}
-      <CurrentAvailability id="availability" />
+      {/* Gallery Locations - Where to Find Work */}
+      <GalleryLocations id="availability" />
 
       {/* Blog Preview */}
       <BlogPreview id="blog" />

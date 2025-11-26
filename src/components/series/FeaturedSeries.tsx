@@ -17,7 +17,7 @@ interface FeaturedSeriesProps {
   limit?: number
 }
 
-const FeaturedSeries = ({ id = "series", className = "", limit = 3 }: FeaturedSeriesProps) => {
+const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSeriesProps) => {
   const [series, setSeries] = useState<SeriesWithArtworks[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -30,10 +30,12 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 3 }: FeaturedSe
     const fetchSeries = async () => {
       try {
         setIsLoading(true)
+        console.log('[FeaturedSeries] Fetching series with limit:', limit)
         const seriesData = await SeriesService.getFeaturedSeries(limit)
+        console.log('[FeaturedSeries] Fetched series:', seriesData?.length, seriesData)
         setSeries(seriesData)
       } catch (err) {
-        console.error('Error fetching featured series:', err)
+        console.error('[FeaturedSeries] Error fetching featured series:', err)
         setError('Failed to load series')
       } finally {
         setIsLoading(false)

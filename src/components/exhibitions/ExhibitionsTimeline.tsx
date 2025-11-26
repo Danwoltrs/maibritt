@@ -29,10 +29,12 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
     const fetchExhibitions = async () => {
       try {
         setIsLoading(true)
+        console.log('[ExhibitionsTimeline] Fetching exhibitions...')
         const exhibitionsData = await ExhibitionsService.getExhibitions()
+        console.log('[ExhibitionsTimeline] Fetched exhibitions:', exhibitionsData?.length, exhibitionsData)
         setExhibitions(exhibitionsData)
       } catch (err) {
-        console.error('Error fetching exhibitions:', err)
+        console.error('[ExhibitionsTimeline] Error fetching exhibitions:', err)
         setError('Failed to load exhibitions')
       } finally {
         setIsLoading(false)
