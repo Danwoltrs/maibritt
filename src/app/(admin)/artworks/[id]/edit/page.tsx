@@ -101,6 +101,20 @@ export default function EditArtworkPage({ params }: PageProps) {
   const [galleries, setGalleries] = useState<Gallery[]>([])
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
 
+  // Sold tracking
+  const [isSold, setIsSold] = useState(false)
+  const [soldPrice, setSoldPrice] = useState<number | undefined>()
+  const [soldCurrency, setSoldCurrency] = useState<'BRL' | 'USD' | 'EUR'>('BRL')
+  const [soldDate, setSoldDate] = useState<string>('')
+  const [buyerName, setBuyerName] = useState('')
+  const [buyerEmail, setBuyerEmail] = useState('')
+  const [buyerPhone, setBuyerPhone] = useState('')
+  const [buyerAddress, setBuyerAddress] = useState('')
+  const [buyerCity, setBuyerCity] = useState('')
+  const [buyerState, setBuyerState] = useState('')
+  const [buyerCountry, setBuyerCountry] = useState('')
+  const [buyerZipCode, setBuyerZipCode] = useState('')
+
   // Images
   const [existingImages, setExistingImages] = useState<Artwork['images']>([])
   const [newImages, setNewImages] = useState<{ file: File; preview: string }[]>([])
@@ -140,6 +154,19 @@ export default function EditArtworkPage({ params }: PageProps) {
         setLocationType(artworkData.locationType || artworkData.location_type || 'studio')
         setLocationId(artworkData.locationId || artworkData.location_id || undefined)
         setLocationNotes(artworkData.locationNotes || artworkData.location_notes || '')
+        // Sold tracking fields
+        setIsSold(artworkData.isSold || artworkData.is_sold || false)
+        setSoldPrice(artworkData.soldPrice || artworkData.sold_price || undefined)
+        setSoldCurrency(artworkData.soldCurrency || artworkData.sold_currency || 'BRL')
+        setSoldDate(artworkData.soldDate || artworkData.sold_date ? new Date(artworkData.soldDate || artworkData.sold_date).toISOString().split('T')[0] : '')
+        setBuyerName(artworkData.buyerName || artworkData.buyer_name || '')
+        setBuyerEmail(artworkData.buyerEmail || artworkData.buyer_email || '')
+        setBuyerPhone(artworkData.buyerPhone || artworkData.buyer_phone || '')
+        setBuyerAddress(artworkData.buyerAddress || artworkData.buyer_address || '')
+        setBuyerCity(artworkData.buyerCity || artworkData.buyer_city || '')
+        setBuyerState(artworkData.buyerState || artworkData.buyer_state || '')
+        setBuyerCountry(artworkData.buyerCountry || artworkData.buyer_country || '')
+        setBuyerZipCode(artworkData.buyerZipCode || artworkData.buyer_zip_code || '')
       } catch (err) {
         console.error('Error loading artwork:', err)
         setError('Failed to load artwork')
@@ -269,7 +296,20 @@ export default function EditArtworkPage({ params }: PageProps) {
         locationId: (locationType === 'gallery' || locationType === 'exhibition') ? locationId : undefined,
         locationNotes: locationNotes || undefined,
         newImages: newImages.map(img => img.file),
-        imagesToDelete
+        imagesToDelete,
+        // Sold tracking
+        isSold,
+        soldPrice: isSold ? soldPrice : undefined,
+        soldCurrency: isSold ? soldCurrency : undefined,
+        soldDate: isSold && soldDate ? new Date(soldDate) : undefined,
+        buyerName: isSold ? buyerName : undefined,
+        buyerEmail: isSold ? buyerEmail : undefined,
+        buyerPhone: isSold ? buyerPhone : undefined,
+        buyerAddress: isSold ? buyerAddress : undefined,
+        buyerCity: isSold ? buyerCity : undefined,
+        buyerState: isSold ? buyerState : undefined,
+        buyerCountry: isSold ? buyerCountry : undefined,
+        buyerZipCode: isSold ? buyerZipCode : undefined
       } as any)
 
       setSuccess(true)
@@ -621,12 +661,14 @@ export default function EditArtworkPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Sale Info */}
+            {/* Availability Info */}
             <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-lg font-medium">Availability / Disponibilidade</h3>
+
               <div className="flex items-center justify-between">
                 <div>
-                  <Label>Available for Sale</Label>
-                  <p className="text-sm text-gray-500">Mark this artwork as available for purchase</p>
+                  <Label>Available at Gallery</Label>
+                  <p className="text-sm text-gray-500">This artwork is available for viewing/purchase at a gallery</p>
                 </div>
                 <Switch checked={forSale} onCheckedChange={setForSale} />
               </div>
@@ -634,7 +676,7 @@ export default function EditArtworkPage({ params }: PageProps) {
               {forSale && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Price</Label>
+                    <Label>Asking Price</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -748,6 +790,138 @@ export default function EditArtworkPage({ params }: PageProps) {
                   rows={2}
                 />
               </div>
+            </div>
+
+            {/* Sold Tracking */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-lg font-medium">Sale Record / Registro de Venda</h3>
+              <p className="text-sm text-gray-500 -mt-2">Track when this artwork has been sold</p>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Mark as Sold</Label>
+                  <p className="text-sm text-gray-500">This artwork has been sold</p>
+                </div>
+                <Switch checked={isSold} onCheckedChange={setIsSold} />
+              </div>
+
+              {isSold && (
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                  {/* Sale Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Sale Price</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={soldPrice || ''}
+                        onChange={(e) => setSoldPrice(parseFloat(e.target.value) || undefined)}
+                        placeholder="5000.00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Currency</Label>
+                      <Select value={soldCurrency} onValueChange={(v) => setSoldCurrency(v as any)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {currencies.map((c) => (
+                            <SelectItem key={c.value} value={c.value}>
+                              {c.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sale Date</Label>
+                      <Input
+                        type="date"
+                        value={soldDate}
+                        onChange={(e) => setSoldDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Buyer Information */}
+                  <div className="pt-4 border-t">
+                    <h4 className="text-sm font-medium mb-3">Buyer Information (Optional)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Name</Label>
+                        <Input
+                          value={buyerName}
+                          onChange={(e) => setBuyerName(e.target.value)}
+                          placeholder="Buyer's name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input
+                          type="email"
+                          value={buyerEmail}
+                          onChange={(e) => setBuyerEmail(e.target.value)}
+                          placeholder="buyer@email.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Phone</Label>
+                        <Input
+                          type="tel"
+                          value={buyerPhone}
+                          onChange={(e) => setBuyerPhone(e.target.value)}
+                          placeholder="+1 234 567 8900"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Country</Label>
+                        <Input
+                          value={buyerCountry}
+                          onChange={(e) => setBuyerCountry(e.target.value)}
+                          placeholder="Country"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Address</Label>
+                        <Input
+                          value={buyerAddress}
+                          onChange={(e) => setBuyerAddress(e.target.value)}
+                          placeholder="Street address"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>City</Label>
+                        <Input
+                          value={buyerCity}
+                          onChange={(e) => setBuyerCity(e.target.value)}
+                          placeholder="City"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div className="space-y-2">
+                        <Label>State/Province</Label>
+                        <Input
+                          value={buyerState}
+                          onChange={(e) => setBuyerState(e.target.value)}
+                          placeholder="State or Province"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>ZIP/Postal Code</Label>
+                        <Input
+                          value={buyerZipCode}
+                          onChange={(e) => setBuyerZipCode(e.target.value)}
+                          placeholder="12345"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

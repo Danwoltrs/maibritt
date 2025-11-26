@@ -33,13 +33,30 @@ export interface ArtworkUpdateData {
   dimensions?: string
   description?: Content
   category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'mixed-media'
-  seriesId?: string
+  seriesId?: string | null
   newImages?: File[]
+  imagesToDelete?: string[]
   forSale?: boolean
   price?: number
   currency?: 'BRL' | 'USD' | 'EUR'
   featured?: boolean
   displayOrder?: number
+  locationType?: string
+  locationId?: string
+  locationNotes?: string
+  // Sold tracking
+  isSold?: boolean
+  soldPrice?: number
+  soldCurrency?: 'BRL' | 'USD' | 'EUR'
+  soldDate?: Date
+  buyerName?: string
+  buyerEmail?: string
+  buyerPhone?: string
+  buyerAddress?: string
+  buyerCity?: string
+  buyerState?: string
+  buyerCountry?: string
+  buyerZipCode?: string
 }
 
 export interface PaginationOptions {
@@ -290,8 +307,34 @@ export class ArtworkService {
       if (updateData.featured !== undefined) updateObject.featured = updateData.featured
       if (updateData.displayOrder !== undefined) updateObject.display_order = updateData.displayOrder
 
+      // Location fields
+      if (updateData.locationType !== undefined) updateObject.location_type = updateData.locationType
+      if (updateData.locationId !== undefined) updateObject.location_id = updateData.locationId || null
+      if (updateData.locationNotes !== undefined) updateObject.location_notes = updateData.locationNotes
+
+      // Sold tracking fields
+      if (updateData.isSold !== undefined) updateObject.is_sold = updateData.isSold
+      if (updateData.soldPrice !== undefined) updateObject.sold_price = updateData.soldPrice
+      if (updateData.soldCurrency !== undefined) updateObject.sold_currency = updateData.soldCurrency
+      if (updateData.soldDate !== undefined) updateObject.sold_date = updateData.soldDate
+      if (updateData.buyerName !== undefined) updateObject.buyer_name = updateData.buyerName
+      if (updateData.buyerEmail !== undefined) updateObject.buyer_email = updateData.buyerEmail
+      if (updateData.buyerPhone !== undefined) updateObject.buyer_phone = updateData.buyerPhone
+      if (updateData.buyerAddress !== undefined) updateObject.buyer_address = updateData.buyerAddress
+      if (updateData.buyerCity !== undefined) updateObject.buyer_city = updateData.buyerCity
+      if (updateData.buyerState !== undefined) updateObject.buyer_state = updateData.buyerState
+      if (updateData.buyerCountry !== undefined) updateObject.buyer_country = updateData.buyerCountry
+      if (updateData.buyerZipCode !== undefined) updateObject.buyer_zip_code = updateData.buyerZipCode
+
       // Always update images if we have new ones
       if (updateData.newImages && updateData.newImages.length > 0) {
+        updateObject.images = imageUrls
+      }
+
+      // Handle image deletions
+      if (updateData.imagesToDelete && updateData.imagesToDelete.length > 0) {
+        // Filter out deleted images
+        imageUrls = imageUrls.filter(img => !updateData.imagesToDelete!.includes(img.original))
         updateObject.images = imageUrls
       }
 
