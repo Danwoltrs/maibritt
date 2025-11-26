@@ -224,9 +224,9 @@ export default function QuotesPage() {
     setUploadingImage(true)
 
     try {
-      const result = await StorageService.uploadImage(file, 'quotes')
-      if (result.success && result.urls) {
-        setFormData(prev => ({ ...prev, imageUrl: result.urls!.display }))
+      const results = await StorageService.uploadImages([file], 'quotes')
+      if (results.length > 0 && results[0].urls) {
+        setFormData(prev => ({ ...prev, imageUrl: results[0].urls.display }))
       } else {
         setError('Failed to upload image')
       }

@@ -27,7 +27,7 @@ export class StorageService {
    */
   static async uploadImages(
     files: File[],
-    bucket: 'artworks' | 'exhibitions' | 'series',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes',
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResult[]> {
     const results: UploadResult[] = []
@@ -61,7 +61,7 @@ export class StorageService {
    */
   static async uploadSingleImage(
     file: File,
-    bucket: 'artworks' | 'exhibitions' | 'series',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes',
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResult> {
     // Validate file type
