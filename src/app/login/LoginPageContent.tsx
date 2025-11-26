@@ -19,8 +19,12 @@ export default function LoginPageContent() {
   // Get redirect URL from search params
   const redirectTo = searchParams.get('redirectTo') || '/dashboard'
 
-  // Simple approach: don't redirect from login page, just show message
-  // Let user manually navigate to admin or use direct URL
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      window.location.href = redirectTo
+    }
+  }, [loading, user, redirectTo])
 
   // Fetch latest artworks for carousel
   useEffect(() => {
@@ -72,32 +76,13 @@ export default function LoginPageContent() {
     )
   }
 
-  // Show message for authenticated users instead of redirecting
+  // Show redirecting state for authenticated users
   if (!loading && user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="text-green-600 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">You're Already Logged In</h2>
-          <p className="text-gray-600 mb-6">You're already authenticated as an admin user.</p>
-          <div className="space-y-3">
-            <a
-              href="/dashboard"
-              className="block w-full bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
-            >
-              Go to Admin Dashboard
-            </a>
-            <a 
-              href="/" 
-              className="block w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              Return to Main Site
-            </a>
-          </div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600">Redirecting to dashboard...</p>
         </div>
       </div>
     )
