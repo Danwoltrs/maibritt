@@ -22,8 +22,17 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [ref, isInView] = useScrollAnimation(0.05) // Lower threshold to trigger earlier
+  const [ref, isInView] = useScrollAnimation(0.01) // Very low threshold
   const [parallaxRef, parallaxY] = useParallax(30)
+
+  // Force visibility after a short delay to ensure content is shown
+  const [forceVisible, setForceVisible] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setForceVisible(true), 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const shouldAnimate = isInView || forceVisible
 
   // Fetch featured series data
   useEffect(() => {
@@ -108,14 +117,14 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
 
       <motion.div
         initial={{ opacity: 0 }}
-        animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+        animate={shouldAnimate ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 1 }}
         className="relative z-10"
       >
         <div className="text-center mb-16">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-4xl md:text-5xl font-light text-gray-900 mb-4"
           >
@@ -123,7 +132,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="text-xl text-gray-600 max-w-2xl mx-auto"
           >
@@ -143,7 +152,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
                 <motion.div
                   key={seriesItem.id}
                   initial={{ opacity: 0, y: 60, scale: 0.9 }}
-                  animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 60, scale: 0.9 }}
+                  animate={shouldAnimate ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 60, scale: 0.9 }}
                   transition={{
                     duration: 0.8,
                     delay: delay,
@@ -228,7 +237,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
                         {/* Artwork count indicator */}
                         <motion.div
                           initial={{ opacity: 0, scale: 0 }}
-                          animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+                          animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
                           transition={{ delay: delay + 0.5, type: "spring" }}
                           className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium text-gray-900"
                         >
@@ -239,7 +248,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
                       <CardContent className="p-6">
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
-                          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                          animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                           transition={{ delay: delay + 0.3 }}
                         >
                           <div className="flex items-center justify-between mb-3">
@@ -266,7 +275,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
                           {seriesItem.latestArtworks.length > 0 && (
                             <motion.div
                               initial={{ opacity: 0, y: 10 }}
-                              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                              animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                               transition={{ delay: delay + 0.6 }}
                               className="mt-4 flex space-x-2"
                             >
@@ -275,7 +284,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
                                   <motion.div
                                     key={artwork.id}
                                     initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+                                    animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
                                     transition={{ delay: delay + 0.7 + artIndex * 0.05 }}
                                     whileHover={{ scale: 1.1, zIndex: 10 }}
                                     className="w-12 h-12 relative rounded overflow-hidden border-2 border-gray-100 group-hover:border-blue-200 transition-colors"
@@ -308,7 +317,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
           {/* View all series button */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             transition={{ duration: 0.8, delay: 0.8 }}
             className="text-center mt-12"
           >
@@ -330,7 +339,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
       {/* Floating decorative elements */}
       <motion.div
         initial={{ opacity: 0, scale: 0 }}
-        animate={isInView ? {
+        animate={shouldAnimate ? {
           opacity: 1,
           scale: 1,
           y: [0, -15, 0],
@@ -347,7 +356,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
 
       <motion.div
         initial={{ opacity: 0, scale: 0 }}
-        animate={isInView ? {
+        animate={shouldAnimate ? {
           opacity: 1,
           scale: 1,
           y: [0, 20, 0],

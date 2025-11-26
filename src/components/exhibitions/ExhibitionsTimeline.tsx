@@ -20,7 +20,16 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [ref, isInView] = useScrollAnimation(0.05) // Lower threshold to trigger earlier
+  const [ref, isInView] = useScrollAnimation(0.01) // Very low threshold
+
+  // Force visibility after a short delay to ensure content is shown
+  const [forceVisible, setForceVisible] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setForceVisible(true), 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const shouldAnimate = isInView || forceVisible
   const [parallaxRef, parallaxOffset] = useContinuousParallax(0.3)
   const [progressRef, scrollProgress] = useScrollProgress()
 
@@ -143,14 +152,14 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
 
       <motion.div
         initial={{ opacity: 0, y: 50 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+        animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10"
       >
         <div className="text-center mb-16">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-4xl md:text-5xl font-light text-gray-900 mb-4"
           >
@@ -158,7 +167,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="text-xl text-gray-600 max-w-2xl mx-auto"
           >
@@ -178,7 +187,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
               <motion.div
                 key={exhibition.id}
                 initial={{ opacity: 0, x: isLeft ? -100 : 100, y: 50 }}
-                animate={isInView ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: isLeft ? -100 : 100, y: 50 }}
+                animate={shouldAnimate ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: isLeft ? -100 : 100, y: 50 }}
                 transition={{
                   duration: 0.8,
                   delay: delay,
@@ -191,7 +200,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                 {/* Timeline dot with fancy animation */}
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
-                  animate={isInView ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
+                  animate={shouldAnimate ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
                   transition={{
                     duration: 0.6,
                     delay: delay + 0.3,
@@ -210,7 +219,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                 {/* Exhibition card with parallax effect */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
-                  animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+                  animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
                   transition={{
                     duration: 0.8,
                     delay: delay + 0.4,
@@ -240,7 +249,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                       <div className="flex items-start justify-between mb-3">
                         <motion.span
                           initial={{ opacity: 0, x: -20 }}
-                          animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                          animate={shouldAnimate ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                           transition={{ delay: delay + 0.6 }}
                           className="text-3xl font-light text-gray-900"
                         >
@@ -256,7 +265,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
 
                       <motion.h3
                         initial={{ opacity: 0, y: 20 }}
-                        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                        animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                         transition={{ delay: delay + 0.7 }}
                         className="text-xl font-medium text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors"
                       >
@@ -265,7 +274,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
 
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
-                        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                        animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                         transition={{ delay: delay + 0.8 }}
                         className="space-y-2 text-sm text-gray-600"
                       >
@@ -284,7 +293,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                       {exhibition.featured && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.8 }}
-                          animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+                          animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
                           transition={{ delay: delay + 0.9 }}
                           className="mt-4"
                         >
@@ -300,7 +309,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                 {/* Floating year indicator with continuous movement */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
-                  animate={isInView ? {
+                  animate={shouldAnimate ? {
                     opacity: 1,
                     scale: 1,
                     y: [0, -10, 0],
@@ -334,7 +343,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
         {/* Statistics section with fancy animation */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+          animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
           transition={{ duration: 0.8, delay: 0.6 }}
           className="mt-20 text-center"
         >
@@ -347,14 +356,14 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
               <motion.div
                 key={index}
                 initial={{ opacity: 0, scale: 0.8 }}
-                animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+                animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
                 transition={{ delay: 0.8 + index * 0.1, duration: 0.6 }}
                 whileHover={{ scale: 1.05 }}
                 className="bg-white rounded-lg p-6 shadow-lg border border-gray-100"
               >
                 <motion.div
                   initial={{ opacity: 0 }}
-                  animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                  animate={shouldAnimate ? { opacity: 1 } : { opacity: 0 }}
                   transition={{ delay: 1 + index * 0.1 }}
                   className="text-4xl font-light text-gray-900 mb-2"
                 >

@@ -71,6 +71,7 @@ export default function SeriesManagementPage() {
   })
 
   const watchIsSeasonal = watch('isSeasonal')
+  const watchIsActive = watch('isActive')
 
   // Load series data on mount
   useEffect(() => {
@@ -429,7 +430,7 @@ export default function SeriesManagementPage() {
                 </div>
                 <Switch
                   id="isActive"
-                  {...register('isActive')}
+                  checked={watchIsActive}
                   onCheckedChange={(checked) => setValue('isActive', checked)}
                 />
               </div>
