@@ -11,8 +11,8 @@ import ScrollNavigation from '@/components/navigation/ScrollNavigation'
 
 const sectionIds = [
   'hero',
-  'exhibitions',
   'series',
+  'exhibitions',
   'statement',
   'availability',
   'blog'
@@ -34,11 +34,11 @@ export default function Home() {
         <HeroCarousel />
       </section>
 
-      {/* Exhibitions Timeline with Continuous Parallax */}
-      <ExhibitionsTimeline id="exhibitions" />
-
       {/* Featured Series Preview */}
       <FeaturedSeries id="series" />
+
+      {/* Exhibitions Timeline with Continuous Parallax */}
+      <ExhibitionsTimeline id="exhibitions" />
 
       {/* Artist Statement */}
       <ArtistStatement id="statement" />

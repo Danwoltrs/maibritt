@@ -104,6 +104,8 @@ export default function SeriesDetailPage({ params }: PageProps) {
         forSale: a.for_sale || false,
         price: a.price,
         currency: a.currency || 'BRL',
+        isAvailable: a.is_available ?? true,
+        displayOrder: a.display_order ?? 0,
         featured: a.featured || false,
         createdAt: a.created_at,
         updatedAt: a.updated_at
@@ -127,10 +129,12 @@ export default function SeriesDetailPage({ params }: PageProps) {
         description: { ptBR: a.description_pt || '', en: a.description_en || '' },
         images: a.images || [],
         category: a.category || 'painting',
-        series: null,
+        series: undefined,
         forSale: a.for_sale || false,
         price: a.price,
         currency: a.currency || 'BRL',
+        isAvailable: a.is_available ?? true,
+        displayOrder: a.display_order ?? 0,
         featured: a.featured || false,
         createdAt: a.created_at,
         updatedAt: a.updated_at

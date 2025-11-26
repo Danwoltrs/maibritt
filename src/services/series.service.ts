@@ -2,6 +2,9 @@ import { supabase } from '@/lib/supabase'
 import { ArtSeries, Content, Artwork } from '@/types'
 import { StorageService } from './storage.service'
 
+// Re-export ArtSeries for consumers of this service
+export type { ArtSeries } from '@/types'
+
 export interface SeriesCreateData {
   name: Content
   description?: Content

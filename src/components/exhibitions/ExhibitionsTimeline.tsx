@@ -139,8 +139,8 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
         <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2" />
       </div>
 
-      {/* Animated timeline line */}
-      <div ref={progressRef} className="absolute left-1/2 transform -translate-x-1/2 w-1 bg-gray-200 h-full">
+      {/* Animated timeline line - starts below the header section */}
+      <div ref={progressRef} className="absolute left-1/2 transform -translate-x-1/2 w-1 bg-gray-200 top-56 bottom-0">
         <motion.div
           className="w-full bg-gradient-to-b from-blue-500 to-purple-500"
           style={{
