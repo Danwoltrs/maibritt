@@ -67,11 +67,28 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
     )
   }
 
-  if (error || series.length === 0) {
+  if (error) {
     return (
       <section id={id} className={`py-24 px-8 bg-white ${className}`}>
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-gray-600">{error || 'No series available'}</p>
+          <p className="text-red-600">Error loading series: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800"
+          >
+            Retry
+          </button>
+        </div>
+      </section>
+    )
+  }
+
+  if (series.length === 0) {
+    return (
+      <section id={id} className={`py-24 px-8 bg-white ${className}`}>
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl font-light text-gray-900 mb-4">Featured Series</h2>
+          <p className="text-gray-600">No series available yet.</p>
         </div>
       </section>
     )
