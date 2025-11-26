@@ -20,7 +20,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [ref, isInView] = useScrollAnimation(0.2)
+  const [ref, isInView] = useScrollAnimation(0.05) // Lower threshold to trigger earlier
   const [parallaxRef, parallaxOffset] = useContinuousParallax(0.3)
   const [progressRef, scrollProgress] = useScrollProgress()
 

@@ -22,7 +22,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [ref, isInView] = useScrollAnimation(0.3)
+  const [ref, isInView] = useScrollAnimation(0.05) // Lower threshold to trigger earlier
   const [parallaxRef, parallaxY] = useParallax(30)
 
   // Fetch featured series data
