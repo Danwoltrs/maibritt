@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import Image from 'next/image'
-import { X, Plus, Video, Image as ImageIcon, Quote, Calendar, Link as LinkIcon } from 'lucide-react'
+import { X, Plus, Video, Image as ImageIcon, Quote, Calendar, Link as LinkIcon, Upload, MapPin, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,15 +13,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select'
-import { ExhibitionImage, ExhibitionVideo } from '@/types'
+import { ExhibitionImage, ExhibitionVideo, ExhibitionAddress } from '@/types'
+import { ExhibitionsService } from '@/services/exhibitions.service'
 
 export interface ExhibitionFormData {
   titleEn: string
   titlePt: string
   venue: string
-  location: string
+  // Address fields
+  street: string
+  streetNumber: string
+  neighborhood: string
+  zipCode: string
+  city: string
+  state: string
+  country: string
   year: number
-  type: 'solo' | 'group' | 'residency'
+  type: 'solo' | 'group' | 'residency' | 'installation'
   descriptionEn: string
   descriptionPt: string
   contentEn: string
@@ -36,7 +44,6 @@ export interface ExhibitionFormData {
   openingDate: string
   openingDetails: string
   featured: boolean
-  showPopup: boolean
   externalUrl: string
   catalogUrl: string
   imageFile: File | null
@@ -56,7 +63,13 @@ export const defaultFormData: ExhibitionFormData = {
   titleEn: '',
   titlePt: '',
   venue: '',
-  location: '',
+  street: '',
+  streetNumber: '',
+  neighborhood: '',
+  zipCode: '',
+  city: '',
+  state: '',
+  country: '',
   year: new Date().getFullYear(),
   type: 'solo',
   descriptionEn: '',
@@ -73,7 +86,6 @@ export const defaultFormData: ExhibitionFormData = {
   openingDate: '',
   openingDetails: '',
   featured: false,
-  showPopup: false,
   externalUrl: '',
   catalogUrl: '',
   imageFile: null
@@ -89,12 +101,13 @@ export function ExhibitionRichForm({
   existingImage
 }: ExhibitionRichFormProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [newImageUrl, setNewImageUrl] = useState('')
-  const [newImageCaptionEn, setNewImageCaptionEn] = useState('')
-  const [newImageCaptionPt, setNewImageCaptionPt] = useState('')
   const [newVideoUrl, setNewVideoUrl] = useState('')
   const [newVideoTitleEn, setNewVideoTitleEn] = useState('')
   const [newVideoTitlePt, setNewVideoTitlePt] = useState('')
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null)
+  const [editingCaption, setEditingCaption] = useState({ en: '', pt: '' })
+  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -108,18 +121,28 @@ export function ExhibitionRichForm({
     }
   }
 
-  const addGalleryImage = () => {
-    if (!newImageUrl) return
-    const newImage: ExhibitionImage = {
-      url: newImageUrl,
-      captionEn: newImageCaptionEn || undefined,
-      captionPt: newImageCaptionPt || undefined,
-      isCover: formData.images.length === 0
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setUploadingGallery(true)
+    try {
+      const fileArray = Array.from(files)
+      const uploadedImages = await ExhibitionsService.uploadGalleryImages(fileArray)
+
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...uploadedImages]
+      }))
+    } catch (error) {
+      console.error('Error uploading gallery images:', error)
+    } finally {
+      setUploadingGallery(false)
+      // Reset input
+      if (galleryInputRef.current) {
+        galleryInputRef.current.value = ''
+      }
     }
-    setFormData(prev => ({ ...prev, images: [...prev.images, newImage] }))
-    setNewImageUrl('')
-    setNewImageCaptionEn('')
-    setNewImageCaptionPt('')
   }
 
   const removeGalleryImage = (index: number) => {
@@ -127,6 +150,31 @@ export function ExhibitionRichForm({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }))
+    if (editingImageIndex === index) {
+      setEditingImageIndex(null)
+    }
+  }
+
+  const openCaptionEditor = (index: number) => {
+    const img = formData.images[index]
+    setEditingCaption({
+      en: img.captionEn || '',
+      pt: img.captionPt || ''
+    })
+    setEditingImageIndex(index)
+  }
+
+  const saveCaptions = () => {
+    if (editingImageIndex === null) return
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.map((img, i) =>
+        i === editingImageIndex
+          ? { ...img, captionEn: editingCaption.en || undefined, captionPt: editingCaption.pt || undefined }
+          : img
+      )
+    }))
+    setEditingImageIndex(null)
   }
 
   const addVideo = () => {
@@ -147,6 +195,22 @@ export function ExhibitionRichForm({
       ...prev,
       videos: prev.videos.filter((_, i) => i !== index)
     }))
+  }
+
+  // Build address helper for display
+  const getAddressPreview = (): string => {
+    const parts: string[] = []
+    if (formData.street) {
+      let streetLine = formData.street
+      if (formData.streetNumber) streetLine += `, ${formData.streetNumber}`
+      parts.push(streetLine)
+    }
+    if (formData.neighborhood) parts.push(formData.neighborhood)
+    if (formData.city) parts.push(formData.city)
+    if (formData.state) parts.push(formData.state)
+    if (formData.zipCode) parts.push(formData.zipCode)
+    if (formData.country) parts.push(formData.country)
+    return parts.join(' - ') || 'No address entered'
   }
 
   return (
@@ -191,15 +255,6 @@ export function ExhibitionRichForm({
               />
             </div>
             <div>
-              <Label htmlFor="location">Location *</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="e.g., New York, USA"
-              />
-            </div>
-            <div>
               <Label htmlFor="year">Year *</Label>
               <Input
                 id="year"
@@ -210,11 +265,11 @@ export function ExhibitionRichForm({
                 max={2100}
               />
             </div>
-            <div>
+            <div className="md:col-span-2">
               <Label htmlFor="type">Type *</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value: 'solo' | 'group' | 'residency') =>
+                onValueChange={(value: 'solo' | 'group' | 'residency' | 'installation') =>
                   setFormData(prev => ({ ...prev, type: value }))
                 }
               >
@@ -225,13 +280,95 @@ export function ExhibitionRichForm({
                   <SelectItem value="solo">Solo Exhibition</SelectItem>
                   <SelectItem value="group">Group Exhibition</SelectItem>
                   <SelectItem value="residency">Artist Residency</SelectItem>
+                  <SelectItem value="installation">Installation</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
+          {/* Address Section */}
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="w-5 h-5 text-gray-500" />
+              <h3 className="font-medium">Location Address</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="street">Street</Label>
+                <Input
+                  id="street"
+                  value={formData.street}
+                  onChange={(e) => setFormData(prev => ({ ...prev, street: e.target.value }))}
+                  placeholder="e.g., Rua Augusta"
+                />
+              </div>
+              <div>
+                <Label htmlFor="streetNumber">Number</Label>
+                <Input
+                  id="streetNumber"
+                  value={formData.streetNumber}
+                  onChange={(e) => setFormData(prev => ({ ...prev, streetNumber: e.target.value }))}
+                  placeholder="e.g., 1234"
+                />
+              </div>
+              <div>
+                <Label htmlFor="neighborhood">Neighborhood</Label>
+                <Input
+                  id="neighborhood"
+                  value={formData.neighborhood}
+                  onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
+                  placeholder="e.g., Consolação"
+                />
+              </div>
+              <div>
+                <Label htmlFor="zipCode">ZIP Code</Label>
+                <Input
+                  id="zipCode"
+                  value={formData.zipCode}
+                  onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value }))}
+                  placeholder="e.g., 01310-100"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city">City *</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="e.g., São Paulo"
+                />
+              </div>
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                  placeholder="e.g., SP"
+                />
+              </div>
+              <div>
+                <Label htmlFor="country">Country *</Label>
+                <Input
+                  id="country"
+                  value={formData.country}
+                  onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                  placeholder="e.g., Brazil"
+                />
+              </div>
+            </div>
+
+            {/* Address Preview */}
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Address preview:</span> {getAddressPreview()}
+              </p>
+            </div>
+          </div>
+
           {/* Cover Image */}
-          <div>
+          <div className="border-t pt-4 mt-4">
             <Label htmlFor="image">Cover Image</Label>
             <div className="mt-2 space-y-4">
               {(imagePreview || existingImage) && (
@@ -370,65 +507,105 @@ export function ExhibitionRichForm({
               <h3 className="font-medium">Gallery Images</h3>
             </div>
 
-            {/* Existing Images */}
+            {/* Existing Images Grid */}
             {formData.images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 {formData.images.map((img, index) => (
                   <div key={index} className="relative group">
-                    <div className="aspect-video relative rounded-lg overflow-hidden bg-gray-100">
+                    <div className="aspect-square relative rounded-lg overflow-hidden bg-gray-100">
                       <Image
                         src={img.url}
                         alt={img.captionEn || `Image ${index + 1}`}
                         fill
                         className="object-cover"
                       />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeGalleryImage(index)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openCaptionEditor(index)}
+                        >
+                          <Quote className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => removeGalleryImage(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    {img.captionEn && (
-                      <p className="text-xs text-gray-500 mt-1 truncate">{img.captionEn}</p>
+                    {(img.captionEn || img.captionPt) && (
+                      <p className="text-xs text-gray-500 mt-1 truncate">{img.captionEn || img.captionPt}</p>
                     )}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Add New Image */}
-            <div className="border rounded-lg p-4 space-y-3">
-              <Label>Add Gallery Image</Label>
-              <Input
-                value={newImageUrl}
-                onChange={(e) => setNewImageUrl(e.target.value)}
-                placeholder="Image URL (from Supabase storage)"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  value={newImageCaptionEn}
-                  onChange={(e) => setNewImageCaptionEn(e.target.value)}
-                  placeholder="Caption (English)"
-                />
-                <Input
-                  value={newImageCaptionPt}
-                  onChange={(e) => setNewImageCaptionPt(e.target.value)}
-                  placeholder="Legenda (Português)"
-                />
+            {/* Caption Editor Modal */}
+            {editingImageIndex !== null && (
+              <div className="mb-4 p-4 border rounded-lg bg-gray-50">
+                <h4 className="font-medium mb-3">Edit Caption for Image {editingImageIndex + 1}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Caption (English)</Label>
+                    <Textarea
+                      value={editingCaption.en}
+                      onChange={(e) => setEditingCaption(prev => ({ ...prev, en: e.target.value }))}
+                      placeholder="Write a caption..."
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <Label>Legenda (Português)</Label>
+                    <Textarea
+                      value={editingCaption.pt}
+                      onChange={(e) => setEditingCaption(prev => ({ ...prev, pt: e.target.value }))}
+                      placeholder="Escreva uma legenda..."
+                      rows={2}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <Button size="sm" onClick={saveCaptions}>Save Caption</Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditingImageIndex(null)}>Cancel</Button>
+                </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addGalleryImage}
-                disabled={!newImageUrl}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Image
-              </Button>
+            )}
+
+            {/* Upload New Images */}
+            <div className="border-2 border-dashed rounded-lg p-6 text-center">
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleGalleryUpload}
+                className="hidden"
+                id="gallery-upload"
+              />
+              <label htmlFor="gallery-upload" className="cursor-pointer">
+                {uploadingGallery ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                    <p className="text-sm text-gray-500">Uploading images...</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="w-8 h-8 text-gray-400" />
+                    <p className="text-sm text-gray-500">
+                      Click to upload images or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      You can select multiple images at once
+                    </p>
+                  </div>
+                )}
+              </label>
             </div>
           </div>
 
@@ -502,6 +679,10 @@ export function ExhibitionRichForm({
             <h3 className="font-medium">Exhibition Dates</h3>
           </div>
 
+          <p className="text-sm text-gray-500 mb-4">
+            The popup will automatically show for exhibitions that are upcoming or currently running (based on start/end dates).
+          </p>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="startDate">Start Date</Label>
@@ -561,17 +742,6 @@ export function ExhibitionRichForm({
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
               />
             </div>
-
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <Label>Show as Popup</Label>
-                <p className="text-sm text-gray-500">Display popup for upcoming exhibition</p>
-              </div>
-              <Switch
-                checked={formData.showPopup}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showPopup: checked }))}
-              />
-            </div>
           </div>
 
           <div className="border-t pt-4 mt-4">
@@ -611,7 +781,7 @@ export function ExhibitionRichForm({
         </Button>
         <Button
           onClick={onSubmit}
-          disabled={saving || !formData.titleEn || !formData.venue || !formData.location}
+          disabled={saving || !formData.titleEn || !formData.venue || !formData.city || !formData.country}
         >
           {saving ? 'Saving...' : submitLabel}
         </Button>

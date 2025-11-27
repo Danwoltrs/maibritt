@@ -113,15 +113,27 @@ export interface ExhibitionVideo {
   titleEn?: string
 }
 
+// Exhibition address structure
+export interface ExhibitionAddress {
+  street?: string
+  streetNumber?: string
+  neighborhood?: string
+  zipCode?: string
+  city: string
+  state?: string
+  country: string
+}
+
 export interface Exhibition {
   id: string
   // Basic info
   title: Content
   slug?: string
   venue: string
-  location: string
+  location: string // Legacy field (constructed from address)
+  address?: ExhibitionAddress
   year: number
-  type: 'solo' | 'group' | 'residency'
+  type: 'solo' | 'group' | 'residency' | 'installation'
 
   // Short description (for cards/previews)
   description?: Content

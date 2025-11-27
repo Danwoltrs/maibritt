@@ -1,13 +1,14 @@
 import { supabase } from '@/lib/supabase'
-import { Exhibition, ExhibitionImage, ExhibitionVideo, Content } from '@/types'
+import { Exhibition, ExhibitionImage, ExhibitionVideo, Content, ExhibitionAddress } from '@/types'
 import { StorageService } from './storage.service'
 
 export interface ExhibitionCreateData {
   title: Content
   venue: string
-  location: string
+  location?: string // Legacy - will be constructed from address
+  address?: ExhibitionAddress
   year: number
-  type: 'solo' | 'group' | 'residency'
+  type: 'solo' | 'group' | 'residency' | 'installation'
   description?: Content
   content?: Content
   curatorName?: string
@@ -28,9 +29,10 @@ export interface ExhibitionCreateData {
 export interface ExhibitionUpdateData {
   title?: Content
   venue?: string
-  location?: string
+  location?: string // Legacy - will be constructed from address
+  address?: ExhibitionAddress
   year?: number
-  type?: 'solo' | 'group' | 'residency'
+  type?: 'solo' | 'group' | 'residency' | 'installation'
   description?: Content
   content?: Content
   curatorName?: string
@@ -51,7 +53,7 @@ export interface ExhibitionUpdateData {
 }
 
 export interface ExhibitionFilters {
-  type?: 'solo' | 'group' | 'residency'
+  type?: 'solo' | 'group' | 'residency' | 'installation'
   year?: number
   featured?: boolean
   upcoming?: boolean
@@ -65,6 +67,39 @@ export interface ExhibitionsTimelineData {
 }
 
 export class ExhibitionsService {
+  /**
+   * Construct location string from address components
+   */
+  static constructLocationString(address?: ExhibitionAddress): string {
+    if (!address) return ''
+    const parts: string[] = []
+    if (address.city) parts.push(address.city)
+    if (address.state) parts.push(address.state)
+    if (address.country) parts.push(address.country)
+    return parts.join(', ')
+  }
+
+  /**
+   * Upload multiple gallery images for an exhibition
+   */
+  static async uploadGalleryImages(files: File[]): Promise<ExhibitionImage[]> {
+    const uploadedImages: ExhibitionImage[] = []
+
+    for (const file of files) {
+      try {
+        const uploadResult = await StorageService.uploadSingleImage(file, 'exhibitions')
+        uploadedImages.push({
+          url: uploadResult.urls.display,
+          isCover: false
+        })
+      } catch (error) {
+        console.error('Error uploading gallery image:', error)
+      }
+    }
+
+    return uploadedImages
+  }
+
   /**
    * Get all exhibitions with optional filtering
    */
@@ -283,6 +318,9 @@ export class ExhibitionsService {
       // Generate slug
       const slug = this.generateSlug(exhibitionData.title.en || exhibitionData.title.ptBR, exhibitionData.year)
 
+      // Construct location from address if provided
+      const locationString = exhibitionData.location || this.constructLocationString(exhibitionData.address)
+
       // Create exhibition record
       const { data, error } = await supabase
         .from('exhibitions')
@@ -301,7 +339,15 @@ export class ExhibitionsService {
           curator_text_pt: exhibitionData.curatorText?.ptBR || null,
           curator_text_en: exhibitionData.curatorText?.en || null,
           venue: exhibitionData.venue,
-          location: exhibitionData.location,
+          location: locationString,
+          // Address fields
+          street: exhibitionData.address?.street || null,
+          street_number: exhibitionData.address?.streetNumber || null,
+          neighborhood: exhibitionData.address?.neighborhood || null,
+          zip_code: exhibitionData.address?.zipCode || null,
+          city: exhibitionData.address?.city || null,
+          state: exhibitionData.address?.state || null,
+          country: exhibitionData.address?.country || null,
           year: exhibitionData.year,
           type: exhibitionData.type,
           image: imageUrl,
@@ -368,6 +414,19 @@ export class ExhibitionsService {
       if (updateData.location !== undefined) updateObject.location = updateData.location
       if (updateData.year !== undefined) updateObject.year = updateData.year
       if (updateData.type !== undefined) updateObject.type = updateData.type
+
+      // Handle address fields
+      if (updateData.address !== undefined) {
+        updateObject.street = updateData.address.street || null
+        updateObject.street_number = updateData.address.streetNumber || null
+        updateObject.neighborhood = updateData.address.neighborhood || null
+        updateObject.zip_code = updateData.address.zipCode || null
+        updateObject.city = updateData.address.city || null
+        updateObject.state = updateData.address.state || null
+        updateObject.country = updateData.address.country || null
+        // Update location string from address
+        updateObject.location = this.constructLocationString(updateData.address)
+      }
 
       if (updateData.images !== undefined) updateObject.images = updateData.images
       if (updateData.videos !== undefined) updateObject.videos = updateData.videos
@@ -510,7 +569,7 @@ export class ExhibitionsService {
    * Get exhibitions by type
    */
   static async getExhibitionsByType(
-    type: 'solo' | 'group' | 'residency'
+    type: 'solo' | 'group' | 'residency' | 'installation'
   ): Promise<Exhibition[]> {
     try {
       const { data, error } = await supabase
@@ -693,6 +752,15 @@ export class ExhibitionsService {
       slug: data.slug || '',
       venue: data.venue || '',
       location: data.location || '',
+      address: data.city || data.country ? {
+        street: data.street || undefined,
+        streetNumber: data.street_number || undefined,
+        neighborhood: data.neighborhood || undefined,
+        zipCode: data.zip_code || undefined,
+        city: data.city || '',
+        state: data.state || undefined,
+        country: data.country || ''
+      } : undefined,
       year: data.year,
       type: data.type,
       // Bilingual description

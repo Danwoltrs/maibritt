@@ -26,9 +26,38 @@ export default function UpcomingExhibitionPopup({ delay = 3000 }: UpcomingExhibi
     const fetchUpcomingExhibition = async () => {
       try {
         const exhibitions = await ExhibitionsService.getExhibitions()
+        const now = new Date()
 
-        // Find exhibitions with showPopup enabled
-        const popupExhibition = exhibitions.find(e => e.showPopup)
+        // Find upcoming or ongoing exhibitions automatically
+        // An exhibition should show popup if:
+        // 1. It has a start date in the future (upcoming), OR
+        // 2. It is currently ongoing (started but not ended)
+        const eligibleExhibitions = exhibitions.filter(e => {
+          if (!e.startDate && !e.endDate) return false
+
+          const startDate = e.startDate ? new Date(e.startDate) : null
+          const endDate = e.endDate ? new Date(e.endDate) : null
+
+          // Upcoming: starts in the future
+          if (startDate && startDate > now) return true
+
+          // Ongoing: has started and either no end date or end date is in the future
+          if (startDate && startDate <= now) {
+            if (!endDate) return true // No end date, assume ongoing
+            if (endDate >= now) return true // End date is today or in the future
+          }
+
+          return false
+        })
+
+        // Sort by start date to show the most imminent one
+        eligibleExhibitions.sort((a, b) => {
+          const dateA = a.startDate ? new Date(a.startDate).getTime() : 0
+          const dateB = b.startDate ? new Date(b.startDate).getTime() : 0
+          return dateA - dateB
+        })
+
+        const popupExhibition = eligibleExhibitions[0]
 
         if (popupExhibition && dismissedId !== popupExhibition.id) {
           setExhibition(popupExhibition)
@@ -87,6 +116,12 @@ export default function UpcomingExhibitionPopup({ delay = 3000 }: UpcomingExhibi
 
   const dateRange = formatDateRange(exhibition.startDate, exhibition.endDate)
 
+  // Determine if exhibition is upcoming or currently open
+  const now = new Date()
+  const isOngoing = exhibition.startDate && new Date(exhibition.startDate) <= now
+  const statusLabel = isOngoing ? 'Now Open' : 'Upcoming Exhibition'
+  const badgeColor = isOngoing ? 'bg-green-500' : 'bg-amber-500'
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -128,8 +163,8 @@ export default function UpcomingExhibitionPopup({ delay = 3000 }: UpcomingExhibi
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
-                    <Badge className="bg-amber-500 text-white border-0 mb-2">
-                      Upcoming Exhibition
+                    <Badge className={`${badgeColor} text-white border-0 mb-2`}>
+                      {statusLabel}
                     </Badge>
                     <h2 className="text-2xl font-light text-white">
                       {getDisplayTitle(exhibition)}
@@ -142,8 +177,8 @@ export default function UpcomingExhibitionPopup({ delay = 3000 }: UpcomingExhibi
               <div className="p-6 space-y-4">
                 {!exhibition.image && (
                   <div className="mb-4">
-                    <Badge className="bg-amber-500 text-white border-0 mb-2">
-                      Upcoming Exhibition
+                    <Badge className={`${badgeColor} text-white border-0 mb-2`}>
+                      {statusLabel}
                     </Badge>
                     <h2 className="text-2xl font-light text-gray-900">
                       {getDisplayTitle(exhibition)}

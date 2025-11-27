@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
   Plus, Edit2, Trash2, Eye, Search,
   Calendar, MapPin, Award, Users, Palette, Star, StarOff,
-  Image as ImageIcon, Bell, BellOff
+  Image as ImageIcon, Landmark
 } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -110,7 +110,14 @@ export default function ExhibitionsAdminPage() {
       titleEn: exhibition.title.en || '',
       titlePt: exhibition.title.ptBR || '',
       venue: exhibition.venue,
-      location: exhibition.location,
+      // Address fields
+      street: exhibition.address?.street || '',
+      streetNumber: exhibition.address?.streetNumber || '',
+      neighborhood: exhibition.address?.neighborhood || '',
+      zipCode: exhibition.address?.zipCode || '',
+      city: exhibition.address?.city || '',
+      state: exhibition.address?.state || '',
+      country: exhibition.address?.country || '',
       year: exhibition.year,
       type: exhibition.type,
       descriptionEn: exhibition.description?.en || '',
@@ -127,7 +134,6 @@ export default function ExhibitionsAdminPage() {
       openingDate: formatDateTimeForInput(exhibition.openingDate),
       openingDetails: exhibition.openingDetails || '',
       featured: exhibition.featured,
-      showPopup: exhibition.showPopup,
       externalUrl: exhibition.externalUrl || '',
       catalogUrl: exhibition.catalogUrl || '',
       imageFile: null
@@ -150,7 +156,15 @@ export default function ExhibitionsAdminPage() {
       const createData: ExhibitionCreateData = {
         title: { en: formData.titleEn, ptBR: formData.titlePt },
         venue: formData.venue,
-        location: formData.location,
+        address: {
+          street: formData.street || undefined,
+          streetNumber: formData.streetNumber || undefined,
+          neighborhood: formData.neighborhood || undefined,
+          zipCode: formData.zipCode || undefined,
+          city: formData.city,
+          state: formData.state || undefined,
+          country: formData.country
+        },
         year: formData.year,
         type: formData.type,
         description: { en: formData.descriptionEn, ptBR: formData.descriptionPt },
@@ -166,7 +180,6 @@ export default function ExhibitionsAdminPage() {
         openingDate: formData.openingDate ? new Date(formData.openingDate) : undefined,
         openingDetails: formData.openingDetails || undefined,
         featured: formData.featured,
-        showPopup: formData.showPopup,
         externalUrl: formData.externalUrl || undefined,
         catalogUrl: formData.catalogUrl || undefined,
         imageFile: formData.imageFile || undefined
@@ -195,7 +208,15 @@ export default function ExhibitionsAdminPage() {
       const updateData: ExhibitionUpdateData = {
         title: { en: formData.titleEn, ptBR: formData.titlePt },
         venue: formData.venue,
-        location: formData.location,
+        address: {
+          street: formData.street || undefined,
+          streetNumber: formData.streetNumber || undefined,
+          neighborhood: formData.neighborhood || undefined,
+          zipCode: formData.zipCode || undefined,
+          city: formData.city,
+          state: formData.state || undefined,
+          country: formData.country
+        },
         year: formData.year,
         type: formData.type,
         description: { en: formData.descriptionEn, ptBR: formData.descriptionPt },
@@ -211,7 +232,6 @@ export default function ExhibitionsAdminPage() {
         openingDate: formData.openingDate ? new Date(formData.openingDate) : null,
         openingDetails: formData.openingDetails || undefined,
         featured: formData.featured,
-        showPopup: formData.showPopup,
         externalUrl: formData.externalUrl || undefined,
         catalogUrl: formData.catalogUrl || undefined,
         newImageFile: formData.imageFile || undefined
@@ -261,17 +281,6 @@ export default function ExhibitionsAdminPage() {
     }
   }
 
-  // Handle toggle popup
-  const handleTogglePopup = async (exhibition: Exhibition) => {
-    try {
-      await ExhibitionsService.togglePopup(exhibition.id, !exhibition.showPopup)
-      await loadExhibitions()
-    } catch (err) {
-      console.error('Error toggling popup:', err)
-      setError('Failed to update exhibition')
-    }
-  }
-
   // Get type badge color
   const getTypeBadge = (type: string) => {
     switch (type) {
@@ -281,6 +290,8 @@ export default function ExhibitionsAdminPage() {
         return <Badge className="bg-green-100 text-green-800"><Users className="w-3 h-3 mr-1" />Group</Badge>
       case 'residency':
         return <Badge className="bg-purple-100 text-purple-800"><Palette className="w-3 h-3 mr-1" />Residency</Badge>
+      case 'installation':
+        return <Badge className="bg-orange-100 text-orange-800"><Landmark className="w-3 h-3 mr-1" />Installation</Badge>
       default:
         return <Badge variant="outline">{type}</Badge>
     }
@@ -352,6 +363,7 @@ export default function ExhibitionsAdminPage() {
                 <SelectItem value="solo">Solo</SelectItem>
                 <SelectItem value="group">Group</SelectItem>
                 <SelectItem value="residency">Residency</SelectItem>
+                <SelectItem value="installation">Installation</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterYear} onValueChange={setFilterYear}>
@@ -427,7 +439,6 @@ export default function ExhibitionsAdminPage() {
                     <TableHead className="w-[80px]">Year</TableHead>
                     <TableHead className="w-[100px]">Type</TableHead>
                     <TableHead className="w-[80px]">Featured</TableHead>
-                    <TableHead className="w-[80px]">Popup</TableHead>
                     <TableHead className="w-[150px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -477,20 +488,6 @@ export default function ExhibitionsAdminPage() {
                             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                           ) : (
                             <StarOff className="w-4 h-4 text-gray-400" />
-                          )}
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleTogglePopup(exhibition)}
-                          title={exhibition.showPopup ? 'Disable popup' : 'Enable popup'}
-                        >
-                          {exhibition.showPopup ? (
-                            <Bell className="w-4 h-4 text-blue-500 fill-blue-100" />
-                          ) : (
-                            <BellOff className="w-4 h-4 text-gray-400" />
                           )}
                         </Button>
                       </TableCell>
