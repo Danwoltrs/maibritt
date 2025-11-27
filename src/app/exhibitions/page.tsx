@@ -58,8 +58,13 @@ export default function ExhibitionsPage() {
     }
   }
 
+  // Helper to get display title (prefer English, fallback to Portuguese)
+  const getDisplayTitle = (exhibition: Exhibition) => exhibition.title.en || exhibition.title.ptBR
+  const getDisplayDescription = (exhibition: Exhibition) => exhibition.description?.en || exhibition.description?.ptBR || ''
+
   const generateSlug = (exhibition: Exhibition) => {
-    const titleSlug = exhibition.title.toLowerCase()
+    const title = getDisplayTitle(exhibition)
+    const titleSlug = title.toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
     return `${titleSlug}-${exhibition.year}`
@@ -182,7 +187,7 @@ export default function ExhibitionsPage() {
                       {exhibition.image ? (
                         <Image
                           src={exhibition.image}
-                          alt={exhibition.title}
+                          alt={getDisplayTitle(exhibition)}
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-700"
                         />
@@ -209,16 +214,16 @@ export default function ExhibitionsPage() {
                         </Badge>
                       </div>
                       <h3 className="text-xl font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                        {exhibition.title}
+                        {getDisplayTitle(exhibition)}
                       </h3>
                       <p className="text-sm font-medium text-gray-700 mb-1">{exhibition.venue}</p>
                       <div className="flex items-center text-sm text-gray-500">
                         <MapPin className="w-4 h-4 mr-1" />
                         {exhibition.location}
                       </div>
-                      {exhibition.description && (
+                      {getDisplayDescription(exhibition) && (
                         <p className="mt-3 text-sm text-gray-600 line-clamp-2">
-                          {exhibition.description}
+                          {getDisplayDescription(exhibition)}
                         </p>
                       )}
                     </CardContent>

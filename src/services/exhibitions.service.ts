@@ -1,28 +1,53 @@
 import { supabase } from '@/lib/supabase'
-import { Exhibition } from '@/types'
+import { Exhibition, ExhibitionImage, ExhibitionVideo, Content } from '@/types'
 import { StorageService } from './storage.service'
 
 export interface ExhibitionCreateData {
-  title: string
+  title: Content
   venue: string
   location: string
   year: number
   type: 'solo' | 'group' | 'residency'
-  description?: string
+  description?: Content
+  content?: Content
+  curatorName?: string
+  curatorText?: Content
   imageFile?: File
+  images?: ExhibitionImage[]
+  videos?: ExhibitionVideo[]
+  startDate?: Date
+  endDate?: Date
+  openingDate?: Date
+  openingDetails?: string
   featured?: boolean
+  showPopup?: boolean
+  externalUrl?: string
+  catalogUrl?: string
 }
 
 export interface ExhibitionUpdateData {
-  title?: string
+  title?: Content
   venue?: string
   location?: string
   year?: number
   type?: 'solo' | 'group' | 'residency'
-  description?: string
+  description?: Content
+  content?: Content
+  curatorName?: string
+  curatorText?: Content
   newImageFile?: File
+  images?: ExhibitionImage[]
+  videos?: ExhibitionVideo[]
+  startDate?: Date | null
+  endDate?: Date | null
+  openingDate?: Date | null
+  openingDetails?: string
   featured?: boolean
+  showPopup?: boolean
+  isVisible?: boolean
   displayOrder?: number
+  externalUrl?: string
+  catalogUrl?: string
 }
 
 export interface ExhibitionFilters {
@@ -30,6 +55,7 @@ export interface ExhibitionFilters {
   year?: number
   featured?: boolean
   upcoming?: boolean
+  showPopup?: boolean
 }
 
 export interface ExhibitionsTimelineData {
@@ -63,12 +89,17 @@ export class ExhibitionsService {
         query = query.eq('featured', filters.featured)
       }
 
+      if (filters.showPopup !== undefined) {
+        query = query.eq('show_popup', filters.showPopup)
+      }
+
       if (filters.upcoming !== undefined) {
-        const currentYear = new Date().getFullYear()
+        const today = new Date().toISOString().split('T')[0]
         if (filters.upcoming) {
-          query = query.gte('year', currentYear)
+          // Has start_date in the future OR year >= current year with no start_date
+          query = query.or(`start_date.gte.${today},and(start_date.is.null,year.gte.${new Date().getFullYear()})`)
         } else {
-          query = query.lt('year', currentYear)
+          query = query.or(`end_date.lt.${today},and(end_date.is.null,year.lt.${new Date().getFullYear()})`)
         }
       }
 
@@ -88,17 +119,45 @@ export class ExhibitionsService {
   }
 
   /**
+   * Get exhibitions for popup (upcoming with show_popup = true)
+   */
+  static async getUpcomingPopupExhibition(): Promise<Exhibition | null> {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+
+      const { data, error } = await supabase
+        .from('exhibitions')
+        .select('*')
+        .eq('show_popup', true)
+        .or(`start_date.gte.${today},end_date.gte.${today}`)
+        .order('start_date', { ascending: true })
+        .limit(1)
+
+      if (error) throw error
+
+      if (!data || data.length === 0) return null
+
+      return this.transformExhibitionFromDB(data[0])
+    } catch (error) {
+      console.error('Error fetching popup exhibition:', error)
+      return null
+    }
+  }
+
+  /**
    * Get exhibitions organized for timeline display
    */
   static async getExhibitionsTimeline(): Promise<ExhibitionsTimelineData> {
     try {
       const currentYear = new Date().getFullYear()
+      const today = new Date().toISOString().split('T')[0]
 
-      // Get upcoming exhibitions
+      // Get upcoming exhibitions (by date or year)
       const { data: upcomingData, error: upcomingError } = await supabase
         .from('exhibitions')
         .select('*')
-        .gte('year', currentYear)
+        .or(`start_date.gte.${today},and(start_date.is.null,year.gte.${currentYear})`)
+        .order('start_date', { ascending: true, nullsFirst: false })
         .order('year', { ascending: true })
         .order('display_order', { ascending: true })
 
@@ -108,7 +167,8 @@ export class ExhibitionsService {
       const { data: pastData, error: pastError } = await supabase
         .from('exhibitions')
         .select('*')
-        .lt('year', currentYear)
+        .or(`end_date.lt.${today},and(end_date.is.null,year.lt.${currentYear})`)
+        .order('end_date', { ascending: false, nullsFirst: false })
         .order('year', { ascending: false })
         .order('display_order', { ascending: true })
 
@@ -161,6 +221,38 @@ export class ExhibitionsService {
   }
 
   /**
+   * Get exhibition by slug
+   */
+  static async getExhibitionBySlug(slug: string): Promise<Exhibition | null> {
+    try {
+      const { data, error } = await supabase
+        .from('exhibitions')
+        .select('*')
+        .eq('slug', slug)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null
+        }
+        throw error
+      }
+
+      return this.transformExhibitionFromDB(data)
+    } catch (error) {
+      console.error('Error fetching exhibition by slug:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Generate slug from title and year
+   */
+  static generateSlug(title: string, year: number): string {
+    return `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${year}`
+  }
+
+  /**
    * Create a new exhibition
    */
   static async createExhibition(
@@ -188,18 +280,42 @@ export class ExhibitionsService {
 
       const nextDisplayOrder = (maxOrderData?.[0]?.display_order || 0) + 1
 
+      // Generate slug
+      const slug = this.generateSlug(exhibitionData.title.en || exhibitionData.title.ptBR, exhibitionData.year)
+
       // Create exhibition record
       const { data, error } = await supabase
         .from('exhibitions')
         .insert({
-          title: exhibitionData.title,
+          // Legacy field for backward compatibility
+          title: exhibitionData.title.en || exhibitionData.title.ptBR,
+          description: exhibitionData.description?.en || exhibitionData.description?.ptBR || '',
+          // New bilingual fields
+          title_pt: exhibitionData.title.ptBR,
+          title_en: exhibitionData.title.en,
+          description_pt: exhibitionData.description?.ptBR || '',
+          description_en: exhibitionData.description?.en || '',
+          content_pt: exhibitionData.content?.ptBR || '',
+          content_en: exhibitionData.content?.en || '',
+          curator_name: exhibitionData.curatorName || null,
+          curator_text_pt: exhibitionData.curatorText?.ptBR || null,
+          curator_text_en: exhibitionData.curatorText?.en || null,
           venue: exhibitionData.venue,
           location: exhibitionData.location,
           year: exhibitionData.year,
           type: exhibitionData.type,
-          description: exhibitionData.description || '',
           image: imageUrl,
+          images: exhibitionData.images || [],
+          videos: exhibitionData.videos || [],
+          start_date: exhibitionData.startDate?.toISOString().split('T')[0] || null,
+          end_date: exhibitionData.endDate?.toISOString().split('T')[0] || null,
+          opening_date: exhibitionData.openingDate?.toISOString() || null,
+          opening_details: exhibitionData.openingDetails || null,
           featured: exhibitionData.featured || false,
+          show_popup: exhibitionData.showPopup || false,
+          external_url: exhibitionData.externalUrl || null,
+          catalog_url: exhibitionData.catalogUrl || null,
+          slug,
           display_order: nextDisplayOrder
         })
         .select()
@@ -225,14 +341,55 @@ export class ExhibitionsService {
       // Prepare update object
       const updateObject: any = {}
 
-      if (updateData.title !== undefined) updateObject.title = updateData.title
+      if (updateData.title) {
+        updateObject.title = updateData.title.en || updateData.title.ptBR
+        updateObject.title_pt = updateData.title.ptBR
+        updateObject.title_en = updateData.title.en
+      }
+
+      if (updateData.description) {
+        updateObject.description = updateData.description.en || updateData.description.ptBR
+        updateObject.description_pt = updateData.description.ptBR
+        updateObject.description_en = updateData.description.en
+      }
+
+      if (updateData.content) {
+        updateObject.content_pt = updateData.content.ptBR
+        updateObject.content_en = updateData.content.en
+      }
+
+      if (updateData.curatorName !== undefined) updateObject.curator_name = updateData.curatorName
+      if (updateData.curatorText) {
+        updateObject.curator_text_pt = updateData.curatorText.ptBR
+        updateObject.curator_text_en = updateData.curatorText.en
+      }
+
       if (updateData.venue !== undefined) updateObject.venue = updateData.venue
       if (updateData.location !== undefined) updateObject.location = updateData.location
       if (updateData.year !== undefined) updateObject.year = updateData.year
       if (updateData.type !== undefined) updateObject.type = updateData.type
-      if (updateData.description !== undefined) updateObject.description = updateData.description
+
+      if (updateData.images !== undefined) updateObject.images = updateData.images
+      if (updateData.videos !== undefined) updateObject.videos = updateData.videos
+
+      if (updateData.startDate !== undefined) {
+        updateObject.start_date = updateData.startDate ? updateData.startDate.toISOString().split('T')[0] : null
+      }
+      if (updateData.endDate !== undefined) {
+        updateObject.end_date = updateData.endDate ? updateData.endDate.toISOString().split('T')[0] : null
+      }
+      if (updateData.openingDate !== undefined) {
+        updateObject.opening_date = updateData.openingDate ? updateData.openingDate.toISOString() : null
+      }
+      if (updateData.openingDetails !== undefined) updateObject.opening_details = updateData.openingDetails
+
       if (updateData.featured !== undefined) updateObject.featured = updateData.featured
+      if (updateData.showPopup !== undefined) updateObject.show_popup = updateData.showPopup
+      if (updateData.isVisible !== undefined) updateObject.is_visible = updateData.isVisible
       if (updateData.displayOrder !== undefined) updateObject.display_order = updateData.displayOrder
+
+      if (updateData.externalUrl !== undefined) updateObject.external_url = updateData.externalUrl
+      if (updateData.catalogUrl !== undefined) updateObject.catalog_url = updateData.catalogUrl
 
       // Upload new image if provided
       if (updateData.newImageFile) {
@@ -241,6 +398,16 @@ export class ExhibitionsService {
           'exhibitions'
         )
         updateObject.image = uploadResult.urls.display
+      }
+
+      // Update slug if title or year changed
+      if (updateData.title || updateData.year) {
+        const exhibition = await this.getExhibitionById(id)
+        if (exhibition) {
+          const titleForSlug = updateData.title?.en || updateData.title?.ptBR || exhibition.title.en || exhibition.title.ptBR
+          const yearForSlug = updateData.year || exhibition.year
+          updateObject.slug = this.generateSlug(titleForSlug, yearForSlug)
+        }
       }
 
       // Update exhibition record
@@ -433,6 +600,27 @@ export class ExhibitionsService {
   }
 
   /**
+   * Toggle popup status of an exhibition
+   */
+  static async togglePopup(id: string, showPopup: boolean): Promise<Exhibition> {
+    try {
+      const { data, error } = await supabase
+        .from('exhibitions')
+        .update({ show_popup: showPopup })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return this.transformExhibitionFromDB(data)
+    } catch (error) {
+      console.error('Error toggling popup status:', error)
+      throw error
+    }
+  }
+
+  /**
    * Get exhibition statistics
    */
   static async getExhibitionStats(): Promise<{
@@ -492,19 +680,57 @@ export class ExhibitionsService {
 
   /**
    * Transform database record to Exhibition type
+   * Supports both legacy (single language) and new (bilingual) data
    */
   private static transformExhibitionFromDB(data: any): Exhibition {
     return {
       id: data.id,
-      title: data.title,
-      venue: data.venue,
-      location: data.location,
+      // Bilingual title - fallback to legacy title field
+      title: {
+        ptBR: data.title_pt || data.title || '',
+        en: data.title_en || data.title || ''
+      },
+      slug: data.slug || '',
+      venue: data.venue || '',
+      location: data.location || '',
       year: data.year,
       type: data.type,
-      description: data.description || '',
+      // Bilingual description
+      description: {
+        ptBR: data.description_pt || data.description || '',
+        en: data.description_en || data.description || ''
+      },
+      // Rich content
+      content: {
+        ptBR: data.content_pt || '',
+        en: data.content_en || ''
+      },
+      // Curator info
+      curatorName: data.curator_name || undefined,
+      curatorText: data.curator_text_pt || data.curator_text_en ? {
+        ptBR: data.curator_text_pt || '',
+        en: data.curator_text_en || ''
+      } : undefined,
+      // Media
       image: data.image || '',
-      featured: data.featured,
-      displayOrder: data.display_order
+      images: data.images || [],
+      videos: data.videos || [],
+      // Dates
+      startDate: data.start_date ? new Date(data.start_date) : undefined,
+      endDate: data.end_date ? new Date(data.end_date) : undefined,
+      openingDate: data.opening_date ? new Date(data.opening_date) : undefined,
+      openingDetails: data.opening_details || undefined,
+      // Display settings
+      featured: data.featured || false,
+      showPopup: data.show_popup || false,
+      isVisible: data.is_visible !== false, // default to true
+      displayOrder: data.display_order || 0,
+      // Links
+      externalUrl: data.external_url || undefined,
+      catalogUrl: data.catalog_url || undefined,
+      // Timestamps
+      createdAt: data.created_at ? new Date(data.created_at) : undefined,
+      updatedAt: data.updated_at ? new Date(data.updated_at) : undefined
     }
   }
 }

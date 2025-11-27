@@ -79,6 +79,10 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
     }
   }
 
+  // Helper to get display title (prefer English, fallback to Portuguese)
+  const getDisplayTitle = (exhibition: Exhibition) => exhibition.title.en || exhibition.title.ptBR
+  const getDisplayDescription = (exhibition: Exhibition) => exhibition.description?.en || exhibition.description?.ptBR || ''
+
   if (isLoading) {
     return (
       <section id={id} className={`py-24 px-8 bg-gray-50 ${className}`}>
@@ -237,7 +241,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                       <div className="relative h-48 overflow-hidden">
                         <Image
                           src={exhibition.image}
-                          alt={exhibition.title}
+                          alt={getDisplayTitle(exhibition)}
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-700"
                         />
@@ -269,7 +273,7 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                         transition={{ delay: delay + 0.7 }}
                         className="text-xl font-medium text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors"
                       >
-                        {exhibition.title}
+                        {getDisplayTitle(exhibition)}
                       </motion.h3>
 
                       <motion.div
@@ -283,9 +287,9 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                           <MapPin className="w-4 h-4" />
                           <span>{exhibition.location}</span>
                         </div>
-                        {exhibition.description && (
+                        {getDisplayDescription(exhibition) && (
                           <p className="line-clamp-3 mt-3 text-gray-700">
-                            {exhibition.description}
+                            {getDisplayDescription(exhibition)}
                           </p>
                         )}
                       </motion.div>

@@ -4,17 +4,15 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
-  Plus, Edit2, Trash2, Eye, EyeOff, Search, Filter,
+  Plus, Edit2, Trash2, Eye, Search,
   Calendar, MapPin, Award, Users, Palette, Star, StarOff,
-  ChevronLeft, ChevronRight, Image as ImageIcon, X
+  Image as ImageIcon, Bell, BellOff
 } from 'lucide-react'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -30,6 +28,7 @@ import {
 
 import { ExhibitionsService, ExhibitionCreateData, ExhibitionUpdateData } from '@/services/exhibitions.service'
 import { Exhibition } from '@/types'
+import { ExhibitionRichForm, ExhibitionFormData, defaultFormData } from '@/components/admin/exhibitions/ExhibitionRichForm'
 
 export default function ExhibitionsAdminPage() {
   const router = useRouter()
@@ -48,16 +47,7 @@ export default function ExhibitionsAdminPage() {
   const [selectedExhibition, setSelectedExhibition] = useState<Exhibition | null>(null)
 
   // Form state
-  const [formData, setFormData] = useState({
-    title: '',
-    venue: '',
-    location: '',
-    year: new Date().getFullYear(),
-    type: 'solo' as 'solo' | 'group' | 'residency',
-    description: '',
-    featured: false,
-    imageFile: null as File | null
-  })
+  const [formData, setFormData] = useState<ExhibitionFormData>(defaultFormData)
   const [saving, setSaving] = useState(false)
 
   // Load exhibitions
@@ -82,9 +72,14 @@ export default function ExhibitionsAdminPage() {
   // Get unique years for filter
   const years = [...new Set(exhibitions.map(e => e.year))].sort((a, b) => b - a)
 
+  // Helper to get display title (prefer English, fallback to Portuguese)
+  const getDisplayTitle = (exhibition: Exhibition) => exhibition.title.en || exhibition.title.ptBR
+  const getDisplayDescription = (exhibition: Exhibition) => exhibition.description?.en || exhibition.description?.ptBR || ''
+
   // Filter exhibitions
   const filteredExhibitions = exhibitions.filter(exhibition => {
-    const matchesSearch = exhibition.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const displayTitle = getDisplayTitle(exhibition)
+    const matchesSearch = displayTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exhibition.venue.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exhibition.location.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = filterType === 'all' || exhibition.type === filterType
@@ -94,29 +89,47 @@ export default function ExhibitionsAdminPage() {
 
   // Reset form
   const resetForm = () => {
-    setFormData({
-      title: '',
-      venue: '',
-      location: '',
-      year: new Date().getFullYear(),
-      type: 'solo',
-      description: '',
-      featured: false,
-      imageFile: null
-    })
+    setFormData({ ...defaultFormData, year: new Date().getFullYear() })
+  }
+
+  // Helper to format date string for form
+  const formatDateForInput = (date?: Date) => {
+    if (!date) return ''
+    return date.toISOString().split('T')[0]
+  }
+
+  const formatDateTimeForInput = (date?: Date) => {
+    if (!date) return ''
+    return date.toISOString().slice(0, 16)
   }
 
   // Open edit dialog
   const openEditDialog = (exhibition: Exhibition) => {
     setSelectedExhibition(exhibition)
     setFormData({
-      title: exhibition.title,
+      titleEn: exhibition.title.en || '',
+      titlePt: exhibition.title.ptBR || '',
       venue: exhibition.venue,
       location: exhibition.location,
       year: exhibition.year,
       type: exhibition.type,
-      description: exhibition.description || '',
+      descriptionEn: exhibition.description?.en || '',
+      descriptionPt: exhibition.description?.ptBR || '',
+      contentEn: exhibition.content?.en || '',
+      contentPt: exhibition.content?.ptBR || '',
+      curatorName: exhibition.curatorName || '',
+      curatorTextEn: exhibition.curatorText?.en || '',
+      curatorTextPt: exhibition.curatorText?.ptBR || '',
+      images: exhibition.images || [],
+      videos: exhibition.videos || [],
+      startDate: formatDateForInput(exhibition.startDate),
+      endDate: formatDateForInput(exhibition.endDate),
+      openingDate: formatDateTimeForInput(exhibition.openingDate),
+      openingDetails: exhibition.openingDetails || '',
       featured: exhibition.featured,
+      showPopup: exhibition.showPopup,
+      externalUrl: exhibition.externalUrl || '',
+      catalogUrl: exhibition.catalogUrl || '',
       imageFile: null
     })
     setShowEditDialog(true)
@@ -135,13 +148,27 @@ export default function ExhibitionsAdminPage() {
       setError(null)
 
       const createData: ExhibitionCreateData = {
-        title: formData.title,
+        title: { en: formData.titleEn, ptBR: formData.titlePt },
         venue: formData.venue,
         location: formData.location,
         year: formData.year,
         type: formData.type,
-        description: formData.description,
+        description: { en: formData.descriptionEn, ptBR: formData.descriptionPt },
+        content: { en: formData.contentEn, ptBR: formData.contentPt },
+        curatorName: formData.curatorName || undefined,
+        curatorText: formData.curatorTextEn || formData.curatorTextPt
+          ? { en: formData.curatorTextEn, ptBR: formData.curatorTextPt }
+          : undefined,
+        images: formData.images,
+        videos: formData.videos,
+        startDate: formData.startDate ? new Date(formData.startDate) : undefined,
+        endDate: formData.endDate ? new Date(formData.endDate) : undefined,
+        openingDate: formData.openingDate ? new Date(formData.openingDate) : undefined,
+        openingDetails: formData.openingDetails || undefined,
         featured: formData.featured,
+        showPopup: formData.showPopup,
+        externalUrl: formData.externalUrl || undefined,
+        catalogUrl: formData.catalogUrl || undefined,
         imageFile: formData.imageFile || undefined
       }
 
@@ -166,13 +193,27 @@ export default function ExhibitionsAdminPage() {
       setError(null)
 
       const updateData: ExhibitionUpdateData = {
-        title: formData.title,
+        title: { en: formData.titleEn, ptBR: formData.titlePt },
         venue: formData.venue,
         location: formData.location,
         year: formData.year,
         type: formData.type,
-        description: formData.description,
+        description: { en: formData.descriptionEn, ptBR: formData.descriptionPt },
+        content: { en: formData.contentEn, ptBR: formData.contentPt },
+        curatorName: formData.curatorName || undefined,
+        curatorText: formData.curatorTextEn || formData.curatorTextPt
+          ? { en: formData.curatorTextEn, ptBR: formData.curatorTextPt }
+          : undefined,
+        images: formData.images,
+        videos: formData.videos,
+        startDate: formData.startDate ? new Date(formData.startDate) : null,
+        endDate: formData.endDate ? new Date(formData.endDate) : null,
+        openingDate: formData.openingDate ? new Date(formData.openingDate) : null,
+        openingDetails: formData.openingDetails || undefined,
         featured: formData.featured,
+        showPopup: formData.showPopup,
+        externalUrl: formData.externalUrl || undefined,
+        catalogUrl: formData.catalogUrl || undefined,
         newImageFile: formData.imageFile || undefined
       }
 
@@ -220,6 +261,17 @@ export default function ExhibitionsAdminPage() {
     }
   }
 
+  // Handle toggle popup
+  const handleTogglePopup = async (exhibition: Exhibition) => {
+    try {
+      await ExhibitionsService.togglePopup(exhibition.id, !exhibition.showPopup)
+      await loadExhibitions()
+    } catch (err) {
+      console.error('Error toggling popup:', err)
+      setError('Failed to update exhibition')
+    }
+  }
+
   // Get type badge color
   const getTypeBadge = (type: string) => {
     switch (type) {
@@ -236,7 +288,8 @@ export default function ExhibitionsAdminPage() {
 
   // Generate slug for exhibition
   const generateSlug = (exhibition: Exhibition) => {
-    return `${exhibition.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${exhibition.year}`
+    const title = getDisplayTitle(exhibition)
+    return `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${exhibition.year}`
   }
 
   if (loading) {
@@ -374,6 +427,7 @@ export default function ExhibitionsAdminPage() {
                     <TableHead className="w-[80px]">Year</TableHead>
                     <TableHead className="w-[100px]">Type</TableHead>
                     <TableHead className="w-[80px]">Featured</TableHead>
+                    <TableHead className="w-[80px]">Popup</TableHead>
                     <TableHead className="w-[150px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -385,7 +439,7 @@ export default function ExhibitionsAdminPage() {
                           <div className="w-16 h-12 relative rounded overflow-hidden">
                             <Image
                               src={exhibition.image}
-                              alt={exhibition.title}
+                              alt={getDisplayTitle(exhibition)}
                               fill
                               className="object-cover"
                             />
@@ -397,10 +451,10 @@ export default function ExhibitionsAdminPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">{exhibition.title}</div>
-                        {exhibition.description && (
+                        <div className="font-medium">{getDisplayTitle(exhibition)}</div>
+                        {getDisplayDescription(exhibition) && (
                           <div className="text-sm text-gray-500 line-clamp-1">
-                            {exhibition.description}
+                            {getDisplayDescription(exhibition)}
                           </div>
                         )}
                       </TableCell>
@@ -423,6 +477,20 @@ export default function ExhibitionsAdminPage() {
                             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                           ) : (
                             <StarOff className="w-4 h-4 text-gray-400" />
+                          )}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleTogglePopup(exhibition)}
+                          title={exhibition.showPopup ? 'Disable popup' : 'Enable popup'}
+                        >
+                          {exhibition.showPopup ? (
+                            <Bell className="w-4 h-4 text-blue-500 fill-blue-100" />
+                          ) : (
+                            <BellOff className="w-4 h-4 text-gray-400" />
                           )}
                         </Button>
                       </TableCell>
@@ -469,14 +537,14 @@ export default function ExhibitionsAdminPage() {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Exhibition</DialogTitle>
             <DialogDescription>
-              Add a new exhibition to your portfolio
+              Add a new exhibition with rich content support
             </DialogDescription>
           </DialogHeader>
-          <ExhibitionForm
+          <ExhibitionRichForm
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleCreate}
@@ -489,14 +557,14 @@ export default function ExhibitionsAdminPage() {
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Exhibition</DialogTitle>
             <DialogDescription>
-              Update exhibition details
+              Update exhibition details and rich content
             </DialogDescription>
           </DialogHeader>
-          <ExhibitionForm
+          <ExhibitionRichForm
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleUpdate}
@@ -514,7 +582,7 @@ export default function ExhibitionsAdminPage() {
           <DialogHeader>
             <DialogTitle>Delete Exhibition</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedExhibition?.title}"?
+              Are you sure you want to delete "{selectedExhibition ? getDisplayTitle(selectedExhibition) : ''}"?
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -534,7 +602,7 @@ export default function ExhibitionsAdminPage() {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {selectedExhibition?.title}
+              {selectedExhibition ? getDisplayTitle(selectedExhibition) : ''}
               {selectedExhibition?.featured && (
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
               )}
@@ -549,7 +617,7 @@ export default function ExhibitionsAdminPage() {
                 <div className="relative w-full h-64 rounded-lg overflow-hidden">
                   <Image
                     src={selectedExhibition.image}
-                    alt={selectedExhibition.title}
+                    alt={getDisplayTitle(selectedExhibition)}
                     fill
                     className="object-cover"
                   />
@@ -576,10 +644,10 @@ export default function ExhibitionsAdminPage() {
                   <div className="mt-1">{getTypeBadge(selectedExhibition.type)}</div>
                 </div>
               </div>
-              {selectedExhibition.description && (
+              {getDisplayDescription(selectedExhibition) && (
                 <div>
                   <Label className="text-gray-500">Description</Label>
-                  <p className="mt-1 text-gray-700">{selectedExhibition.description}</p>
+                  <p className="mt-1 text-gray-700">{getDisplayDescription(selectedExhibition)}</p>
                 </div>
               )}
             </div>
@@ -598,178 +666,6 @@ export default function ExhibitionsAdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-// Exhibition Form Component
-interface ExhibitionFormProps {
-  formData: {
-    title: string
-    venue: string
-    location: string
-    year: number
-    type: 'solo' | 'group' | 'residency'
-    description: string
-    featured: boolean
-    imageFile: File | null
-  }
-  setFormData: React.Dispatch<React.SetStateAction<ExhibitionFormProps['formData']>>
-  onSubmit: () => void
-  onCancel: () => void
-  saving: boolean
-  submitLabel: string
-  existingImage?: string
-}
-
-function ExhibitionForm({
-  formData,
-  setFormData,
-  onSubmit,
-  onCancel,
-  saving,
-  submitLabel,
-  existingImage
-}: ExhibitionFormProps) {
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setFormData(prev => ({ ...prev, imageFile: file }))
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
-          <Label htmlFor="title">Exhibition Title *</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="e.g., Fragments of Memory"
-          />
-        </div>
-        <div>
-          <Label htmlFor="venue">Venue *</Label>
-          <Input
-            id="venue"
-            value={formData.venue}
-            onChange={(e) => setFormData(prev => ({ ...prev, venue: e.target.value }))}
-            placeholder="e.g., Museum of Modern Art"
-          />
-        </div>
-        <div>
-          <Label htmlFor="location">Location *</Label>
-          <Input
-            id="location"
-            value={formData.location}
-            onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-            placeholder="e.g., New York, USA"
-          />
-        </div>
-        <div>
-          <Label htmlFor="year">Year *</Label>
-          <Input
-            id="year"
-            type="number"
-            value={formData.year}
-            onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-            min={1950}
-            max={2100}
-          />
-        </div>
-        <div>
-          <Label htmlFor="type">Type *</Label>
-          <Select
-            value={formData.type}
-            onValueChange={(value: 'solo' | 'group' | 'residency') =>
-              setFormData(prev => ({ ...prev, type: value }))
-            }
-          >
-            <SelectTrigger id="type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="solo">Solo Exhibition</SelectItem>
-              <SelectItem value="group">Group Exhibition</SelectItem>
-              <SelectItem value="residency">Artist Residency</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="md:col-span-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="Brief description of the exhibition..."
-            rows={4}
-          />
-        </div>
-        <div className="md:col-span-2">
-          <Label htmlFor="image">Exhibition Image</Label>
-          <div className="mt-2 space-y-4">
-            {(imagePreview || existingImage) && (
-              <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-                <Image
-                  src={imagePreview || existingImage || ''}
-                  alt="Preview"
-                  fill
-                  className="object-cover"
-                />
-                {imagePreview && (
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      setImagePreview(null)
-                      setFormData(prev => ({ ...prev, imageFile: null }))
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            )}
-            <Input
-              id="image"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-            />
-          </div>
-        </div>
-        <div className="md:col-span-2 flex items-center justify-between">
-          <div>
-            <Label>Featured Exhibition</Label>
-            <p className="text-sm text-gray-500">Show prominently on homepage</p>
-          </div>
-          <Switch
-            checked={formData.featured}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
-          />
-        </div>
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button
-          onClick={onSubmit}
-          disabled={saving || !formData.title || !formData.venue || !formData.location}
-        >
-          {saving ? 'Saving...' : submitLabel}
-        </Button>
-      </DialogFooter>
     </div>
   )
 }

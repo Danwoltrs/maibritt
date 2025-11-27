@@ -8,6 +8,7 @@ import ArtistStatement from '@/components/sections/ArtistStatement'
 import GalleryLocations from '@/components/sections/GalleryLocations'
 import BlogPreview from '@/components/sections/BlogPreview'
 import ScrollNavigation from '@/components/navigation/ScrollNavigation'
+import UpcomingExhibitionPopup from '@/components/exhibitions/UpcomingExhibitionPopup'
 
 const sectionIds = [
   'hero',
@@ -48,6 +49,9 @@ export default function Home() {
 
       {/* Blog Preview */}
       <BlogPreview id="blog" />
+
+      {/* Upcoming Exhibition Popup */}
+      <UpcomingExhibitionPopup delay={3000} />
     </div>
   )
 }
