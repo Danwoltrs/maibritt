@@ -772,7 +772,7 @@ export default function EditArtworkPage({ params }: PageProps) {
                         <SelectItem value="none">No specific exhibition</SelectItem>
                         {exhibitions.map((e) => (
                           <SelectItem key={e.id} value={e.id}>
-                            {e.title} ({e.year}) - {e.venue}
+                            {e.title.en || e.title.ptBR} ({e.year}) - {e.venue}
                           </SelectItem>
                         ))}
                       </SelectContent>
