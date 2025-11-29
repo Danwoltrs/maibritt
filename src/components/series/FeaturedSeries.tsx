@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SeriesService, SeriesWithArtworks } from '@/services'
 import { useScrollAnimation, useParallax } from '@/hooks/useScrollAnimation'
+import SeriesModal from './SeriesModal'
 
 interface FeaturedSeriesProps {
   id?: string
@@ -21,9 +22,21 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
   const [series, setSeries] = useState<SeriesWithArtworks[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const [ref, isInView] = useScrollAnimation(0.01) // Very low threshold
   const [parallaxRef, parallaxY] = useParallax(30)
+
+  const openSeriesModal = (seriesId: string) => {
+    setSelectedSeriesId(seriesId)
+    setIsModalOpen(true)
+  }
+
+  const closeSeriesModal = () => {
+    setIsModalOpen(false)
+    setSelectedSeriesId(null)
+  }
 
   // Force visibility after a short delay to ensure content is shown
   const [forceVisible, setForceVisible] = useState(false)
@@ -161,9 +174,9 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
                     stiffness: 100
                   }}
                   className="group cursor-pointer"
+                  onClick={() => openSeriesModal(seriesItem.id)}
                 >
-                  <Link href={`/series/${seriesItem.id}`}>
-                    <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden group-hover:scale-[1.02]">
+                  <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden group-hover:scale-[1.02]">
                       {/* Main series image */}
                       <div className="relative aspect-[4/5] overflow-hidden">
                         {seriesItem.coverImage ? (
@@ -308,7 +321,6 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
                         </motion.div>
                       </CardContent>
                     </Card>
-                  </Link>
                 </motion.div>
               )
             })}
@@ -369,6 +381,13 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
           rotate: { duration: 8, repeat: Infinity, ease: "easeInOut" }
         }}
         className="absolute bottom-20 left-20 w-24 h-24 bg-purple-100 rounded-full opacity-20 hidden lg:block"
+      />
+
+      {/* Series Modal */}
+      <SeriesModal
+        seriesId={selectedSeriesId}
+        isOpen={isModalOpen}
+        onClose={closeSeriesModal}
       />
     </section>
   )
