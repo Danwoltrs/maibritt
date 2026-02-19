@@ -19,10 +19,15 @@ const getEnvVar = (key: string, fallback?: string): string => {
 }
 
 // Create configuration with proper error handling
+// NOTE: NEXT_PUBLIC_* vars must use direct property access (not dynamic keys)
+// because Next.js inlines them at build time via static replacement.
 const createConfig = (): AppConfig => {
-  const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL')
-  const supabaseAnonKey = getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY')
-  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl) throw new Error('Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL')
+  if (!supabaseAnonKey) throw new Error('Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY')
+
   return {
     supabase: {
       url: supabaseUrl,
