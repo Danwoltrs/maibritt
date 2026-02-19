@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import NextImage from 'next/image'
 import { TrendingUp, Image, Building, DollarSign, MapPin, PenTool, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -132,18 +131,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Logo */}
-      <div className="flex justify-center pt-2 pb-4">
-        <NextImage
-          src="/logo.svg"
-          alt="Mai-Britt Wolthers"
-          width={220}
-          height={44}
-          priority
-          className="opacity-80"
-        />
-      </div>
-
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
         <div className="max-w-3xl">
