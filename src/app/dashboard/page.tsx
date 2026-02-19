@@ -1,10 +1,21 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import NextImage from 'next/image'
 import { TrendingUp, Image, Building, DollarSign, MapPin, PenTool, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArtworkService, GalleryService } from '@/services'
+
+function getDanishGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 10) return 'Godmorgen'
+  if (hour >= 10 && hour < 12) return 'God formiddag'
+  if (hour >= 12 && hour < 14) return 'God middag'
+  if (hour >= 14 && hour < 18) return 'God eftermiddag'
+  if (hour >= 18 && hour < 22) return 'God aften'
+  return 'God nat'
+}
 
 const quickActions = [
   {
@@ -60,12 +71,14 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const currentDate = new Date().toLocaleDateString('en-US', {
+  const currentDate = new Date().toLocaleDateString('da-DK', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   })
+
+  const greeting = getDanishGreeting()
 
   // Fetch dashboard data
   useEffect(() => {
@@ -119,14 +132,26 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Logo */}
+      <div className="flex justify-center pt-2 pb-4">
+        <NextImage
+          src="/logo.svg"
+          alt="Mai-Britt Wolthers"
+          width={220}
+          height={44}
+          priority
+          className="opacity-80"
+        />
+      </div>
+
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
         <div className="max-w-3xl">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Good morning, Mai-Britt
+            {greeting}, Mai-Britt
           </h1>
           <p className="text-gray-600 mb-4">
-            Today is {currentDate}. Here's what's happening in your art world.
+            I dag er {currentDate}. Her er hvad der sker i din kunstverden.
           </p>
           <div className="flex flex-wrap gap-3">
             {loading ? (
