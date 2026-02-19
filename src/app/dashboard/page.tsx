@@ -8,7 +8,7 @@ import { ArtworkService, GalleryService } from '@/services'
 
 function getDanishGreeting(): string {
   const hour = new Date().getHours()
-  if (hour >= 5 && hour < 10) return 'Godmorgen'
+  if (hour >= 5 && hour < 10) return 'God morgen'
   if (hour >= 10 && hour < 12) return 'God formiddag'
   if (hour >= 12 && hour < 14) return 'God middag'
   if (hour >= 14 && hour < 18) return 'God eftermiddag'
