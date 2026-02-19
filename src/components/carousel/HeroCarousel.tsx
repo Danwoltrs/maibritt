@@ -109,7 +109,7 @@ const HeroCarousel = ({
   }
 
   const togglePlayPause = () => {
-    setIsPlaying(!isPlaying)
+    setIsPlaying(prev => !prev)
   }
 
   if (isLoading) {

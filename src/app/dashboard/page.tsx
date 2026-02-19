@@ -73,35 +73,19 @@ export default function DashboardPage() {
       try {
         setLoading(true)
         
-        // Fetch artworks data
-        const artworksResponse = await ArtworkService.getArtworks({}, { page: 1, limit: 1000 })
-        const artworks = artworksResponse.artworks || []
-        
-        // Fetch galleries data  
-        const galleriesResponse = await GalleryService.getAll({})
+        // Fetch lightweight stats instead of full records
+        const [artworkStats, galleriesResponse] = await Promise.all([
+          ArtworkService.getArtworkStats(),
+          GalleryService.getAll({})
+        ])
         const galleries = galleriesResponse.data || []
-        
-        // Calculate stats from real data
-        const totalArtworks = artworks.length
-        const artworksInGalleries = artworks.filter(artwork => 
-          artwork.location && artwork.location !== 'studio'
-        ).length
-        const artworksInStudio = artworks.filter(artwork => 
-          !artwork.location || artwork.location === 'studio'
-        ).length
-        const artworksSold = artworks.filter(artwork => 
-          artwork.status === 'sold'
-        ).length
-        
-        const activeGalleries = galleries.filter(gallery => 
+
+        const activeGalleries = galleries.filter(gallery =>
           gallery.is_active && gallery.relationship_status === 'active'
         ).length
-        
+
         setStats({
-          totalArtworks,
-          artworksInGalleries,
-          artworksInStudio,
-          artworksSold,
+          ...artworkStats,
           monthlyRevenue: 0, // TODO: Calculate from sales data
           totalGalleries: galleries.length,
           activeGalleries,

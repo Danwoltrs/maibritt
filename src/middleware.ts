@@ -55,19 +55,34 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
+  // Validate session server-side (getUser() verifies the JWT, unlike getSession())
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  // Define protected admin routes (exclude /dashboard as it's a public redirect)
-  const adminRoutes = ['/admin']
-  const isAdminRoute = adminRoutes.some(route =>
-    req.nextUrl.pathname.startsWith(route)
-  ) && req.nextUrl.pathname !== '/admin' // Exclude /admin itself since it handles auth
+  // Protected admin routes - all (admin) route group paths
+  // Be specific to avoid blocking public routes (/series page, /exhibitions page, /artworks/series)
+  const pathname = req.nextUrl.pathname
+  const isAdminRoute = (
+    // Exclusively admin prefixes (no public overlap)
+    pathname.startsWith('/galleries') ||
+    pathname.startsWith('/journal') ||
+    pathname.startsWith('/quotes') ||
+    pathname.startsWith('/sales') ||
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/exhibitions/manage') ||
+    // /admin/* but not /admin itself (login page)
+    (pathname.startsWith('/admin') && pathname !== '/admin') ||
+    // /artworks admin pages: /artworks (exact list page), /artworks/new, /artworks/locations, /artworks/[id]/edit
+    (pathname.startsWith('/artworks') && !pathname.startsWith('/artworks/series')) ||
+    // /series/[id] is admin; /series (exact) is public
+    (pathname.startsWith('/series/') && pathname !== '/series') ||
+    // Protected API routes
+    pathname.startsWith('/api/scrape-press')
+  )
 
   // Redirect to admin (with login modal) if accessing admin routes without authentication
-  if (isAdminRoute && !session && req.nextUrl.pathname !== '/admin') {
+  if (isAdminRoute && !user) {
     const redirectUrl = new URL('/admin', req.url)
     redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)

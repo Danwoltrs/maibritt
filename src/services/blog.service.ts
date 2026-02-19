@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 import { Content } from '@/types'
 import { StorageService } from './storage.service'
 
@@ -97,14 +98,8 @@ export class BlogService {
 
       // Search functionality
       if (filters.searchTerm) {
-        query = query.or(`
-          title_pt.ilike.%${filters.searchTerm}%,
-          title_en.ilike.%${filters.searchTerm}%,
-          content_pt.ilike.%${filters.searchTerm}%,
-          content_en.ilike.%${filters.searchTerm}%,
-          excerpt_pt.ilike.%${filters.searchTerm}%,
-          excerpt_en.ilike.%${filters.searchTerm}%
-        `)
+        const term = sanitizeFilterValue(filters.searchTerm)
+        query = query.or(`title_pt.ilike.%${term}%,title_en.ilike.%${term}%,content_pt.ilike.%${term}%,content_en.ilike.%${term}%,excerpt_pt.ilike.%${term}%,excerpt_en.ilike.%${term}%`)
       }
 
       // Date filtering
@@ -226,8 +221,8 @@ export class BlogService {
         coverImageUrl = uploadResult.urls.display
       }
 
-      // Generate slug from title
-      const slug = this.generateSlug(postData.title.en)
+      // Generate unique slug from title
+      const slug = await this.generateUniqueSlug(postData.title.en)
 
       // Calculate reading time
       const readingTime = this.calculateReadingTime(
@@ -279,7 +274,7 @@ export class BlogService {
         updateObject.title_pt = updateData.title.ptBR
         updateObject.title_en = updateData.title.en
         // Regenerate slug if title changed
-        updateObject.slug = this.generateSlug(updateData.title.en)
+        updateObject.slug = await this.generateUniqueSlug(updateData.title.en, id)
       }
 
       if (updateData.content) {
@@ -597,13 +592,36 @@ export class BlogService {
   /**
    * Generate URL-friendly slug from title
    */
-  private static generateSlug(title: string): string {
-    return title
+  private static async generateUniqueSlug(title: string, excludeId?: string): Promise<string> {
+    const baseSlug = title
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '') // Remove special characters
-      .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
-      .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
+    let slug = baseSlug
+    let suffix = 2
+
+    while (true) {
+      let query = supabase
+        .from('blog_posts')
+        .select('id')
+        .eq('slug', slug)
+        .limit(1)
+
+      if (excludeId) {
+        query = query.neq('id', excludeId)
+      }
+
+      const { data } = await query
+      if (!data || data.length === 0) break
+
+      slug = `${baseSlug}-${suffix}`
+      suffix++
+    }
+
+    return slug
   }
 
   /**

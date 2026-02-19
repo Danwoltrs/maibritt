@@ -64,13 +64,13 @@ export class SettingsService {
             settings.carouselRotationSpeed = parseInt(setting.value)
             break
           case 'carousel_auto_play':
-            settings.carouselAutoPlay = setting.value
+            settings.carouselAutoPlay = setting.value === true || setting.value === 'true'
             break
           case 'carousel_transition_style':
             settings.carouselTransitionStyle = setting.value
             break
           case 'carousel_pause_on_hover':
-            settings.carouselPauseOnHover = setting.value
+            settings.carouselPauseOnHover = setting.value === true || setting.value === 'true'
             break
         }
       })

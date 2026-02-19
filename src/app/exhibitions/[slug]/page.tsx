@@ -36,17 +36,7 @@ export default function ExhibitionDetailPage({ params }: PageProps) {
         setLoading(true)
         setError(null)
 
-        const allExhibitions = await ExhibitionsService.getExhibitions()
-
-        // Find exhibition by slug (title-year format)
-        const found = allExhibitions.find(e => {
-          const title = e.title.en || e.title.ptBR
-          const titleSlug = title.toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '')
-          const exhibitionSlug = `${titleSlug}-${e.year}`
-          return exhibitionSlug === slug
-        })
+        const found = await ExhibitionsService.getExhibitionBySlug(slug)
 
         if (!found) {
           setError('Exhibition not found')
@@ -56,6 +46,7 @@ export default function ExhibitionDetailPage({ params }: PageProps) {
         setExhibition(found)
 
         // Get related exhibitions (same type or same year)
+        const allExhibitions = await ExhibitionsService.getExhibitions()
         const related = allExhibitions
           .filter(e => e.id !== found.id && (e.type === found.type || e.year === found.year))
           .slice(0, 3)

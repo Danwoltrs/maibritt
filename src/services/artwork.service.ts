@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 import { Artwork, Content } from '@/types'
 import { StorageService, ImageVariant } from './storage.service'
 
@@ -71,7 +72,38 @@ export interface ArtworkListResponse {
   totalPages: number
 }
 
+export interface ArtworkStats {
+  totalArtworks: number
+  artworksInGalleries: number
+  artworksInStudio: number
+  artworksSold: number
+}
+
 export class ArtworkService {
+  /**
+   * Get lightweight artwork stats without fetching full records
+   */
+  static async getArtworkStats(): Promise<ArtworkStats> {
+    try {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select('id, location, status')
+
+      if (error) throw error
+
+      const artworks = data || []
+      return {
+        totalArtworks: artworks.length,
+        artworksInGalleries: artworks.filter(a => a.location && a.location !== 'studio').length,
+        artworksInStudio: artworks.filter(a => !a.location || a.location === 'studio').length,
+        artworksSold: artworks.filter(a => a.status === 'sold').length
+      }
+    } catch (error) {
+      console.error('Error fetching artwork stats:', error)
+      throw error
+    }
+  }
+
   /**
    * Get all artworks with optional filtering and pagination
    */
@@ -114,14 +146,8 @@ export class ArtworkService {
 
       // Search functionality
       if (filters.searchTerm) {
-        query = query.or(`
-          title_pt.ilike.%${filters.searchTerm}%,
-          title_en.ilike.%${filters.searchTerm}%,
-          description_pt.ilike.%${filters.searchTerm}%,
-          description_en.ilike.%${filters.searchTerm}%,
-          medium_pt.ilike.%${filters.searchTerm}%,
-          medium_en.ilike.%${filters.searchTerm}%
-        `)
+        const term = sanitizeFilterValue(filters.searchTerm)
+        query = query.or(`title_pt.ilike.%${term}%,title_en.ilike.%${term}%,description_pt.ilike.%${term}%,description_en.ilike.%${term}%,medium_pt.ilike.%${term}%,medium_en.ilike.%${term}%`)
       }
 
       // Apply pagination

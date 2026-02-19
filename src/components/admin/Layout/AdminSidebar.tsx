@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import NextImage from 'next/image'
 import {
   LayoutDashboard,
   Image,
@@ -134,10 +135,16 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   return (
     <div className={cn('flex flex-col h-full bg-white border-r border-gray-200', className)}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="px-4 py-4 border-b border-gray-200">
         <Link href="/dashboard" className="block">
-          <h1 className="text-xl font-semibold text-gray-900">Artist Portal</h1>
-          <p className="text-sm text-gray-600 mt-1">Mai-Britt Wolthers</p>
+          <NextImage
+            src="/logo.svg"
+            alt="Mai-Britt Wolthers"
+            width={160}
+            height={32}
+            className="h-8 w-auto"
+            priority
+          />
         </Link>
       </div>
 

@@ -281,10 +281,33 @@ export class ExhibitionsService {
   }
 
   /**
-   * Generate slug from title and year
+   * Generate unique slug from title and year
    */
-  static generateSlug(title: string, year: number): string {
-    return `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${year}`
+  static async generateUniqueSlug(title: string, year: number, excludeId?: string): Promise<string> {
+    const baseSlug = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${year}`
+
+    let slug = baseSlug
+    let suffix = 2
+
+    while (true) {
+      let query = supabase
+        .from('exhibitions')
+        .select('id')
+        .eq('slug', slug)
+        .limit(1)
+
+      if (excludeId) {
+        query = query.neq('id', excludeId)
+      }
+
+      const { data } = await query
+      if (!data || data.length === 0) break
+
+      slug = `${baseSlug}-${suffix}`
+      suffix++
+    }
+
+    return slug
   }
 
   /**
@@ -315,8 +338,8 @@ export class ExhibitionsService {
 
       const nextDisplayOrder = (maxOrderData?.[0]?.display_order || 0) + 1
 
-      // Generate slug
-      const slug = this.generateSlug(exhibitionData.title.en || exhibitionData.title.ptBR, exhibitionData.year)
+      // Generate unique slug
+      const slug = await this.generateUniqueSlug(exhibitionData.title.en || exhibitionData.title.ptBR, exhibitionData.year)
 
       // Construct location from address if provided
       const locationString = exhibitionData.location || this.constructLocationString(exhibitionData.address)
@@ -465,7 +488,7 @@ export class ExhibitionsService {
         if (exhibition) {
           const titleForSlug = updateData.title?.en || updateData.title?.ptBR || exhibition.title.en || exhibition.title.ptBR
           const yearForSlug = updateData.year || exhibition.year
-          updateObject.slug = this.generateSlug(titleForSlug, yearForSlug)
+          updateObject.slug = await this.generateUniqueSlug(titleForSlug, yearForSlug, id)
         }
       }
 
@@ -714,7 +737,7 @@ export class ExhibitionsService {
 
       // Extract unique countries from locations
       const countries = new Set(
-        data.map(ex => ex.location.split(',').pop()?.trim().toLowerCase())
+        data.map(ex => (ex.location || '').split(',').pop()?.trim().toLowerCase())
           .filter(Boolean)
       )
 

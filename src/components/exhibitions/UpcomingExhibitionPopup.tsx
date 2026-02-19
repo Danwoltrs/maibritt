@@ -25,39 +25,7 @@ export default function UpcomingExhibitionPopup({ delay = 3000 }: UpcomingExhibi
 
     const fetchUpcomingExhibition = async () => {
       try {
-        const exhibitions = await ExhibitionsService.getExhibitions()
-        const now = new Date()
-
-        // Find upcoming or ongoing exhibitions automatically
-        // An exhibition should show popup if:
-        // 1. It has a start date in the future (upcoming), OR
-        // 2. It is currently ongoing (started but not ended)
-        const eligibleExhibitions = exhibitions.filter(e => {
-          if (!e.startDate && !e.endDate) return false
-
-          const startDate = e.startDate ? new Date(e.startDate) : null
-          const endDate = e.endDate ? new Date(e.endDate) : null
-
-          // Upcoming: starts in the future
-          if (startDate && startDate > now) return true
-
-          // Ongoing: has started and either no end date or end date is in the future
-          if (startDate && startDate <= now) {
-            if (!endDate) return true // No end date, assume ongoing
-            if (endDate >= now) return true // End date is today or in the future
-          }
-
-          return false
-        })
-
-        // Sort by start date to show the most imminent one
-        eligibleExhibitions.sort((a, b) => {
-          const dateA = a.startDate ? new Date(a.startDate).getTime() : 0
-          const dateB = b.startDate ? new Date(b.startDate).getTime() : 0
-          return dateA - dateB
-        })
-
-        const popupExhibition = eligibleExhibitions[0]
+        const popupExhibition = await ExhibitionsService.getUpcomingPopupExhibition()
 
         if (popupExhibition && dismissedId !== popupExhibition.id) {
           setExhibition(popupExhibition)

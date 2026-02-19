@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 import { ArtSeries, Content, Artwork } from '@/types'
 import { StorageService } from './storage.service'
 
@@ -139,7 +140,7 @@ export class SeriesService {
       const { data: seriesData, error } = await supabase
         .from('art_series')
         .select('*')
-        .or(`name_en.ilike.%${slug}%,name_pt.ilike.%${slug}%`)
+        .or(`name_en.ilike.%${sanitizeFilterValue(slug)}%,name_pt.ilike.%${sanitizeFilterValue(slug)}%`)
         .eq('is_active', true)
         .limit(1)
 

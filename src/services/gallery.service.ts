@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 
 export interface Gallery {
   id: string
@@ -142,7 +143,8 @@ export class GalleryService {
       }
 
       if (search) {
-        query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%,country.ilike.%${search}%`)
+        const term = sanitizeFilterValue(search)
+        query = query.or(`name.ilike.%${term}%,city.ilike.%${term}%,country.ilike.%${term}%`)
       }
 
       if (country) {
