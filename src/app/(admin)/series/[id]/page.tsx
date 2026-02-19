@@ -19,6 +19,16 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 import { SeriesService, ArtSeries } from '@/services/series.service'
 import { ArtworkService } from '@/services/artwork.service'
@@ -49,6 +59,9 @@ export default function SeriesDetailPage({ params }: PageProps) {
   const [editYear, setEditYear] = useState<number>(new Date().getFullYear())
   const [editIsActive, setEditIsActive] = useState(true)
   const [editIsSeasonal, setEditIsSeasonal] = useState(false)
+
+  // Remove artwork confirmation
+  const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null)
 
   // Add artwork dialog
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -204,13 +217,10 @@ export default function SeriesDetailPage({ params }: PageProps) {
   }
 
   const handleRemoveArtwork = async (artworkId: string) => {
-    if (!confirm('Remove this artwork from the series?')) return
-
     try {
       setSaving(true)
       setError(null)
 
-      // Update artwork to remove from series
       const { error: updateError } = await supabase
         .from('artworks')
         .update({ series_id: null })
@@ -218,13 +228,13 @@ export default function SeriesDetailPage({ params }: PageProps) {
 
       if (updateError) throw updateError
 
-      // Reload data
       await loadData()
     } catch (err) {
       console.error('Error removing artwork from series:', err)
       setError('Failed to remove artwork from series')
     } finally {
       setSaving(false)
+      setRemoveConfirmId(null)
     }
   }
 
@@ -472,7 +482,7 @@ export default function SeriesDetailPage({ params }: PageProps) {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleRemoveArtwork(artwork.id)}
+                        onClick={() => setRemoveConfirmId(artwork.id)}
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -567,6 +577,27 @@ export default function SeriesDetailPage({ params }: PageProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Remove Artwork Confirmation */}
+      <AlertDialog open={!!removeConfirmId} onOpenChange={(open) => !open && setRemoveConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Artwork</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove this artwork from the series? The artwork won't be deleted, just unlinked from this series.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              onClick={() => removeConfirmId && handleRemoveArtwork(removeConfirmId)}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

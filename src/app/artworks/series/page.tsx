@@ -12,6 +12,16 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -55,6 +65,7 @@ export default function SeriesManagementPage() {
   const [editingSeries, setEditingSeries] = useState<Series | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   const {
     register,
@@ -206,19 +217,15 @@ export default function SeriesManagementPage() {
   }
 
   const deleteSeries = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this series? This action cannot be undone.')) {
-      return
-    }
-
     try {
       await SeriesService.deleteSeries(id)
-      // Remove from local state immediately for better UX
       setSeries(prev => prev.filter(s => s.id !== id))
     } catch (error) {
       console.error('Failed to delete series:', error)
       setError(error instanceof Error ? error.message : 'Failed to delete series')
-      // Reload to restore the series if delete failed
       await loadSeries()
+    } finally {
+      setDeleteConfirmId(null)
     }
   }
 
@@ -354,7 +361,7 @@ export default function SeriesManagementPage() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation()
-                      deleteSeries(series.id)
+                      setDeleteConfirmId(series.id)
                     }}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
@@ -514,6 +521,27 @@ export default function SeriesManagementPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Series</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this series? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              onClick={() => deleteConfirmId && deleteSeries(deleteConfirmId)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -19,9 +19,7 @@ import {
   FolderOpen,
   Quote,
   Calendar,
-  Search,
-  Plus,
-  Bell
+  Search
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -137,7 +135,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   return (
     <div className={cn('flex flex-col h-full bg-white border-r border-gray-200', className)}>
       {/* Navigation */}
-      <nav className="flex-1 p-4 pt-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-4 pt-2 space-y-1">
         {navigationItems.map((item) => {
           const isExpanded = expandedItems.includes(item.name)
           const isActive = pathname === item.href || (item.subItems?.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/')))
@@ -230,22 +228,6 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
             placeholder="Search artworks..."
             className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
           />
-        </div>
-
-        {/* Quick Add & Notifications */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex-1" asChild>
-            <Link href="/artworks/new">
-              <Plus className="h-4 w-4 mr-1" />
-              Quick Add
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" className="relative">
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
-              3
-            </span>
-          </Button>
         </div>
 
         {/* User & Sign Out */}

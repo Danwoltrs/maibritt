@@ -29,6 +29,7 @@ export default function ExhibitionDetailPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [showCopiedToast, setShowCopiedToast] = useState(false)
 
   useEffect(() => {
     const fetchExhibition = async () => {
@@ -149,7 +150,8 @@ export default function ExhibitionDetailPage({ params }: PageProps) {
       }
     } else {
       navigator.clipboard.writeText(window.location.href)
-      alert('Link copied to clipboard!')
+      setShowCopiedToast(true)
+      setTimeout(() => setShowCopiedToast(false), 2000)
     }
   }
 
@@ -682,6 +684,21 @@ export default function ExhibitionDetailPage({ params }: PageProps) {
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm">
               {lightboxIndex + 1} / {allImages.length}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Copied Toast */}
+      <AnimatePresence>
+        {showCopiedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Share2 className="w-4 h-4" />
+            Link copied to clipboard!
           </motion.div>
         )}
       </AnimatePresence>
