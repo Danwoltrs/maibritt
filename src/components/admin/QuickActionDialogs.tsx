@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import {
-  Image,
+  ImageIcon,
   FolderOpen,
   TrendingUp,
   Building,
@@ -20,8 +20,11 @@ import {
   PartyPopper,
   Upload,
   X,
+  Plus,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
+import { SeriesService } from '@/services'
+import type { ArtSeries } from '@/types'
 
 export type QuickAction =
   | 'upload-artwork'
@@ -55,69 +58,269 @@ function UploadArtworkDialog({ open, onClose }: { open: boolean; onClose: () => 
   const [medium, setMedium] = useState('')
   const [dimensions, setDimensions] = useState('')
   const [year, setYear] = useState('')
+  const [seriesId, setSeriesId] = useState('')
+  const [seriesList, setSeriesList] = useState<ArtSeries[]>([])
+  const [showNewSeries, setShowNewSeries] = useState(false)
+  const [imagePreviews, setImagePreviews] = useState<{ file: File; url: string }[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (open) {
+      SeriesService.getSeries(true).then(setSeriesList).catch(console.error)
+    }
+  }, [open])
+
+  const handleFiles = (files: FileList | File[]) => {
+    const newFiles = Array.from(files).filter((f) => f.type.startsWith('image/'))
+    const newPreviews = newFiles.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }))
+    setImagePreviews((prev) => [...prev, ...newPreviews])
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files)
+  }
+
+  const removeImage = (index: number) => {
+    setImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index].url)
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  const handleSeriesCreated = (newSeries: ArtSeries) => {
+    setSeriesList((prev) => [newSeries, ...prev])
+    setSeriesId(newSeries.id)
+    setShowNewSeries(false)
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+        <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              Upload New Artwork
+            </DialogTitle>
+            <DialogDescription>Add a new artwork to your portfolio.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Title</label>
+              <input
+                className={inputClass}
+                placeholder="Artwork title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            {/* Multi-image upload */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Images (high-res)</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files) handleFiles(e.target.files)
+                  e.target.value = ''
+                }}
+              />
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {imagePreviews.map((img, i) => (
+                    <div key={i} className="relative group">
+                      <img
+                        src={img.url}
+                        alt={`Upload ${i + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border"
+                      />
+                      <button
+                        onClick={() => removeImage(i)}
+                        className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      <span className="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1 rounded">
+                        {(img.file.size / 1024 / 1024).toFixed(1)}MB
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label
+                className="flex items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+              >
+                <div className="text-center">
+                  <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                  <p className="mt-1 text-sm text-gray-500">
+                    {imagePreviews.length > 0 ? 'Add more images' : 'Click to upload or drag and drop'}
+                  </p>
+                  <p className="text-xs text-gray-400">Multiple files supported, any resolution</p>
+                </div>
+              </label>
+            </div>
+
+            {/* Series selector */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Series</label>
+              <div className="flex gap-2">
+                <select
+                  className={inputClass + ' flex-1'}
+                  value={seriesId}
+                  onChange={(e) => setSeriesId(e.target.value)}
+                >
+                  <option value="">No series</option>
+                  {seriesList.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name.en || s.name.ptBR || 'Untitled'} ({s.year})
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => setShowNewSeries(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  New
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Medium</label>
+                <input
+                  className={inputClass}
+                  placeholder="e.g. Oil on canvas"
+                  value={medium}
+                  onChange={(e) => setMedium(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Year</label>
+                <input
+                  className={inputClass}
+                  placeholder="e.g. 2024"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Dimensions</label>
+              <input
+                className={inputClass}
+                placeholder="e.g. 100 x 80 cm"
+                value={dimensions}
+                onChange={(e) => setDimensions(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button>Upload Artwork</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inline Add Series modal (on top) */}
+      <InlineAddSeriesDialog
+        open={showNewSeries}
+        onClose={() => setShowNewSeries(false)}
+        onCreated={handleSeriesCreated}
+      />
+    </>
+  )
+}
+
+function InlineAddSeriesDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean
+  onClose: () => void
+  onCreated: (series: ArtSeries) => void
+}) {
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [yearVal, setYearVal] = useState(new Date().getFullYear().toString())
+
+  const handleCreate = async () => {
+    if (!name.trim()) return
+    try {
+      const created = await SeriesService.createSeries({
+        name: { en: name, ptBR: '' },
+        description: { en: description, ptBR: '' },
+        year: parseInt(yearVal) || new Date().getFullYear(),
+      })
+      if (created) {
+        onCreated(created)
+        setName('')
+        setDescription('')
+        setYearVal(new Date().getFullYear().toString())
+      }
+    } catch (err) {
+      console.error('Failed to create series:', err)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[450px] z-[60]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Image className="h-5 w-5" />
-            Upload New Artwork
+            <FolderOpen className="h-5 w-5" />
+            New Series
           </DialogTitle>
-          <DialogDescription>Add a new artwork to your portfolio.</DialogDescription>
+          <DialogDescription>Create a new series and assign this artwork to it.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Title</label>
+            <label className="text-sm font-medium">Series Name</label>
             <input
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Artwork title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              className={inputClass}
+              placeholder="Series name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Image</label>
-            <div className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors cursor-pointer">
-              <div className="text-center">
-                <Image className="mx-auto h-8 w-8 text-gray-400" />
-                <p className="mt-1 text-sm text-gray-500">Click to upload or drag and drop</p>
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Medium</label>
-              <input
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="e.g. Oil on canvas"
-                value={medium}
-                onChange={(e) => setMedium(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Year</label>
-              <input
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="e.g. 2024"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-              />
-            </div>
+            <label className="text-sm font-medium">Year</label>
+            <input
+              className={inputClass}
+              placeholder="e.g. 2024"
+              value={yearVal}
+              onChange={(e) => setYearVal(e.target.value)}
+            />
           </div>
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Dimensions</label>
-            <input
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="e.g. 100 x 80 cm"
-              value={dimensions}
-              onChange={(e) => setDimensions(e.target.value)}
+            <label className="text-sm font-medium">Description</label>
+            <textarea
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder="Describe this series..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button>Upload Artwork</Button>
+          <Button onClick={handleCreate}>Create Series</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
