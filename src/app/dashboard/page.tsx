@@ -70,7 +70,7 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const currentDate = new Date().toLocaleDateString('da-DK', {
+  const currentDate = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -135,10 +135,10 @@ export default function DashboardPage() {
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
         <div className="max-w-3xl">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {greeting}, Mai-Britt
+            {greeting}, Mor
           </h1>
           <p className="text-gray-600 mb-4">
-            I dag er {currentDate}. Her er hvad der sker i din kunstverden.
+            Hoje é {currentDate}.
           </p>
           <div className="flex flex-wrap gap-3">
             {loading ? (
