@@ -204,8 +204,20 @@ function RecordSaleDialog({ open, onClose }: { open: boolean; onClose: () => voi
   const [buyer, setBuyer] = useState('')
   const [date, setDate] = useState('')
   const [celebrated, setCelebrated] = useState(false)
+  const [celebrationMessage, setCelebrationMessage] = useState('')
+
+  const celebrationMessages = [
+    'Sådan!',
+    'Tillykke!',
+    'Tillykke mor!',
+    'Kæmpe stort!',
+    'Boa mãe!!',
+    'Sådan mor!!',
+    'Flot!',
+  ]
 
   const handleRecordSale = () => {
+    setCelebrationMessage(celebrationMessages[Math.floor(Math.random() * celebrationMessages.length)])
     setCelebrated(true)
     fireConfetti()
     // Reset after a delay so next open is fresh
@@ -226,8 +238,7 @@ function RecordSaleDialog({ open, onClose }: { open: boolean; onClose: () => voi
         {celebrated ? (
           <div className="py-12 text-center space-y-4">
             <PartyPopper className="h-16 w-16 mx-auto text-yellow-500 animate-bounce" />
-            <h2 className="text-2xl font-bold text-gray-900">Sale Recorded!</h2>
-            <p className="text-gray-500">Congratulations on the sale!</p>
+            <h2 className="text-2xl font-bold text-gray-900">{celebrationMessage}</h2>
           </div>
         ) : (
           <>
