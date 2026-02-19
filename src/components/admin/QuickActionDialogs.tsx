@@ -18,6 +18,8 @@ import {
   PenTool,
   Calendar,
   PartyPopper,
+  Upload,
+  X,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 
@@ -374,16 +376,125 @@ function WriteJournalDialog({ open, onClose }: { open: boolean; onClose: () => v
   )
 }
 
+const COUNTRIES = [
+  'Denmark', 'Brazil', 'United States', 'United Kingdom', 'Germany', 'France',
+  'Spain', 'Italy', 'Portugal', 'Netherlands', 'Sweden', 'Norway', 'Finland',
+  'Switzerland', 'Austria', 'Belgium', 'Japan', 'China', 'South Korea',
+  'Australia', 'Canada', 'Mexico', 'Argentina', 'Colombia', 'Chile',
+  'India', 'UAE', 'Israel', 'South Africa', 'Nigeria', 'Singapore',
+  'Thailand', 'Indonesia', 'Turkey', 'Greece', 'Poland', 'Czech Republic',
+  'Ireland', 'New Zealand', 'Iceland', 'Luxembourg', 'Monaco',
+]
+
+const inputClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+
 function UpcomingExhibitionDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState('')
   const [venue, setVenue] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [description, setDescription] = useState('')
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [country, setCountry] = useState('')
+  const [state, setState] = useState('')
+  const [city, setCity] = useState('')
+  const [zipCode, setZipCode] = useState('')
+  const [street, setStreet] = useState('')
+  const [number, setNumber] = useState('')
+  const [complement, setComplement] = useState('')
+  const [addressQuery, setAddressQuery] = useState('')
+  const [addressSuggestions, setAddressSuggestions] = useState<Array<{
+    display: string
+    street?: string
+    number?: string
+    city?: string
+    state?: string
+    postcode?: string
+    country?: string
+  }>>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const searchTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => setImagePreview(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (!file || !file.type.startsWith('image/')) return
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => setImagePreview(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setImagePreview(null)
+    setImageFile(null)
+  }
+
+  const searchAddress = async (query: string) => {
+    if (query.length < 3) {
+      setAddressSuggestions([])
+      return
+    }
+    setSearching(true)
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`,
+        { headers: { 'Accept-Language': 'en' } }
+      )
+      const data = await res.json()
+      setAddressSuggestions(
+        data.map((item: { display_name: string; address: { road?: string; house_number?: string; city?: string; town?: string; village?: string; state?: string; postcode?: string; country?: string } }) => ({
+          display: item.display_name,
+          street: item.address?.road || '',
+          number: item.address?.house_number || '',
+          city: item.address?.city || item.address?.town || item.address?.village || '',
+          state: item.address?.state || '',
+          postcode: item.address?.postcode || '',
+          country: item.address?.country || '',
+        }))
+      )
+      setShowSuggestions(true)
+    } catch {
+      setAddressSuggestions([])
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const handleAddressQueryChange = (value: string) => {
+    setAddressQuery(value)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    searchTimeout.current = setTimeout(() => searchAddress(value), 400)
+  }
+
+  const selectSuggestion = (suggestion: typeof addressSuggestions[0]) => {
+    setStreet(suggestion.street || '')
+    setNumber(suggestion.number || '')
+    setCity(suggestion.city || '')
+    setState(suggestion.state || '')
+    setZipCode(suggestion.postcode || '')
+    const matchedCountry = COUNTRIES.find(
+      (c) => c.toLowerCase() === suggestion.country?.toLowerCase()
+    )
+    if (matchedCountry) setCountry(matchedCountry)
+    setAddressQuery(suggestion.display)
+    setShowSuggestions(false)
+  }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -395,7 +506,7 @@ function UpcomingExhibitionDialog({ open, onClose }: { open: boolean; onClose: (
           <div className="grid gap-2">
             <label className="text-sm font-medium">Exhibition Name</label>
             <input
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={inputClass}
               placeholder="Exhibition name"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -404,18 +515,57 @@ function UpcomingExhibitionDialog({ open, onClose }: { open: boolean; onClose: (
           <div className="grid gap-2">
             <label className="text-sm font-medium">Venue</label>
             <input
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={inputClass}
               placeholder="Gallery or venue name"
               value={venue}
               onChange={(e) => setVenue(e.target.value)}
             />
           </div>
+
+          {/* Image Upload */}
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Flyer / Invitation / Image</label>
+            {imagePreview ? (
+              <div className="relative w-full">
+                <img
+                  src={imagePreview}
+                  alt="Exhibition flyer preview"
+                  className="w-full max-h-48 object-contain rounded-lg border"
+                />
+                <button
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 p-1 bg-black/60 rounded-full text-white hover:bg-black/80 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label
+                className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors cursor-pointer"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <div className="text-center">
+                  <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                  <p className="mt-1 text-sm text-gray-500">Click to upload or drag and drop</p>
+                  <p className="text-xs text-gray-400">PNG, JPG, PDF up to 10MB</p>
+                </div>
+              </label>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <label className="text-sm font-medium">Start Date</label>
               <input
                 type="date"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className={inputClass}
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
@@ -424,12 +574,123 @@ function UpcomingExhibitionDialog({ open, onClose }: { open: boolean; onClose: (
               <label className="text-sm font-medium">End Date</label>
               <input
                 type="date"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className={inputClass}
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
           </div>
+
+          {/* Address Section */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Venue Address</label>
+            <div className="relative">
+              <input
+                className={inputClass}
+                placeholder="Search address worldwide..."
+                value={addressQuery}
+                onChange={(e) => handleAddressQueryChange(e.target.value)}
+                onFocus={() => addressSuggestions.length > 0 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              />
+              {searching && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                </div>
+              )}
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                  {addressSuggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 border-b last:border-b-0 truncate"
+                      onMouseDown={() => selectSuggestion(s)}
+                    >
+                      {s.display}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2 grid gap-1">
+                <label className="text-xs text-muted-foreground">Street</label>
+                <input
+                  className={inputClass}
+                  placeholder="Street name"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1">
+                <label className="text-xs text-muted-foreground">Number</label>
+                <input
+                  className={inputClass}
+                  placeholder="No."
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-1">
+              <label className="text-xs text-muted-foreground">Complement / Floor / Suite</label>
+              <input
+                className={inputClass}
+                placeholder="Apt, Suite, Floor..."
+                value={complement}
+                onChange={(e) => setComplement(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1">
+                <label className="text-xs text-muted-foreground">City</label>
+                <input
+                  className={inputClass}
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1">
+                <label className="text-xs text-muted-foreground">State / Province</label>
+                <input
+                  className={inputClass}
+                  placeholder="State"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1">
+                <label className="text-xs text-muted-foreground">ZIP / Postal / CEP</label>
+                <input
+                  className={inputClass}
+                  placeholder="Postal code"
+                  value={zipCode}
+                  onChange={(e) => setZipCode(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1">
+                <label className="text-xs text-muted-foreground">Country</label>
+                <select
+                  className={inputClass}
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                >
+                  <option value="">Select country...</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-2">
             <label className="text-sm font-medium">Description</label>
             <textarea

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -19,11 +19,22 @@ import {
   FolderOpen,
   Quote,
   Calendar,
-  Search
+  Search,
+  Upload,
+  DollarSign,
+  FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import { QuickActionDialogs, type QuickAction } from '@/components/admin/QuickActionDialogs'
 
 const navigationItems = [
   {
@@ -119,6 +130,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   const pathname = usePathname()
   const { signOut, user } = useAuth()
   const [expandedItems, setExpandedItems] = React.useState<string[]>(['Artworks'])
+  const [quickAction, setQuickAction] = useState<QuickAction>(null)
 
   const handleSignOut = async () => {
     await signOut()
@@ -141,9 +153,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
           const isActive = pathname === item.href || (item.subItems?.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/')))
           const hasSubItems = item.expandable && item.subItems
 
-          return (
-            <div key={item.name}>
-              {/* Main item */}
+          const mainItemContent = (
               <div
                 className={cn(
                   'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer',
@@ -155,7 +165,6 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                   if (hasSubItems) {
                     toggleExpanded(item.name)
                   } else {
-                    // Navigate for non-expandable items
                     window.location.href = item.href
                   }
                 }}
@@ -185,6 +194,49 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                   </div>
                 )}
               </div>
+          )
+
+          return (
+            <div key={item.name}>
+              {item.name === 'Dashboard' ? (
+                <ContextMenu>
+                  <ContextMenuTrigger asChild>
+                    {mainItemContent}
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="w-56">
+                    <ContextMenuItem onClick={() => setQuickAction('upload-artwork')}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload New Artwork
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => setQuickAction('add-series')}>
+                      <FolderOpen className="mr-2 h-4 w-4" />
+                      Add Series
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => setQuickAction('record-sale')}>
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Record Sale
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => setQuickAction('view-galleries')}>
+                      <Building className="mr-2 h-4 w-4" />
+                      View Active Galleries
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => setQuickAction('write-journal')}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Write Journal Entry
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => setQuickAction('upcoming-exhibition')}>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Upcoming Exhibition
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground italic">
+                      Dani elsker dig
+                    </div>
+                  </ContextMenuContent>
+                </ContextMenu>
+              ) : (
+                mainItemContent
+              )}
 
               {/* Sub items */}
               {hasSubItems && isExpanded && (
@@ -245,6 +297,11 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
           </Button>
         </div>
       </div>
+
+      <QuickActionDialogs
+        activeAction={quickAction}
+        onClose={() => setQuickAction(null)}
+      />
     </div>
   )
 }
