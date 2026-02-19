@@ -214,6 +214,8 @@ function RecordSaleDialog({ open, onClose }: { open: boolean; onClose: () => voi
     'Boa mãe!!',
     'Sådan mor!!',
     'Flot!',
+    'Juppiiii!',
+    'Yumalauutaaa!',
   ]
 
   const handleRecordSale = () => {
