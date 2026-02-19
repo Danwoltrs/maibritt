@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   Image,
@@ -128,6 +128,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ className }: AdminSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const { signOut, user } = useAuth()
   const [expandedItems, setExpandedItems] = React.useState<string[]>(['Artworks'])
   const [quickAction, setQuickAction] = useState<QuickAction>(null)
@@ -165,7 +166,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                   if (hasSubItems) {
                     toggleExpanded(item.name)
                   } else {
-                    window.location.href = item.href
+                    router.push(item.href)
                   }
                 }}
               >
