@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Header from '@/components/Header'
+import ConditionalHeader from '@/components/ConditionalHeader'
 import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -50,7 +50,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          <Header />
+          <ConditionalHeader />
           <main className="min-h-screen">
             {children}
           </main>
