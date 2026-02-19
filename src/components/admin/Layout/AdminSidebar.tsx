@@ -3,7 +3,6 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import NextImage from 'next/image'
 import {
   LayoutDashboard,
   Image,
@@ -19,7 +18,10 @@ import {
   ChevronDown,
   FolderOpen,
   Quote,
-  Calendar
+  Calendar,
+  Search,
+  Plus,
+  Bell
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -134,22 +136,8 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
 
   return (
     <div className={cn('flex flex-col h-full bg-white border-r border-gray-200', className)}>
-      {/* Header */}
-      <div className="px-4 py-4 border-b border-gray-200">
-        <Link href="/dashboard" className="block">
-          <NextImage
-            src="/logo.svg"
-            alt="Mai-Britt Wolthers"
-            width={160}
-            height={32}
-            className="h-8 w-auto"
-            priority
-          />
-        </Link>
-      </div>
-
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 pt-2 space-y-1 overflow-y-auto">
         {navigationItems.map((item) => {
           const isExpanded = expandedItems.includes(item.name)
           const isActive = pathname === item.href || (item.subItems?.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/')))
@@ -233,25 +221,47 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center mb-4">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">
-              {user?.email || 'Artist'}
-            </p>
-            <p className="text-xs text-gray-500">Signed in</p>
-          </div>
+      <div className="p-4 border-t border-gray-200 space-y-3">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="search"
+            placeholder="Search artworks..."
+            className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          />
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSignOut}
-          className="w-full justify-start text-gray-700 hover:bg-gray-100"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
-        </Button>
+        {/* Quick Add & Notifications */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="flex-1" asChild>
+            <Link href="/artworks/new">
+              <Plus className="h-4 w-4 mr-1" />
+              Quick Add
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" className="relative">
+            <Bell className="h-4 w-4" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+              3
+            </span>
+          </Button>
+        </div>
+
+        {/* User & Sign Out */}
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <p className="text-xs text-gray-500 truncate">
+            {user?.email || 'Artist'}
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            className="text-gray-500 hover:text-gray-700 p-1 h-auto"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )
