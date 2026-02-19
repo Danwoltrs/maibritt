@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { Calendar, MapPin, Award, Users, Palette } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { ExhibitionsService } from '@/services'
@@ -52,19 +52,6 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
 
     fetchExhibitions()
   }, [])
-
-  const getExhibitionIcon = (type: string) => {
-    switch (type) {
-      case 'solo':
-        return <Award className="w-5 h-5" />
-      case 'group':
-        return <Users className="w-5 h-5" />
-      case 'residency':
-        return <Palette className="w-5 h-5" />
-      default:
-        return <Calendar className="w-5 h-5" />
-    }
-  }
 
   const getExhibitionColor = (type: string) => {
     switch (type) {
@@ -213,9 +200,10 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                   }}
                   className="absolute left-1/2 transform -translate-x-1/2 z-20 md:relative md:left-auto md:transform-none"
                 >
-                  <div className="w-16 h-16 bg-white rounded-full border-4 border-gray-200 flex items-center justify-center shadow-lg">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getExhibitionColor(exhibition.type)}`}>
-                      {getExhibitionIcon(exhibition.type)}
+                  <div className="w-16 h-16 bg-white rounded-full border-4 border-gray-200 flex flex-col items-center justify-center shadow-lg">
+                    <div className="text-sm font-bold text-gray-900 leading-none">{exhibition.year}</div>
+                    <div className="text-[9px] text-gray-500 uppercase tracking-wide leading-none mt-0.5">
+                      {exhibition.type}
                     </div>
                   </div>
                 </motion.div>
@@ -310,35 +298,6 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                   </Card>
                 </motion.div>
 
-                {/* Floating year indicator with continuous movement */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={shouldAnimate ? {
-                    opacity: 1,
-                    scale: 1,
-                    y: [0, -10, 0],
-                    rotate: [0, 2, 0, -2, 0]
-                  } : { opacity: 0, scale: 0 }}
-                  transition={{
-                    opacity: { delay: delay + 0.5, type: "spring", stiffness: 100 },
-                    scale: { delay: delay + 0.5, type: "spring", stiffness: 100 },
-                    y: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: index * 0.5 },
-                    rotate: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: index * 0.5 }
-                  }}
-                  className={`hidden md:block absolute ${
-                    isLeft ? 'right-0 transform translate-x-1/2' : 'left-0 transform -translate-x-1/2'
-                  } bg-white rounded-full shadow-lg p-3 border-2 border-gray-100`}
-                  style={{
-                    transform: `translateY(${parallaxOffset * 0.5}px)`
-                  }}
-                >
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-gray-900">{exhibition.year}</div>
-                    <div className="text-xs text-gray-500 uppercase tracking-wide">
-                      {exhibition.type}
-                    </div>
-                  </div>
-                </motion.div>
               </motion.div>
             )
           })}
