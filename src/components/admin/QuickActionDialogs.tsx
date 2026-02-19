@@ -259,6 +259,27 @@ function InlineAddSeriesDialog({
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [yearVal, setYearVal] = useState(new Date().getFullYear().toString())
+  const [category, setCategory] = useState('')
+  const [categories, setCategories] = useState<string[]>([])
+  const [newCategory, setNewCategory] = useState('')
+  const [showNewCategory, setShowNewCategory] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      SeriesService.getCategories().then(setCategories).catch(console.error)
+    }
+  }, [open])
+
+  const handleAddCategory = () => {
+    if (!newCategory.trim()) return
+    const cat = newCategory.trim()
+    if (!categories.includes(cat)) {
+      setCategories((prev) => [...prev, cat].sort())
+    }
+    setCategory(cat)
+    setNewCategory('')
+    setShowNewCategory(false)
+  }
 
   const handleCreate = async () => {
     if (!name.trim()) return
@@ -267,12 +288,14 @@ function InlineAddSeriesDialog({
         name: { en: name, ptBR: '' },
         description: { en: description, ptBR: '' },
         year: parseInt(yearVal) || new Date().getFullYear(),
+        category: category || undefined,
       })
       if (created) {
         onCreated(created)
         setName('')
         setDescription('')
         setYearVal(new Date().getFullYear().toString())
+        setCategory('')
       }
     } catch (err) {
       console.error('Failed to create series:', err)
@@ -298,6 +321,47 @@ function InlineAddSeriesDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Category</label>
+            <div className="flex gap-2">
+              <select
+                className={inputClass + ' flex-1'}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="">No category</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setShowNewCategory(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                New
+              </Button>
+            </div>
+            {showNewCategory && (
+              <div className="flex gap-2 mt-1">
+                <input
+                  className={inputClass + ' flex-1'}
+                  placeholder="e.g. Paintings, Sculptures..."
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                  autoFocus
+                />
+                <Button size="sm" onClick={handleAddCategory}>Add</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setShowNewCategory(false); setNewCategory('') }}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium">Year</label>
@@ -330,6 +394,47 @@ function InlineAddSeriesDialog({
 function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [yearVal, setYearVal] = useState(new Date().getFullYear().toString())
+  const [category, setCategory] = useState('')
+  const [categories, setCategories] = useState<string[]>([])
+  const [newCategory, setNewCategory] = useState('')
+  const [showNewCategory, setShowNewCategory] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      SeriesService.getCategories().then(setCategories).catch(console.error)
+    }
+  }, [open])
+
+  const handleAddCategory = () => {
+    if (!newCategory.trim()) return
+    const cat = newCategory.trim()
+    if (!categories.includes(cat)) {
+      setCategories((prev) => [...prev, cat].sort())
+    }
+    setCategory(cat)
+    setNewCategory('')
+    setShowNewCategory(false)
+  }
+
+  const handleCreate = async () => {
+    if (!name.trim()) return
+    try {
+      await SeriesService.createSeries({
+        name: { en: name, ptBR: '' },
+        description: { en: description, ptBR: '' },
+        year: parseInt(yearVal) || new Date().getFullYear(),
+        category: category || undefined,
+      })
+      setName('')
+      setDescription('')
+      setYearVal(new Date().getFullYear().toString())
+      setCategory('')
+      onClose()
+    } catch (err) {
+      console.error('Failed to create series:', err)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -345,16 +450,66 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
           <div className="grid gap-2">
             <label className="text-sm font-medium">Series Name</label>
             <input
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={inputClass}
               placeholder="Series name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
+            <label className="text-sm font-medium">Category</label>
+            <div className="flex gap-2">
+              <select
+                className={inputClass + ' flex-1'}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="">No category</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setShowNewCategory(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                New
+              </Button>
+            </div>
+            {showNewCategory && (
+              <div className="flex gap-2 mt-1">
+                <input
+                  className={inputClass + ' flex-1'}
+                  placeholder="e.g. Paintings, Sculptures..."
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                  autoFocus
+                />
+                <Button size="sm" onClick={handleAddCategory}>Add</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setShowNewCategory(false); setNewCategory('') }}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Year</label>
+            <input
+              className={inputClass}
+              placeholder="e.g. 2024"
+              value={yearVal}
+              onChange={(e) => setYearVal(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
             <label className="text-sm font-medium">Description</label>
             <textarea
-              className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="Describe this series..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -363,7 +518,7 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button>Create Series</Button>
+          <Button onClick={handleCreate}>Create Series</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

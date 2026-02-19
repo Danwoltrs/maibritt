@@ -14,6 +14,7 @@ export interface SeriesCreateData {
   isSeasonal?: boolean
   seasonStart?: Date
   seasonEnd?: Date
+  category?: string
 }
 
 export interface SeriesUpdateData {
@@ -26,6 +27,7 @@ export interface SeriesUpdateData {
   seasonEnd?: Date
   isActive?: boolean
   displayOrder?: number
+  category?: string
 }
 
 export interface SeriesWithArtworks extends ArtSeries {
@@ -195,7 +197,8 @@ export class SeriesService {
           is_seasonal: seriesData.isSeasonal || false,
           season_start: seriesData.seasonStart || null,
           season_end: seriesData.seasonEnd || null,
-          display_order: nextDisplayOrder
+          display_order: nextDisplayOrder,
+          category: seriesData.category || null
         })
         .select()
         .single()
@@ -236,6 +239,7 @@ export class SeriesService {
       if (updateData.seasonEnd !== undefined) updateObject.season_end = updateData.seasonEnd
       if (updateData.isActive !== undefined) updateObject.is_active = updateData.isActive
       if (updateData.displayOrder !== undefined) updateObject.display_order = updateData.displayOrder
+      if (updateData.category !== undefined) updateObject.category = updateData.category
 
       // Upload new cover image if provided
       if (updateData.newCoverImageFile) {
@@ -467,6 +471,27 @@ export class SeriesService {
   /**
    * Transform database record to ArtSeries type
    */
+  /**
+   * Get distinct categories from existing series
+   */
+  static async getCategories(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('art_series')
+        .select('category')
+        .not('category', 'is', null)
+        .order('category')
+
+      if (error) throw error
+
+      const unique = [...new Set(data?.map((d) => d.category).filter(Boolean))] as string[]
+      return unique
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      return []
+    }
+  }
+
   private static transformSeriesFromDB(data: any): ArtSeries {
     return {
       id: data.id,
@@ -485,7 +510,8 @@ export class SeriesService {
       isActive: data.is_active,
       isSeasonal: data.is_seasonal,
       seasonStart: data.season_start ? new Date(data.season_start) : undefined,
-      seasonEnd: data.season_end ? new Date(data.season_end) : undefined
+      seasonEnd: data.season_end ? new Date(data.season_end) : undefined,
+      category: data.category || undefined
     }
   }
 }
