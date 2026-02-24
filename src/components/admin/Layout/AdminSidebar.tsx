@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import NextImage from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -62,7 +61,7 @@ const navigationItems = [
         description: 'Add new artwork'
       },
       {
-        name: 'Series & Collections',
+        name: 'Work',
         href: '/artworks/series',
         description: 'Manage series'
       },
@@ -148,19 +147,6 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
 
   return (
     <div className={cn('flex flex-col h-full bg-white border-r border-gray-200', className)}>
-      {/* Logo */}
-      <div className="px-4 py-4 border-b border-gray-100">
-        <Link href="/dashboard">
-          <NextImage
-            src="/logo.svg"
-            alt="Mai-Britt Wolthers"
-            width={160}
-            height={32}
-            priority
-          />
-        </Link>
-      </div>
-
       {/* Navigation */}
       <nav className="flex-1 p-4 pt-2 space-y-1 overflow-y-auto">
         {navigationItems.map((item) => {

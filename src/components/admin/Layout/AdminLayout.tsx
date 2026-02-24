@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { AdminHeader } from './AdminHeader'
 import { AdminSidebar } from './AdminSidebar'
 import AuthGuard from '@/components/auth/AuthGuard'
+import { Menu } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -11,48 +12,33 @@ interface AdminLayoutProps {
   subtitle?: string
 }
 
-export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
+export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  const handleMenuClick = () => {
-    setSidebarOpen(!sidebarOpen)
-  }
 
   // Create a blurred fallback component for unauthenticated users
   const BlurredDashboardFallback = () => (
-    <div className="h-screen flex overflow-hidden bg-gray-50 relative">
+    <div className="min-h-[calc(100vh-5rem)] bg-gray-50 relative">
       {/* Blurred dashboard background */}
-      <div className="absolute inset-0 blur-sm pointer-events-none">
+      <div className="absolute inset-0 blur-sm pointer-events-none flex">
         {/* Sidebar - Desktop */}
-        <div className="hidden lg:flex lg:flex-shrink-0">
-          <div className="w-64">
-            <AdminSidebar />
-          </div>
+        <div className="hidden lg:block w-64 flex-shrink-0">
+          <AdminSidebar />
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <AdminHeader 
-            onMenuClick={() => {}}
-            title={title || "Dashboard"}
-            subtitle={subtitle || "Artist Portfolio Management"}
-          />
-          
-          <main className="flex-1 overflow-auto p-6">
-            {/* Mock dashboard content */}
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 h-32"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="bg-white rounded-lg p-6 h-24"></div>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-lg p-6 h-64"></div>
-                <div className="bg-white rounded-lg p-6 h-64"></div>
-              </div>
+        <div className="flex-1 p-6">
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 h-32"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="bg-white rounded-lg p-6 h-24"></div>
+              ))}
             </div>
-          </main>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 bg-white rounded-lg p-6 h-64"></div>
+              <div className="bg-white rounded-lg p-6 h-64"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -67,7 +53,7 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
               Please sign in to access the artist dashboard
             </p>
           </div>
-          
+
           <div className="space-y-4">
             <a
               href="/login?redirectTo=/dashboard"
@@ -89,39 +75,40 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
 
   return (
     <AuthGuard fallback={<BlurredDashboardFallback />}>
-      <div className="h-screen flex overflow-hidden bg-gray-50">
+      <div className="min-h-[calc(100vh-5rem)] bg-gray-50 flex">
         {/* Sidebar - Desktop */}
-        <div className="hidden lg:flex lg:flex-shrink-0">
-          <div className="w-64">
+        <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
+          <div className="sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto">
             <AdminSidebar />
           </div>
         </div>
 
+        {/* Mobile sidebar toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="fixed bottom-4 left-4 z-50 lg:hidden bg-white shadow-md"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
         {/* Sidebar - Mobile */}
         {sidebarOpen && (
           <>
-            {/* Backdrop */}
             <div
               className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
               onClick={() => setSidebarOpen(false)}
             />
-            
-            {/* Sidebar */}
-            <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white lg:hidden">
+            <div className="fixed top-20 bottom-0 left-0 z-50 w-64 bg-white lg:hidden">
               <AdminSidebar />
             </div>
           </>
         )}
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <AdminHeader 
-            onMenuClick={handleMenuClick}
-            title={title}
-            subtitle={subtitle}
-          />
-          
-          <main className="flex-1 overflow-auto p-6">
+        <div className="flex-1 min-w-0">
+          <main className="p-6">
             {children}
           </main>
         </div>
