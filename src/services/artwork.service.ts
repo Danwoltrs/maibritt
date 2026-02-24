@@ -4,7 +4,7 @@ import { Artwork, Content } from '@/types'
 import { StorageService, ImageVariant } from './storage.service'
 
 export interface ArtworkFilters {
-  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'mixed-media'
+  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   year?: number
   series?: string
   forSale?: boolean
@@ -18,7 +18,7 @@ export interface ArtworkCreateData {
   medium: Content
   dimensions: string
   description?: Content
-  category: 'painting' | 'sculpture' | 'engraving' | 'video' | 'mixed-media'
+  category: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   seriesId?: string
   images: File[]
   forSale?: boolean
@@ -33,7 +33,7 @@ export interface ArtworkUpdateData {
   medium?: Content
   dimensions?: string
   description?: Content
-  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'mixed-media'
+  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   seriesId?: string | null
   newImages?: File[]
   imagesToDelete?: string[]

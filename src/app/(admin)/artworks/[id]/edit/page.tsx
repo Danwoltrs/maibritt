@@ -29,8 +29,9 @@ interface SeriesOption {
 const categories = [
   { value: 'painting', label: 'Painting / Pintura' },
   { value: 'sculpture', label: 'Sculpture / Escultura' },
-  { value: 'engraving', label: 'Engraving / Gravura' },
+  { value: 'engraving', label: 'Engravings / Gravuras' },
   { value: 'video', label: 'Video / Vídeo' },
+  { value: 'installations', label: 'Installations / Instalações' },
   { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' }
 ]
 

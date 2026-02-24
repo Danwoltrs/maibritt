@@ -168,8 +168,9 @@ export default function ArtworksPage() {
   const categories = [
     { value: 'painting', label: 'Painting' },
     { value: 'sculpture', label: 'Sculpture' },
-    { value: 'engraving', label: 'Engraving' },
-    { value: 'video', label: 'Video Art' },
+    { value: 'engraving', label: 'Engravings' },
+    { value: 'video', label: 'Video' },
+    { value: 'installations', label: 'Installations' },
     { value: 'mixed-media', label: 'Mixed Media' }
   ]
 

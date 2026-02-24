@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Upload, X, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ArrowLeft, Upload, X, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Plus, Maximize2, Minimize2 } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,7 +27,7 @@ interface UploadedImage {
 
 interface CommonMetadata {
   seriesId?: string
-  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'mixed-media'
+  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   year?: number
 }
 
@@ -59,8 +59,9 @@ interface SeriesOption {
 const categories = [
   { value: 'painting', label: 'Painting / Pintura' },
   { value: 'sculpture', label: 'Sculpture / Escultura' },
-  { value: 'engraving', label: 'Engraving / Gravura' },
+  { value: 'engraving', label: 'Engravings / Gravuras' },
   { value: 'video', label: 'Video / Vídeo' },
+  { value: 'installations', label: 'Installations / Instalações' },
   { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' }
 ]
 
@@ -103,6 +104,10 @@ export default function NewArtworkPage() {
   // Step 2: Individual Details
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [artworkDetails, setArtworkDetails] = useState<Record<number, ArtworkDetails>>({})
+
+  // Fullscreen & Lightbox
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   // Submission
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -460,10 +465,10 @@ export default function NewArtworkPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Series & Collections */}
+              {/* Work */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Series & Collections (Optional)</Label>
+                  <Label>Work (Optional)</Label>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="applySeriesAll"
@@ -664,19 +669,19 @@ export default function NewArtworkPage() {
   }
 
   // Step 2: Individual Details
-  return (
-    <div className="space-y-6">
+  const detailsContent = (
+    <div className={`space-y-6 ${isFullscreen ? 'p-6' : ''}`}>
       {/* Header with Progress */}
       <div className="space-y-4">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setStep('upload')}
+            onClick={() => { if (isFullscreen) setIsFullscreen(false); else setStep('upload'); }}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Upload
+            {isFullscreen ? 'Exit Fullscreen' : 'Back to Upload'}
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900">
@@ -684,6 +689,15 @@ export default function NewArtworkPage() {
             </h1>
             <p className="text-gray-600">Fill in the details for each artwork</p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="flex items-center gap-2"
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+          </Button>
         </div>
 
         {/* Progress Bar */}
@@ -715,12 +729,23 @@ export default function NewArtworkPage() {
             <CardTitle>Image Preview</CardTitle>
           </CardHeader>
           <CardContent>
-            <img
-              src={uploadedImages[currentImageIndex].preview}
-              alt={`Artwork ${currentImageIndex + 1}`}
-              className="w-full aspect-square object-cover rounded-lg"
-            />
-            <div className="mt-4 flex justify-between items-center">
+            <div
+              onClick={() => setLightboxOpen(true)}
+              className="cursor-pointer group relative"
+            >
+              <img
+                src={uploadedImages[currentImageIndex].preview}
+                alt={`Artwork ${currentImageIndex + 1}`}
+                className="w-full aspect-square object-cover rounded-lg transition-opacity group-hover:opacity-90"
+              />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="bg-black/60 text-white text-sm px-3 py-1.5 rounded-full">
+                  Click to enlarge
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 text-center mt-2">Click image to enlarge</p>
+            <div className="mt-3 flex justify-between items-center">
               <Button
                 variant="outline"
                 size="sm"
@@ -940,5 +965,32 @@ export default function NewArtworkPage() {
         </div>
       </div>
     </div>
+  )
+
+  return (
+    <>
+      {/* Image Lightbox */}
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-4xl p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Artwork Preview</DialogTitle>
+          </DialogHeader>
+          <img
+            src={uploadedImages[currentImageIndex]?.preview}
+            alt={`Artwork ${currentImageIndex + 1}`}
+            className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Fullscreen overlay or normal view */}
+      {isFullscreen ? (
+        <div className="fixed inset-0 z-50 bg-white overflow-auto">
+          {detailsContent}
+        </div>
+      ) : (
+        detailsContent
+      )}
+    </>
   )
 }

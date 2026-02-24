@@ -18,7 +18,7 @@ export interface Artwork {
   medium: Content
   dimensions: string
   description: Content
-  category: 'painting' | 'sculpture' | 'engraving' | 'video' | 'mixed-media'
+  category: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   series?: string
   location?: string
   status?: 'available' | 'sold' | 'reserved' | 'archived'
