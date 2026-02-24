@@ -234,7 +234,7 @@ export default function SeriesManagementPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Series & Collections</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Work</h1>
           <p className="text-gray-600">Organize your artworks into meaningful collections</p>
         </div>
         <Button onClick={openCreateDialog} className="flex items-center gap-2">

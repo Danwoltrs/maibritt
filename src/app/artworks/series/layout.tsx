@@ -6,7 +6,7 @@ export default function SeriesLayout({
   children: React.ReactNode
 }) {
   return (
-    <AdminLayout title="Series & Collections" subtitle="Organize your artworks into meaningful collections">
+    <AdminLayout title="Work" subtitle="Organize your artworks into meaningful collections">
       {children}
     </AdminLayout>
   )
