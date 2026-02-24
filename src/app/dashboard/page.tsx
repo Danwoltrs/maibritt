@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { TrendingUp, Image, Building, DollarSign, MapPin, PenTool, Loader2 } from 'lucide-react'
+import { TrendingUp, Image, Building, DollarSign, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArtworkService, GalleryService } from '@/services'
@@ -18,39 +18,29 @@ function getDanishGreeting(): string {
 
 const quickActions = [
   {
-    title: 'Upload New Artwork',
+    title: 'New Work',
     description: 'Add a new piece to your portfolio',
-    icon: Image,
     href: '/artworks/new',
-    color: 'bg-blue-500'
   },
   {
-    title: 'Add Gallery',
+    title: 'New Gallery',
     description: 'Register a new partner gallery',
-    icon: Building,
     href: '/galleries/new',
-    color: 'bg-green-500'
   },
   {
-    title: 'Record Sale',
+    title: 'Sold',
     description: 'Log a recent artwork sale',
-    icon: DollarSign,
     href: '/sales/new',
-    color: 'bg-purple-500'
   },
   {
-    title: 'Update Location',
+    title: 'Piece Moved',
     description: 'Move artwork to new location',
-    icon: MapPin,
     href: '/artworks/locations',
-    color: 'bg-orange-500'
   },
   {
-    title: 'Write Journal Entry',
+    title: 'New Journal Entry',
     description: 'Document your creative process',
-    icon: PenTool,
     href: '/journal/new',
-    color: 'bg-pink-500'
   }
 ]
 
@@ -266,20 +256,17 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {quickActions.map((action) => (
                 <Button
                   key={action.title}
                   variant="outline"
-                  className="h-auto p-4 flex flex-col items-start text-left"
+                  className="h-auto px-4 py-3 flex flex-col items-start text-left hover:bg-gray-50 transition-colors"
                   asChild
                 >
                   <a href={action.href}>
-                    <div className={`p-2 rounded-md ${action.color} mb-3`}>
-                      <action.icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="font-medium text-sm mb-1">{action.title}</div>
-                    <div className="text-xs text-gray-600">{action.description}</div>
+                    <div className="font-medium text-sm">{action.title}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{action.description}</div>
                   </a>
                 </Button>
               ))}
