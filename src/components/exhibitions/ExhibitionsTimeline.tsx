@@ -188,26 +188,6 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                   isLeft ? 'md:flex-row' : 'md:flex-row-reverse'
                 }`}
               >
-                {/* Timeline dot with fancy animation */}
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={shouldAnimate ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
-                  transition={{
-                    duration: 0.6,
-                    delay: delay + 0.3,
-                    type: "spring",
-                    stiffness: 100
-                  }}
-                  className="absolute left-1/2 transform -translate-x-1/2 z-20 md:relative md:left-auto md:transform-none"
-                >
-                  <div className="w-16 h-16 bg-white rounded-full border-4 border-gray-200 flex flex-col items-center justify-center shadow-lg">
-                    <div className="text-sm font-bold text-gray-900 leading-none">{exhibition.year}</div>
-                    <div className="text-[9px] text-gray-500 uppercase tracking-wide leading-none mt-0.5">
-                      {exhibition.type}
-                    </div>
-                  </div>
-                </motion.div>
-
                 {/* Exhibition card with parallax effect */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
