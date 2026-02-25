@@ -54,7 +54,7 @@ interface ApplyToAll {
   year: boolean
 }
 
-const CATEGORIES = [
+const WORKS = [
   { value: 'painting', label: 'Painting / Pintura' },
   { value: 'sculpture', label: 'Sculpture / Escultura' },
   { value: 'engraving', label: 'Engravings / Gravuras' },
@@ -144,7 +144,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
       return
     }
     if (applyToAll.category && !commonMeta.category) {
-      setError('Please select a category since "Same for all" is checked')
+      setError('Please select a work since "Same for all" is checked')
       return
     }
 
@@ -185,7 +185,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     const seriesId = applyToAll.series ? commonMeta.seriesId : undefined
 
     if (!category) {
-      setError('Please go back and set a category with "Same for all" checked, or ensure each artwork has a category')
+      setError('Please go back and set a work with "Same for all" checked')
       return
     }
 
@@ -416,10 +416,10 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
                 </div>
               </div>
 
-              {/* Category */}
+              {/* Work (category) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Category *</Label>
+                  <Label>Work *</Label>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="applyCatAll"
@@ -439,10 +439,10 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
                   disabled={!applyToAll.category}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={applyToAll.category ? 'Select category' : "Enable 'Same for all'"} />
+                    <SelectValue placeholder={applyToAll.category ? 'Select work' : "Enable 'Same for all'"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map(c => (
+                    {WORKS.map(c => (
                       <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -583,10 +583,10 @@ function InlineAddSeriesDialog({
             <input className={inputClass} placeholder="Series name" value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
           </div>
           <div className="grid gap-2">
-            <Label>Category</Label>
+            <Label>Work</Label>
             <div className="flex gap-2">
               <select className={inputClass + ' flex-1'} value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option value="">No category</option>
+                <option value="">No work</option>
                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
               <Button variant="outline" size="sm" className="shrink-0" onClick={() => setShowNewCategory(true)}>
