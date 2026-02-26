@@ -71,3 +71,6 @@ export type {
   QuoteCreateData,
   QuoteUpdateData
 } from './quotes.service'
+
+export { AiUsageService } from './ai-usage.service'
+export type { AiUsageStats } from './ai-usage.service'

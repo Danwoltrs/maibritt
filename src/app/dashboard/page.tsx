@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { TrendingUp, Image, Building, DollarSign, Loader2 } from 'lucide-react'
+import { TrendingUp, Image, Building, DollarSign, Loader2, Sparkles } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArtworkService, GalleryService } from '@/services'
+import { ArtworkService, GalleryService, AiUsageService } from '@/services'
 
 function getDanishGreeting(): string {
   const hour = new Date().getHours()
@@ -53,6 +53,8 @@ interface DashboardStats {
   totalGalleries: number
   activeGalleries: number
   journalEntries: number
+  aiCallCount: number
+  aiCostTotal: number
 }
 
 export default function DashboardPage() {
@@ -76,9 +78,10 @@ export default function DashboardPage() {
         setLoading(true)
         
         // Fetch lightweight stats instead of full records
-        const [artworkStats, galleriesResponse] = await Promise.all([
+        const [artworkStats, galleriesResponse, aiUsageStats] = await Promise.all([
           ArtworkService.getArtworkStats(),
-          GalleryService.getAll({})
+          GalleryService.getAll({}),
+          AiUsageService.getUsageStats()
         ])
         const galleries = galleriesResponse.data || []
 
@@ -91,7 +94,9 @@ export default function DashboardPage() {
           monthlyRevenue: 0, // TODO: Calculate from sales data
           totalGalleries: galleries.length,
           activeGalleries,
-          journalEntries: 0 // TODO: Fetch from journal entries
+          journalEntries: 0, // TODO: Fetch from journal entries
+          aiCallCount: aiUsageStats.totalCalls,
+          aiCostTotal: aiUsageStats.totalCost
         })
         
         // Set empty recent activity for now
@@ -108,7 +113,9 @@ export default function DashboardPage() {
           monthlyRevenue: 0,
           totalGalleries: 0,
           activeGalleries: 0,
-          journalEntries: 0
+          journalEntries: 0,
+          aiCallCount: 0,
+          aiCostTotal: 0
         })
         setRecentActivity([])
       } finally {
@@ -154,7 +161,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Artworks</CardTitle>
@@ -239,6 +246,28 @@ export default function DashboardPage() {
                 <div className="text-2xl font-bold">{stats?.artworksSold || 0}</div>
                 <p className="text-xs text-gray-600">
                   Lifetime sales
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">AI Usage</CardTitle>
+            <Sparkles className="h-4 w-4 text-gray-600" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-gray-500">Loading...</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stats?.aiCallCount || 0}</div>
+                <p className="text-xs text-gray-600">
+                  calls ~${(stats?.aiCostTotal || 0).toFixed(4)}
                 </p>
               </>
             )}

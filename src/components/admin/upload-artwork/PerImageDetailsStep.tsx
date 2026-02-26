@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Sparkles,
   Loader2,
+  Maximize2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -184,22 +185,21 @@ export function PerImageDetailsStep({
       {/* Main content: image top, form bottom */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
-          {/* Large image preview */}
-          <div
-            className="relative cursor-pointer group mx-auto"
-            style={{ maxHeight: '40vh' }}
-            onClick={() => setLightboxOpen(true)}
-          >
+          {/* Image preview */}
+          <div className="relative mx-auto w-fit">
             <img
               src={images[currentIndex]?.preview}
               alt={`Artwork ${currentIndex + 1}`}
-              className="max-h-[40vh] w-auto mx-auto object-contain rounded-lg border"
+              className="max-h-[20vh] w-auto mx-auto object-contain rounded-lg border"
             />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="bg-black/60 text-white text-sm px-3 py-1.5 rounded-full">
-                Click to enlarge
-              </span>
-            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute top-2 right-2 h-7 w-7 p-0 bg-black/50 hover:bg-black/70 text-white border-0"
+              onClick={() => setLightboxOpen(true)}
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </Button>
           </div>
 
           {/* Form */}

@@ -87,16 +87,16 @@ export class ArtworkService {
     try {
       const { data, error } = await supabase
         .from('artworks')
-        .select('id, location, status')
+        .select('id, location_type, is_sold')
 
       if (error) throw error
 
       const artworks = data || []
       return {
         totalArtworks: artworks.length,
-        artworksInGalleries: artworks.filter(a => a.location && a.location !== 'studio').length,
-        artworksInStudio: artworks.filter(a => !a.location || a.location === 'studio').length,
-        artworksSold: artworks.filter(a => a.status === 'sold').length
+        artworksInGalleries: artworks.filter(a => a.location_type === 'gallery' || a.location_type === 'exhibition').length,
+        artworksInStudio: artworks.filter(a => !a.location_type || a.location_type === 'studio').length,
+        artworksSold: artworks.filter(a => a.is_sold === true).length
       }
     } catch (error) {
       console.error('Error fetching artwork stats:', error)
