@@ -9,6 +9,7 @@ import { ArtworkService } from '@/services'
 import { SettingsService, SiteSettings } from '@/services/settings.service'
 import { Artwork } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
+import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 
 interface HeroCarouselProps {
   showControls?: boolean
@@ -33,6 +34,26 @@ const HeroCarousel = ({
   const [unfeaturing, setUnfeaturing] = useState(false)
   const { isAuthenticated } = useAuth()
 
+  const reloadArtworks = async () => {
+    try {
+      const response = await ArtworkService.getArtworks(
+        { featured: true },
+        { page: 1, limit: 20 }
+      )
+      if (response.artworks.length === 0) {
+        const fallbackResponse = await ArtworkService.getArtworks(
+          {},
+          { page: 1, limit: 20 }
+        )
+        setArtworks(fallbackResponse.artworks)
+      } else {
+        setArtworks(response.artworks)
+      }
+    } catch (err) {
+      console.error('Error reloading artworks:', err)
+    }
+  }
+
   // Fetch carousel settings and artworks
   useEffect(() => {
     const fetchData = async () => {
@@ -44,22 +65,7 @@ const HeroCarousel = ({
         setSettings(carouselSettings)
         setIsPlaying(carouselSettings.carouselAutoPlay)
 
-        // Fetch artworks
-        const response = await ArtworkService.getArtworks(
-          { featured: true }, // Show featured artworks first
-          { page: 1, limit: 20 } // Show up to 20 featured artworks
-        )
-
-        if (response.artworks.length === 0) {
-          // Fallback to latest artworks if no featured ones
-          const fallbackResponse = await ArtworkService.getArtworks(
-            {},
-            { page: 1, limit: 20 }
-          )
-          setArtworks(fallbackResponse.artworks)
-        } else {
-          setArtworks(response.artworks)
-        }
+        await reloadArtworks()
       } catch (err) {
         console.error('Error fetching carousel data:', err)
         setError('Failed to load artworks')
@@ -162,6 +168,7 @@ const HeroCarousel = ({
   const currentArtwork = artworks[currentSlide]
 
   return (
+    <ArtworkContextMenu artwork={currentArtwork} onUpdate={reloadArtworks}>
     <div
       className={`relative h-screen w-full overflow-hidden ${className}`}
       onMouseEnter={() => settings.carouselPauseOnHover && setIsPlaying(false)}
@@ -349,6 +356,7 @@ const HeroCarousel = ({
         </div>
       )}
     </div>
+    </ArtworkContextMenu>
   )
 }
 

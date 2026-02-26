@@ -17,6 +17,7 @@ import {
 
 import { Artwork } from '@/types'
 import { ArtworkService } from '@/services/artwork.service'
+import { useAuth } from '@/hooks/useAuth'
 
 import {
   PreviewModal,
@@ -46,9 +47,15 @@ interface ArtworkContextMenuProps {
 
 export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkContextMenuProps) {
   const router = useRouter()
+  const { isAuthenticated } = useAuth()
   const [activeModal, setActiveModal] = useState<ModalType>(null)
 
   const closeModal = useCallback(() => setActiveModal(null), [])
+
+  // If not authenticated, just render children without context menu
+  if (!isAuthenticated) {
+    return <>{children}</>
+  }
 
   const handleDownload = () => {
     if (artwork.images.length === 0) return

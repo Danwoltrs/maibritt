@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { SeriesService, SeriesWithArtworks } from '@/services'
 import { Artwork } from '@/types'
+import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 
 interface SeriesModalProps {
   seriesId: string | null
@@ -86,6 +87,16 @@ export default function SeriesModal({ seriesId, isOpen, onClose }: SeriesModalPr
     document.addEventListener('keydown', handleKeyNav)
     return () => document.removeEventListener('keydown', handleKeyNav)
   }, [selectedArtwork, series])
+
+  const reloadSeries = async () => {
+    if (!seriesId) return
+    try {
+      const data = await SeriesService.getSeriesById(seriesId)
+      setSeries(data)
+    } catch (err) {
+      console.error('Error reloading series:', err)
+    }
+  }
 
   const getDisplayTitle = (artwork: Artwork) => artwork.title.en || artwork.title.ptBR
   const getDisplayMedium = (artwork: Artwork) => artwork.medium.en || artwork.medium.ptBR
@@ -171,41 +182,42 @@ export default function SeriesModal({ seriesId, isOpen, onClose }: SeriesModalPr
                   {/* Artwork grid */}
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {series.latestArtworks.map((artwork, index) => (
-                      <motion.div
-                        key={artwork.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="group cursor-pointer"
-                        onClick={() => {
-                          setSelectedArtwork(artwork)
-                          setLightboxIndex(0)
-                        }}
-                      >
-                        <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                          {artwork.images.length > 0 ? (
-                            <Image
-                              src={artwork.images[0].display}
-                              alt={getDisplayTitle(artwork)}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Images className="w-8 h-8 text-gray-400" />
+                      <ArtworkContextMenu key={artwork.id} artwork={artwork} onUpdate={reloadSeries}>
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="group cursor-pointer"
+                          onClick={() => {
+                            setSelectedArtwork(artwork)
+                            setLightboxIndex(0)
+                          }}
+                        >
+                          <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                            {artwork.images.length > 0 ? (
+                              <Image
+                                src={artwork.images[0].display}
+                                alt={getDisplayTitle(artwork)}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Images className="w-8 h-8 text-gray-400" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                              <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
-                          )}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                            <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
-                        </div>
-                        <div className="mt-2">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {getDisplayTitle(artwork)}
-                          </h3>
-                          <p className="text-xs text-gray-500">{artwork.year}</p>
-                        </div>
-                      </motion.div>
+                          <div className="mt-2">
+                            <h3 className="text-sm font-medium text-gray-900 truncate">
+                              {getDisplayTitle(artwork)}
+                            </h3>
+                            <p className="text-xs text-gray-500">{artwork.year}</p>
+                          </div>
+                        </motion.div>
+                      </ArtworkContextMenu>
                     ))}
                   </div>
 
