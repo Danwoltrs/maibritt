@@ -34,6 +34,7 @@ import { SeriesService, ArtSeries } from '@/services/series.service'
 import { ArtworkService } from '@/services/artwork.service'
 import { Artwork } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -451,8 +452,8 @@ export default function SeriesDetailPage({ params }: PageProps) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {artworks.map((artwork) => (
+                <ArtworkContextMenu key={artwork.id} artwork={artwork} onUpdate={loadData}>
                 <div
-                  key={artwork.id}
                   className="group relative bg-gray-50 rounded-lg overflow-hidden border hover:shadow-lg transition-shadow"
                 >
                   {/* Artwork Image */}
@@ -496,6 +497,7 @@ export default function SeriesDetailPage({ params }: PageProps) {
                     <p className="text-xs text-gray-400 truncate">{artwork.medium.en}</p>
                   </div>
                 </div>
+                </ArtworkContextMenu>
               ))}
             </div>
           )}

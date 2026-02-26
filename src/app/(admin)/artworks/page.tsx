@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch'
 
 import { ArtworkService, ArtworkFilters } from '@/services/artwork.service'
 import { Artwork } from '@/types'
+import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 
 interface ArtworkPageFilters extends ArtworkFilters {
   sortBy: 'created_at' | 'year' | 'title' | 'display_order'
@@ -394,7 +395,8 @@ export default function ArtworksPage() {
           : "space-y-4"
       }>
         {sortedArtworks.map((artwork) => (
-          <Card key={artwork.id} className="group hover:shadow-lg transition-shadow">
+          <ArtworkContextMenu key={artwork.id} artwork={artwork} onUpdate={loadArtworks}>
+          <Card className="group hover:shadow-lg transition-shadow">
             <div className={
               filters.viewMode === 'grid' 
                 ? "aspect-square overflow-hidden rounded-t-lg"
@@ -500,6 +502,7 @@ export default function ArtworksPage() {
               </div>
             </CardContent>
           </Card>
+          </ArtworkContextMenu>
         ))}
       </div>
 

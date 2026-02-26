@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pause, Play, StarOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ArtworkService } from '@/services'
 import { SettingsService, SiteSettings } from '@/services/settings.service'
 import { Artwork } from '@/types'
+import { useAuth } from '@/hooks/useAuth'
 
 interface HeroCarouselProps {
   showControls?: boolean
@@ -29,6 +30,8 @@ const HeroCarousel = ({
   const [isPlaying, setIsPlaying] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [unfeaturing, setUnfeaturing] = useState(false)
+  const { isAuthenticated } = useAuth()
 
   // Fetch carousel settings and artworks
   useEffect(() => {
@@ -110,6 +113,26 @@ const HeroCarousel = ({
 
   const togglePlayPause = () => {
     setIsPlaying(prev => !prev)
+  }
+
+  const handleUnfeature = async () => {
+    const artwork = artworks[currentSlide]
+    if (!artwork) return
+    setUnfeaturing(true)
+    try {
+      await ArtworkService.updateArtwork(artwork.id, { featured: false })
+      setArtworks(prev => {
+        const next = prev.filter((_, i) => i !== currentSlide)
+        if (currentSlide >= next.length && next.length > 0) {
+          setCurrentSlide(next.length - 1)
+        }
+        return next
+      })
+    } catch (err) {
+      console.error('Error unfeaturing artwork:', err)
+    } finally {
+      setUnfeaturing(false)
+    }
   }
 
   if (isLoading) {
@@ -240,15 +263,30 @@ const HeroCarousel = ({
           </Button>
 
           {/* Play/Pause control */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white border-none z-10"
-            onClick={togglePlayPause}
-            aria-label={isPlaying ? 'Pause slideshow' : 'Play slideshow'}
-          >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </Button>
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
+            {isAuthenticated && currentArtwork?.featured && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-white/10 hover:bg-red-500/40 text-white border-none"
+                onClick={handleUnfeature}
+                disabled={unfeaturing}
+                aria-label="Remove from featured"
+                title="Remove from featured"
+              >
+                <StarOff className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-white/10 hover:bg-white/20 text-white border-none"
+              onClick={togglePlayPause}
+              aria-label={isPlaying ? 'Pause slideshow' : 'Play slideshow'}
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+          </div>
 
           {/* Scroll indicator with dots */}
           <motion.div

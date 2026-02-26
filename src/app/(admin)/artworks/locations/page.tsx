@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 
 import { ArtworkService } from '@/services/artwork.service'
 import { Artwork } from '@/types'
+import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 
 interface LocationFilter {
   location: 'all' | 'studio' | 'gallery' | 'collector' | 'storage' | 'transit'
@@ -337,7 +338,8 @@ export default function ArtworkLocationsPage() {
           const locationDetails = artwork.location || 'Studio'
 
           return (
-            <Card key={artwork.id} className="group hover:shadow-lg transition-shadow">
+            <ArtworkContextMenu key={artwork.id} artwork={artwork} onUpdate={loadArtworks}>
+            <Card className="group hover:shadow-lg transition-shadow">
               <div className="aspect-square overflow-hidden rounded-t-lg">
                 <img
                   src={artwork.images[0]?.thumbnail || '/placeholder-image.jpg'}
@@ -393,6 +395,7 @@ export default function ArtworkLocationsPage() {
                 </div>
               </CardContent>
             </Card>
+            </ArtworkContextMenu>
           )
         })}
       </div>
