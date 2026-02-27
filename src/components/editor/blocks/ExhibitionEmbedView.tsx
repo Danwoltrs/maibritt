@@ -5,12 +5,7 @@ import { NodeViewWrapper } from '@tiptap/react'
 import type { NodeViewProps } from '@tiptap/react'
 import { X } from 'lucide-react'
 
-/**
- * Node view for the exhibitionEmbed Tiptap node.
- * Renders a compact horizontal card showing image, title, year, and venue.
- * Attributes are stored on the node by ExhibitionEmbedNode.ts.
- */
-export default function ExhibitionEmbedView({ node, deleteNode }: NodeViewProps) {
+export default function ExhibitionEmbedView({ node, deleteNode, editor }: NodeViewProps) {
   const [hovered, setHovered] = useState(false)
 
   const { title, year, venue, imageUrl } = node.attrs as {
@@ -20,6 +15,8 @@ export default function ExhibitionEmbedView({ node, deleteNode }: NodeViewProps)
     venue: string
     imageUrl: string
   }
+
+  const isEditable = editor?.isEditable ?? false
 
   return (
     <NodeViewWrapper
@@ -62,8 +59,8 @@ export default function ExhibitionEmbedView({ node, deleteNode }: NodeViewProps)
           Exhibition
         </span>
 
-        {/* Delete button */}
-        {hovered && (
+        {/* Delete button — editor only */}
+        {isEditable && hovered && (
           <button
             type="button"
             onClick={deleteNode}

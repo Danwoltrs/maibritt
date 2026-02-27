@@ -5,12 +5,7 @@ import { NodeViewWrapper } from '@tiptap/react'
 import type { NodeViewProps } from '@tiptap/react'
 import { X } from 'lucide-react'
 
-/**
- * Node view for the artworkEmbed Tiptap node.
- * Renders a compact horizontal card showing thumbnail, title, year, and medium.
- * Attributes are stored on the node by ArtworkEmbedNode.ts.
- */
-export default function ArtworkEmbedView({ node, deleteNode }: NodeViewProps) {
+export default function ArtworkEmbedView({ node, deleteNode, editor }: NodeViewProps) {
   const [hovered, setHovered] = useState(false)
 
   const { title, year, medium, imageUrl } = node.attrs as {
@@ -20,6 +15,8 @@ export default function ArtworkEmbedView({ node, deleteNode }: NodeViewProps) {
     medium: string
     imageUrl: string
   }
+
+  const isEditable = editor?.isEditable ?? false
 
   return (
     <NodeViewWrapper
@@ -62,8 +59,8 @@ export default function ArtworkEmbedView({ node, deleteNode }: NodeViewProps) {
           Artwork
         </span>
 
-        {/* Delete button */}
-        {hovered && (
+        {/* Delete button — editor only */}
+        {isEditable && hovered && (
           <button
             type="button"
             onClick={deleteNode}

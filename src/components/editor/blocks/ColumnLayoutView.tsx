@@ -11,29 +11,25 @@ const COLUMN_GRID: Record<number, string> = {
   3: 'grid-cols-3',
 }
 
-/**
- * Node view for the columnLayout Tiptap node.
- * Wraps NodeViewContent in a CSS grid. A toolbar lets the editor switch
- * between 2 and 3 columns and delete the block.
- *
- * Expected node attributes: columns (2 | 3).
- *
- * NOTE: Tiptap's NodeViewContent renders the node's content editable area
- * as a single element. True per-column editing requires separate child nodes;
- * this simpler approach renders all column content in a shared grid context,
- * which covers the common layout use-case without requiring complex nested nodes.
- */
-export default function ColumnLayoutView({ node, updateAttributes, deleteNode }: NodeViewProps) {
+export default function ColumnLayoutView({ node, updateAttributes, deleteNode, editor }: NodeViewProps) {
   const [hovered, setHovered] = useState(false)
 
   const columns: 2 | 3 = node.attrs.columns === 3 ? 3 : 2
   const gridClass = COLUMN_GRID[columns]
+  const isEditable = editor?.isEditable ?? false
 
+  // Public/read-only: just render the grid, no toolbar or borders
+  if (!isEditable) {
+    return (
+      <NodeViewWrapper data-type="column-layout" className="my-6">
+        <NodeViewContent className={`grid ${gridClass} gap-6`} />
+      </NodeViewWrapper>
+    )
+  }
+
+  // Editor: show toolbar with column controls
   return (
-    <NodeViewWrapper
-      data-type="column-layout"
-      className="my-4"
-    >
+    <NodeViewWrapper data-type="column-layout" className="my-4">
       <div
         className="relative rounded-lg border border-stone-200"
         onMouseEnter={() => setHovered(true)}
