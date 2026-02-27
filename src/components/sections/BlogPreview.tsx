@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BlogService, BlogPost } from '@/services'
 import { useScrollAnimation, useParallax } from '@/hooks/useScrollAnimation'
+import { JournalContextMenu } from '@/components/admin/JournalContextMenu'
 
 interface BlogPreviewProps {
   id?: string
@@ -26,7 +27,7 @@ const mockBlogPosts: BlogPost[] = [
       en: 'Atlantic Forest Colors: A Visual Journey'
     },
     slug: 'atlantic-forest-colors-visual-journey',
-    content: { ptBR: '', en: '' },
+    content: { ptBR: null, en: null },
     excerpt: {
       ptBR: 'Explorando as nuances cromáticas da floresta brasileira através da pintura en plein air...',
       en: 'Exploring the chromatic nuances of the Brazilian forest through plein air painting...'
@@ -48,7 +49,7 @@ const mockBlogPosts: BlogPost[] = [
       en: 'Reflections on Cultural Memory'
     },
     slug: 'reflections-cultural-memory',
-    content: { ptBR: '', en: '' },
+    content: { ptBR: null, en: null },
     excerpt: {
       ptBR: 'Como as influências dinamarquesas e brasileiras se entrelaçam no meu processo criativo...',
       en: 'How Danish and Brazilian influences intertwine in my creative process...'
@@ -70,7 +71,7 @@ const mockBlogPosts: BlogPost[] = [
       en: 'The Studio in Motion'
     },
     slug: 'studio-in-motion',
-    content: { ptBR: '', en: '' },
+    content: { ptBR: null, en: null },
     excerpt: {
       ptBR: 'Adaptando o espaço criativo às diferentes estações e projetos em desenvolvimento...',
       en: 'Adapting the creative space to different seasons and projects in development...'
@@ -90,9 +91,12 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [ref, isInView] = useScrollAnimation(0.3)
   const [parallaxRef, parallaxY] = useParallax(25)
+
+  const handleUpdate = () => setRefreshKey(k => k + 1)
 
   // Fetch blog posts
   useEffect(() => {
@@ -100,7 +104,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
       try {
         setIsLoading(true)
         // Try to fetch from the service
-        const response = await BlogService.getRecentBlogPosts(limit)
+        const response = await BlogService.getRecentJournalPosts(limit)
         if (response.length > 0) {
           setBlogPosts(response)
         } else {
@@ -117,7 +121,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
     }
 
     fetchBlogPosts()
-  }, [limit])
+  }, [limit, refreshKey])
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -217,7 +221,8 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
                     }}
                     className={`group cursor-pointer ${isFeatured ? 'md:col-span-2 md:row-span-2' : ''}`}
                   >
-                    <Link href={`/blog/${post.slug}`}>
+                    <JournalContextMenu post={post} onUpdate={handleUpdate}>
+                    <Link href={`/journal/${post.slug}`}>
                       <Card className="h-full border-0 shadow-md hover:shadow-xl transition-all duration-500 overflow-hidden group-hover:scale-[1.01]">
                         {/* Blog post image */}
                         {post.coverImage && (
@@ -342,6 +347,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
                         </CardContent>
                       </Card>
                     </Link>
+                    </JournalContextMenu>
                   </motion.div>
                 )
               })}
@@ -359,7 +365,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
                 className="group bg-gray-900 hover:bg-gray-800 text-white"
                 asChild
               >
-                <Link href="/blog">
+                <Link href="/journal">
                   Read All Journal Entries
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>

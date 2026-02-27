@@ -32,6 +32,17 @@ export type {
   ExhibitionsTimelineData
 } from './exhibitions.service'
 
+export { JournalService } from './journal.service'
+export type {
+  JournalPost,
+  JournalPostCreateData,
+  JournalPostUpdateData,
+  JournalPostFilters,
+  JournalPostListResponse,
+  JournalArchive
+} from './journal.service'
+
+// Backward compatibility
 export { BlogService } from './blog.service'
 export type {
   BlogPost,

@@ -27,7 +27,7 @@ export class StorageService {
    */
   static async uploadImages(
     files: File[],
-    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes' | 'journal',
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResult[]> {
     const results: UploadResult[] = []
@@ -61,7 +61,7 @@ export class StorageService {
    */
   static async uploadSingleImage(
     file: File,
-    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes' | 'journal',
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResult> {
     // Validate file type
@@ -155,7 +155,7 @@ export class StorageService {
    * Delete images from storage
    */
   static async deleteImages(
-    bucket: 'artworks' | 'exhibitions' | 'series',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal',
     fileName: string
   ): Promise<void> {
     try {
@@ -186,7 +186,7 @@ export class StorageService {
    * List all files in a bucket
    */
   static async listFiles(
-    bucket: 'artworks' | 'exhibitions' | 'series',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal',
     folder?: 'original' | 'display' | 'thumbnail'
   ) {
     try {
@@ -209,7 +209,7 @@ export class StorageService {
    * Get public URL for a file
    */
   static getPublicUrl(
-    bucket: 'artworks' | 'exhibitions' | 'series',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal',
     path: string
   ): string {
     const { data } = supabase.storage.from(bucket).getPublicUrl(path)

@@ -358,6 +358,27 @@ function ViewGalleriesDialog({ open, onClose }: { open: boolean; onClose: () => 
 function WriteJournalDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (!title.trim()) return
+    try {
+      setSaving(true)
+      const { JournalService } = await import('@/services/journal.service')
+      await JournalService.createJournalPost({
+        title: { en: title, ptBR: '' },
+        content: { en: null, ptBR: null },
+        published: false,
+      })
+      setTitle('')
+      setContent('')
+      onClose()
+    } catch (err) {
+      console.error('Failed to create journal entry:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -367,31 +388,33 @@ function WriteJournalDialog({ open, onClose }: { open: boolean; onClose: () => v
             <PenTool className="h-5 w-5" />
             Write Journal Entry
           </DialogTitle>
-          <DialogDescription>Capture your thoughts and reflections.</DialogDescription>
+          <DialogDescription>Quick-create a draft entry. Edit it in the journal editor for rich content.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium">Title</label>
             <input
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={inputClass}
               placeholder="Entry title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Content</label>
+            <label className="text-sm font-medium">Notes (optional)</label>
             <textarea
-              className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Write your journal entry..."
+              className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder="Quick notes... You can add rich content in the editor later."
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button>Save Entry</Button>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving || !title.trim()}>
+            {saving ? 'Saving...' : 'Save as Draft'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

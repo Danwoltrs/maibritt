@@ -8,7 +8,7 @@ import {
   Image,
   Building,
   TrendingUp,
-  BookOpen,
+
   Settings,
   MapPin,
   BarChart3,
@@ -104,15 +104,22 @@ const navigationItems = [
   },
   {
     name: 'Journal',
-    href: '/journal',
+    href: '/journal/manage',
     icon: PenTool,
-    description: 'Private journal'
-  },
-  {
-    name: 'Blog',
-    href: '/blog',
-    icon: BookOpen,
-    description: 'Public blog posts'
+    description: 'Entries & blog',
+    expandable: true,
+    subItems: [
+      {
+        name: 'All Entries',
+        href: '/journal/manage',
+        description: 'Manage entries'
+      },
+      {
+        name: 'New Entry',
+        href: '/journal/new',
+        description: 'Write new entry'
+      }
+    ]
   },
   {
     name: 'Settings',
