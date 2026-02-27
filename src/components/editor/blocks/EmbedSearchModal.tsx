@@ -156,10 +156,10 @@ export default function EmbedSearchModal({
   function handleSelect(item: AnyResult) {
     if (type === 'artwork') {
       const r = item as ArtworkResult
-      onSelect({ artworkId: r.id, title: r.title, imageUrl: r.imageUrl })
+      onSelect({ artworkId: r.id, title: r.title, imageUrl: r.imageUrl, subtitle: r.subtitle })
     } else if (type === 'exhibition') {
       const r = item as ExhibitionResult
-      onSelect({ exhibitionId: r.id, title: r.title, imageUrl: r.imageUrl })
+      onSelect({ exhibitionId: r.id, title: r.title, imageUrl: r.imageUrl, subtitle: r.subtitle })
     } else {
       const r = item as SeriesResult
       onSelect({ seriesId: r.id, name: r.title, coverImage: r.imageUrl, artworkCount: r.artworkCount ?? 0, layout: 'full' })

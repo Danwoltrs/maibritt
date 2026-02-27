@@ -68,35 +68,35 @@ export function EditorToolbar({ editor, language }: EditorToolbarProps) {
   const handleEmbedSelect = (data: any) => {
     const type = embedModal.type
     if (type === 'artwork') {
+      // EmbedSearchModal sends: { artworkId, title, imageUrl }
       editor.chain().focus().insertContent({
         type: 'artworkEmbed',
         attrs: {
-          artworkId: data.id,
-          title: data.title?.en || data.title?.ptBR || '',
-          year: data.year,
-          medium: data.medium?.en || '',
-          imageUrl: data.images?.[0]?.thumbnail || data.images?.[0]?.display || '',
+          artworkId: data.artworkId,
+          title: data.title || '',
+          imageUrl: data.imageUrl || '',
         }
       }).run()
     } else if (type === 'exhibition') {
+      // EmbedSearchModal sends: { exhibitionId, title, imageUrl }
       editor.chain().focus().insertContent({
         type: 'exhibitionEmbed',
         attrs: {
-          exhibitionId: data.id,
-          title: data.title?.en || data.title?.ptBR || '',
-          year: data.year,
-          venue: data.venue || '',
-          imageUrl: data.image || '',
+          exhibitionId: data.exhibitionId,
+          title: data.title || '',
+          imageUrl: data.imageUrl || '',
         }
       }).run()
     } else if (type === 'series') {
+      // EmbedSearchModal sends: { seriesId, name, coverImage, artworkCount, layout }
       editor.chain().focus().insertContent({
         type: 'seriesEmbed',
         attrs: {
-          seriesId: data.id,
+          seriesId: data.seriesId,
           name: data.name || '',
           coverImage: data.coverImage || '',
           artworkCount: data.artworkCount || 0,
+          layout: data.layout || 'full',
         }
       }).run()
     }
