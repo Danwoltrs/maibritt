@@ -42,7 +42,9 @@ export async function middleware(req: NextRequest) {
   const isAdminRoute = (
     // Exclusively admin prefixes (no public overlap)
     pathname.startsWith('/galleries') ||
-    pathname.startsWith('/journal') ||
+    pathname.startsWith('/journal/manage') ||
+    pathname.startsWith('/journal/new') ||
+    (pathname.startsWith('/journal/') && pathname.endsWith('/edit')) ||
     pathname.startsWith('/quotes') ||
     pathname.startsWith('/sales') ||
     pathname.startsWith('/settings') ||
