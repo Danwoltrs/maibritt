@@ -219,12 +219,12 @@ export function MarkAsSoldModal({ artwork, open, onOpenChange, onUpdate }: MarkA
                 {loadingGalleries ? (
                   <p className="text-sm text-gray-500">Loading galleries...</p>
                 ) : (
-                  <Select value={galleryId} onValueChange={setGalleryId}>
+                  <Select value={galleryId || 'none'} onValueChange={(v) => setGalleryId(v === 'none' ? '' : v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="No gallery" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No gallery</SelectItem>
+                      <SelectItem value="none">No gallery</SelectItem>
                       {galleries.map(g => (
                         <SelectItem key={g.id} value={g.id}>
                           {g.name} — {g.city}, {g.country}
