@@ -7,8 +7,13 @@ import Link from 'next/link'
 import { ArrowLeft, Calendar, Clock, Eye, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import dynamic from 'next/dynamic'
 import { JournalService, JournalPost } from '@/services/journal.service'
-import { TiptapRenderer } from '@/components/editor/TiptapRenderer'
+
+const TiptapRenderer = dynamic(
+  () => import('@/components/editor/TiptapRenderer').then(mod => ({ default: mod.TiptapRenderer })),
+  { ssr: false, loading: () => <div className="animate-pulse h-32 bg-gray-100 rounded" /> }
+)
 
 export default function JournalPostPage() {
   const params = useParams()
