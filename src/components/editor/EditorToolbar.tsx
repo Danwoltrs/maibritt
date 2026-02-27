@@ -67,40 +67,46 @@ export function EditorToolbar({ editor, language }: EditorToolbarProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEmbedSelect = (data: any) => {
     const type = embedModal.type
-    if (type === 'artwork') {
-      // EmbedSearchModal sends: { artworkId, title, imageUrl }
-      editor.chain().focus().insertContent({
-        type: 'artworkEmbed',
-        attrs: {
-          artworkId: data.artworkId,
-          title: data.title || '',
-          imageUrl: data.imageUrl || '',
-        }
-      }).run()
-    } else if (type === 'exhibition') {
-      // EmbedSearchModal sends: { exhibitionId, title, imageUrl }
-      editor.chain().focus().insertContent({
-        type: 'exhibitionEmbed',
-        attrs: {
-          exhibitionId: data.exhibitionId,
-          title: data.title || '',
-          imageUrl: data.imageUrl || '',
-        }
-      }).run()
-    } else if (type === 'series') {
-      // EmbedSearchModal sends: { seriesId, name, coverImage, artworkCount, layout }
-      editor.chain().focus().insertContent({
-        type: 'seriesEmbed',
-        attrs: {
-          seriesId: data.seriesId,
-          name: data.name || '',
-          coverImage: data.coverImage || '',
-          artworkCount: data.artworkCount || 0,
-          layout: data.layout || 'full',
-        }
-      }).run()
-    }
+
+    // Close modal first, then insert after a tick so editor can regain focus
     setEmbedModal({ open: false, type: 'artwork' })
+
+    setTimeout(() => {
+      editor.commands.focus()
+
+      if (type === 'artwork') {
+        editor.commands.insertContent({
+          type: 'artworkEmbed',
+          attrs: {
+            artworkId: data.artworkId ?? '',
+            title: data.title ?? '',
+            imageUrl: data.imageUrl ?? '',
+            subtitle: data.subtitle ?? '',
+          },
+        })
+      } else if (type === 'exhibition') {
+        editor.commands.insertContent({
+          type: 'exhibitionEmbed',
+          attrs: {
+            exhibitionId: data.exhibitionId ?? '',
+            title: data.title ?? '',
+            imageUrl: data.imageUrl ?? '',
+            subtitle: data.subtitle ?? '',
+          },
+        })
+      } else if (type === 'series') {
+        editor.commands.insertContent({
+          type: 'seriesEmbed',
+          attrs: {
+            seriesId: data.seriesId ?? '',
+            name: data.name ?? '',
+            coverImage: data.coverImage ?? '',
+            artworkCount: data.artworkCount ?? 0,
+            layout: data.layout ?? 'full',
+          },
+        })
+      }
+    }, 50)
   }
 
   const ToolbarButton = ({ onClick, isActive, children, title }: {

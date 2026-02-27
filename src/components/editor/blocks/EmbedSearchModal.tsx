@@ -164,7 +164,8 @@ export default function EmbedSearchModal({
       const r = item as SeriesResult
       onSelect({ seriesId: r.id, name: r.title, coverImage: r.imageUrl, artworkCount: r.artworkCount ?? 0, layout: 'full' })
     }
-    onOpenChange(false)
+    // Don't call onOpenChange(false) here — the parent (EditorToolbar)
+    // handles closing so the editor can regain focus before inserting content.
   }
 
   return (
