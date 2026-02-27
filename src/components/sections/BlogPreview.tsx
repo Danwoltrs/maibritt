@@ -18,75 +18,6 @@ interface BlogPreviewProps {
   limit?: number
 }
 
-// Mock blog posts for development
-const mockBlogPosts: BlogPost[] = [
-  {
-    id: '1',
-    title: {
-      ptBR: 'Cores da Mata Atlântica: Uma Jornada Visual',
-      en: 'Atlantic Forest Colors: A Visual Journey'
-    },
-    slug: 'atlantic-forest-colors-visual-journey',
-    content: { ptBR: null, en: null },
-    excerpt: {
-      ptBR: 'Explorando as nuances cromáticas da floresta brasileira através da pintura en plein air...',
-      en: 'Exploring the chromatic nuances of the Brazilian forest through plein air painting...'
-    },
-    coverImage: '/blog/atlantic-forest-1.jpg',
-    published: true,
-    publishedAt: new Date('2024-03-15'),
-    tags: ['nature', 'plein-air', 'color-theory', 'brazil'],
-    readingTime: 8,
-    viewCount: 234,
-    featured: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '2',
-    title: {
-      ptBR: 'Reflexões sobre Memória Cultural',
-      en: 'Reflections on Cultural Memory'
-    },
-    slug: 'reflections-cultural-memory',
-    content: { ptBR: null, en: null },
-    excerpt: {
-      ptBR: 'Como as influências dinamarquesas e brasileiras se entrelaçam no meu processo criativo...',
-      en: 'How Danish and Brazilian influences intertwine in my creative process...'
-    },
-    coverImage: '/blog/cultural-memory-1.jpg',
-    published: true,
-    publishedAt: new Date('2024-03-08'),
-    tags: ['culture', 'memory', 'identity', 'artistic-process'],
-    readingTime: 12,
-    viewCount: 189,
-    featured: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '3',
-    title: {
-      ptBR: 'O Ateliê em Movimento',
-      en: 'The Studio in Motion'
-    },
-    slug: 'studio-in-motion',
-    content: { ptBR: null, en: null },
-    excerpt: {
-      ptBR: 'Adaptando o espaço criativo às diferentes estações e projetos em desenvolvimento...',
-      en: 'Adapting the creative space to different seasons and projects in development...'
-    },
-    published: true,
-    publishedAt: new Date('2024-02-28'),
-    tags: ['studio', 'workspace', 'organization', 'inspiration'],
-    readingTime: 6,
-    viewCount: 156,
-    featured: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-]
-
 const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProps) => {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -103,18 +34,11 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
     const fetchBlogPosts = async () => {
       try {
         setIsLoading(true)
-        // Try to fetch from the service
         const response = await BlogService.getRecentJournalPosts(limit)
-        if (response.length > 0) {
-          setBlogPosts(response)
-        } else {
-          // Fallback to mock data if no posts exist
-          setBlogPosts(mockBlogPosts.slice(0, limit))
-        }
+        setBlogPosts(response)
       } catch (err) {
-        console.warn('Using mock blog data:', err)
-        // Use mock data as fallback
-        setBlogPosts(mockBlogPosts.slice(0, limit))
+        console.warn('Failed to fetch journal posts:', err)
+        setBlogPosts([])
       } finally {
         setIsLoading(false)
       }

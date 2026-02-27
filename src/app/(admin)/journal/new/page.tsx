@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { CheckCircle2 } from 'lucide-react'
 
 import { JournalService, JournalPostCreateData } from '@/services/journal.service'
 import { JournalPostForm, JournalFormData, defaultJournalFormData } from '@/components/admin/journal/JournalPostForm'
@@ -14,6 +16,7 @@ export default function NewJournalPage() {
   const [formData, setFormData] = useState<JournalFormData>(defaultJournalFormData)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async () => {
     try {
@@ -34,7 +37,10 @@ export default function NewJournalPage() {
       }
 
       const post = await JournalService.createJournalPost(createData)
-      router.push(`/journal/${post.id}/edit`)
+      setSuccess(true)
+      setTimeout(() => {
+        router.push(`/journal/${post.id}/edit`)
+      }, 1000)
     } catch (err) {
       console.error('Error creating journal post:', err)
       setError('Failed to create journal post')
@@ -55,6 +61,15 @@ export default function NewJournalPage() {
           <p className="text-gray-500">Create a new journal entry with rich content</p>
         </div>
       </div>
+
+      {success && (
+        <Alert className="bg-green-50 border-green-200">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            Journal entry created! Redirecting to editor...
+          </AlertDescription>
+        </Alert>
+      )}
 
       {error && (
         <div className="p-3 rounded-md bg-red-50 text-red-800 text-sm">{error}</div>

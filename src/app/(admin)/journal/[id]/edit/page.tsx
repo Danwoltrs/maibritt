@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 import { JournalService, JournalPost, JournalPostUpdateData } from '@/services/journal.service'
 import { JournalPostForm, JournalFormData, defaultJournalFormData } from '@/components/admin/journal/JournalPostForm'
@@ -19,6 +20,7 @@ export default function EditJournalPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     async function loadPost() {
@@ -73,7 +75,10 @@ export default function EditJournalPage() {
       }
 
       await JournalService.updateJournalPost(post.id, updateData)
-      router.push('/journal/manage')
+      setSuccess(true)
+      setTimeout(() => {
+        router.push('/journal/manage')
+      }, 1000)
     } catch (err) {
       console.error('Error updating journal post:', err)
       setError('Failed to update journal entry')
@@ -115,6 +120,15 @@ export default function EditJournalPage() {
           </p>
         </div>
       </div>
+
+      {success && (
+        <Alert className="bg-green-50 border-green-200">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            Journal entry saved! Redirecting...
+          </AlertDescription>
+        </Alert>
+      )}
 
       {error && (
         <div className="p-3 rounded-md bg-red-50 text-red-800 text-sm">{error}</div>
