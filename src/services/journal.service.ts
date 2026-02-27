@@ -201,7 +201,8 @@ export class JournalService {
         throw error
       }
 
-      await this.incrementViewCount(data.id)
+      // Fire and forget — don't block page load
+      this.incrementViewCount(data.id).catch(() => {})
       return this.transformFromDB(data)
     } catch (error) {
       console.error('Error fetching journal post by slug:', error)
@@ -532,14 +533,29 @@ export class JournalService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static parseContent(raw: any): TiptapDoc | null {
+    if (!raw) return null
+    if (typeof raw === 'object') return raw
+    if (typeof raw === 'string') {
+      try {
+        const parsed = JSON.parse(raw)
+        return typeof parsed === 'object' ? parsed : null
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static transformFromDB(data: any): JournalPost {
     return {
       id: data.id,
       title: { ptBR: data.title_pt || '', en: data.title_en || '' },
       slug: data.slug || '',
       content: {
-        ptBR: data.content_pt || null,
-        en: data.content_en || null
+        ptBR: this.parseContent(data.content_pt),
+        en: this.parseContent(data.content_en),
       },
       excerpt: data.excerpt_pt || data.excerpt_en ? {
         ptBR: data.excerpt_pt || '',
