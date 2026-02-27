@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { ArtworkService } from '@/services/artwork.service'
 import { ExhibitionsService } from '@/services/exhibitions.service'
 import { SeriesService } from '@/services/series.service'
+import { supabase } from '@/lib/supabase'
 import type { Artwork, ArtSeries } from '@/types'
 import type { Exhibition } from '@/types'
 import { Loader2, Search } from 'lucide-react'
@@ -70,13 +71,13 @@ function mapExhibition(e: Exhibition): ExhibitionResult {
   }
 }
 
-function mapSeries(s: ArtSeries): SeriesResult {
+function mapSeries(s: ArtSeries, artworkCount = 0): SeriesResult {
   return {
     id: s.id,
     title: s.name.en || s.name.ptBR,
     subtitle: String(s.year),
     imageUrl: s.coverImage || '',
-    artworkCount: s.artworks?.length ?? 0,
+    artworkCount,
   }
 }
 
@@ -112,7 +113,17 @@ export default function EmbedSearchModal({
           if (!cancelled) setResults(exhibitions.map(mapExhibition))
         } else {
           const series = await SeriesService.getSeries()
-          if (!cancelled) setResults(series.map(mapSeries))
+          // Fetch artwork counts per series
+          const counts = await Promise.all(
+            series.map(async (s) => {
+              const { count } = await supabase
+                .from('artworks')
+                .select('*', { count: 'exact', head: true })
+                .eq('series_id', s.id)
+              return count ?? 0
+            })
+          )
+          if (!cancelled) setResults(series.map((s, i) => mapSeries(s, counts[i])))
         }
       } catch {
         if (!cancelled) setError('Failed to load items. Please try again.')
