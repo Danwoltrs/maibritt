@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Eye, Pencil, DollarSign, Building, CalendarDays, Home,
   Star, Tag, Download, Trash2,
@@ -27,9 +26,11 @@ import {
   ConfirmActionModal,
   ForSaleModal,
 } from './artwork-context-modals'
+import { EditArtworkModal } from './EditArtworkModal'
 
 type ModalType =
   | 'preview'
+  | 'edit'
   | 'markSold'
   | 'assignGallery'
   | 'assignExhibition'
@@ -46,7 +47,6 @@ interface ArtworkContextMenuProps {
 }
 
 export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkContextMenuProps) {
-  const router = useRouter()
   const { isAuthenticated } = useAuth()
   const [activeModal, setActiveModal] = useState<ModalType>(null)
 
@@ -100,7 +100,7 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => router.push(`/artworks/${artwork.id}/edit`)}>
+          <ContextMenuItem onClick={() => setActiveModal('edit')}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit
           </ContextMenuItem>
@@ -162,6 +162,13 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
         artwork={artwork}
         open={activeModal === 'preview'}
         onOpenChange={(open) => !open && closeModal()}
+      />
+
+      <EditArtworkModal
+        artwork={artwork}
+        open={activeModal === 'edit'}
+        onOpenChange={(open) => !open && closeModal()}
+        onUpdate={onUpdate}
       />
 
       <MarkAsSoldModal

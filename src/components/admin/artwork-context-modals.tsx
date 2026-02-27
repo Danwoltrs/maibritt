@@ -135,6 +135,16 @@ export function MarkAsSoldModal({ artwork, open, onOpenChange, onUpdate }: MarkA
   const [currency, setCurrency] = useState<'BRL' | 'USD' | 'EUR'>(artwork.currency || 'BRL')
   const [soldDate, setSoldDate] = useState(new Date().toISOString().split('T')[0])
   const [buyerName, setBuyerName] = useState('')
+  const [buyerEmail, setBuyerEmail] = useState('')
+  const [buyerPhone, setBuyerPhone] = useState('')
+  const [buyerAddress, setBuyerAddress] = useState('')
+  const [buyerCity, setBuyerCity] = useState('')
+  const [buyerState, setBuyerState] = useState('')
+  const [buyerCountry, setBuyerCountry] = useState('')
+  const [buyerZipCode, setBuyerZipCode] = useState('')
+  const [galleryId, setGalleryId] = useState('')
+  const [galleries, setGalleries] = useState<Gallery[]>([])
+  const [loadingGalleries, setLoadingGalleries] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -143,6 +153,20 @@ export function MarkAsSoldModal({ artwork, open, onOpenChange, onUpdate }: MarkA
       setCurrency(artwork.currency || 'BRL')
       setSoldDate(new Date().toISOString().split('T')[0])
       setBuyerName('')
+      setBuyerEmail('')
+      setBuyerPhone('')
+      setBuyerAddress('')
+      setBuyerCity('')
+      setBuyerState('')
+      setBuyerCountry('')
+      setBuyerZipCode('')
+      setGalleryId('')
+      setLoadingGalleries(true)
+      GalleryService.getAll({ includeInactive: false })
+        .then(res => {
+          if (res.success && res.data) setGalleries(res.data)
+        })
+        .finally(() => setLoadingGalleries(false))
     }
   }, [open, artwork])
 
@@ -155,7 +179,15 @@ export function MarkAsSoldModal({ artwork, open, onOpenChange, onUpdate }: MarkA
         soldCurrency: currency,
         soldDate: new Date(soldDate),
         buyerName: buyerName || undefined,
+        buyerEmail: buyerEmail || undefined,
+        buyerPhone: buyerPhone || undefined,
+        buyerAddress: buyerAddress || undefined,
+        buyerCity: buyerCity || undefined,
+        buyerState: buyerState || undefined,
+        buyerCountry: buyerCountry || undefined,
+        buyerZipCode: buyerZipCode || undefined,
         forSale: false,
+        ...(galleryId ? { locationType: 'gallery', locationId: galleryId } : {}),
       })
       onOpenChange(false)
       onUpdate?.()
@@ -168,7 +200,7 @@ export function MarkAsSoldModal({ artwork, open, onOpenChange, onUpdate }: MarkA
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Mark as Sold</DialogTitle>
           <DialogDescription>
@@ -177,6 +209,7 @@ export function MarkAsSoldModal({ artwork, open, onOpenChange, onUpdate }: MarkA
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Sale details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Price</Label>
@@ -201,6 +234,7 @@ export function MarkAsSoldModal({ artwork, open, onOpenChange, onUpdate }: MarkA
               </Select>
             </div>
           </div>
+
           <div className="space-y-2">
             <Label>Sale Date</Label>
             <Input
@@ -209,13 +243,105 @@ export function MarkAsSoldModal({ artwork, open, onOpenChange, onUpdate }: MarkA
               onChange={(e) => setSoldDate(e.target.value)}
             />
           </div>
+
+          {/* Gallery (optional) */}
           <div className="space-y-2">
-            <Label>Buyer Name (optional)</Label>
-            <Input
-              value={buyerName}
-              onChange={(e) => setBuyerName(e.target.value)}
-              placeholder="Buyer name"
-            />
+            <Label>Sold through Gallery (optional)</Label>
+            {loadingGalleries ? (
+              <p className="text-sm text-gray-500">Loading galleries...</p>
+            ) : (
+              <Select value={galleryId} onValueChange={setGalleryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Direct sale / no gallery" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Direct sale / no gallery</SelectItem>
+                  {galleries.map(g => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name} — {g.city}, {g.country}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          {/* Buyer info */}
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">Buyer Information (optional)</p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Name</Label>
+                  <Input
+                    value={buyerName}
+                    onChange={(e) => setBuyerName(e.target.value)}
+                    placeholder="Buyer name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Email</Label>
+                  <Input
+                    type="email"
+                    value={buyerEmail}
+                    onChange={(e) => setBuyerEmail(e.target.value)}
+                    placeholder="buyer@email.com"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Phone</Label>
+                <Input
+                  value={buyerPhone}
+                  onChange={(e) => setBuyerPhone(e.target.value)}
+                  placeholder="+55 11 99999-9999"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Address</Label>
+                <Input
+                  value={buyerAddress}
+                  onChange={(e) => setBuyerAddress(e.target.value)}
+                  placeholder="Street address"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">City</Label>
+                  <Input
+                    value={buyerCity}
+                    onChange={(e) => setBuyerCity(e.target.value)}
+                    placeholder="City"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">State</Label>
+                  <Input
+                    value={buyerState}
+                    onChange={(e) => setBuyerState(e.target.value)}
+                    placeholder="State"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Country</Label>
+                  <Input
+                    value={buyerCountry}
+                    onChange={(e) => setBuyerCountry(e.target.value)}
+                    placeholder="Country"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Zip Code</Label>
+                  <Input
+                    value={buyerZipCode}
+                    onChange={(e) => setBuyerZipCode(e.target.value)}
+                    placeholder="00000-000"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
