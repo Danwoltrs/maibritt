@@ -24,7 +24,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const [ref, isInView] = useScrollAnimation(0.3)
+  const [ref, isInView] = useScrollAnimation(0.1)
   const [parallaxRef, parallaxY] = useParallax(25)
 
   const handleUpdate = () => setRefreshKey(k => k + 1)
@@ -34,12 +34,10 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
     const fetchBlogPosts = async () => {
       try {
         setIsLoading(true)
-        console.log('[BlogPreview] Fetching journal posts...')
         const response = await BlogService.getRecentJournalPosts(limit)
-        console.log('[BlogPreview] Fetched posts:', response.length, response)
         setBlogPosts(response)
       } catch (err) {
-        console.error('[BlogPreview] Failed to fetch journal posts:', err)
+        console.warn('Failed to fetch journal posts:', err)
         setError(err instanceof Error ? err.message : 'Failed to load journal')
         setBlogPosts([])
       } finally {
