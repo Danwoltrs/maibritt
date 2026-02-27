@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ExhibitionsService } from '@/services'
 import { Exhibition } from '@/types'
 import { useScrollAnimation, useContinuousParallax, useScrollProgress } from '@/hooks/useScrollAnimation'
+import { ExhibitionContextMenu } from '@/components/admin/ExhibitionContextMenu'
 
 interface ExhibitionsTimelineProps {
   id?: string
@@ -19,6 +20,9 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleUpdate = () => setRefreshKey(k => k + 1)
 
   const [ref, isInView] = useScrollAnimation(0.01) // Very low threshold
 
@@ -33,15 +37,19 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
   const [parallaxRef, parallaxOffset] = useContinuousParallax(0.3)
   const [progressRef, scrollProgress] = useScrollProgress()
 
-  // Fetch exhibitions data
+  const [stats, setStats] = useState<{ soloShows: number; groupShows: number; residencies: number } | null>(null)
+
+  // Fetch featured exhibitions + stats
   useEffect(() => {
-    const fetchExhibitions = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true)
-        console.log('[ExhibitionsTimeline] Fetching exhibitions...')
-        const exhibitionsData = await ExhibitionsService.getExhibitions()
-        console.log('[ExhibitionsTimeline] Fetched exhibitions:', exhibitionsData?.length, exhibitionsData)
-        setExhibitions(exhibitionsData)
+        const [featuredData, statsData] = await Promise.all([
+          ExhibitionsService.getFeaturedExhibitions(20),
+          ExhibitionsService.getExhibitionStats()
+        ])
+        setExhibitions(featuredData)
+        setStats(statsData)
       } catch (err) {
         console.error('[ExhibitionsTimeline] Error fetching exhibitions:', err)
         setError('Failed to load exhibitions')
@@ -50,8 +58,8 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
       }
     }
 
-    fetchExhibitions()
-  }, [])
+    fetchData()
+  }, [refreshKey])
 
   const getExhibitionColor = (type: string) => {
     switch (type) {
@@ -204,78 +212,68 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
                   }}
                   className={`w-full md:w-5/12 ${isLeft ? 'md:mr-auto md:pr-8' : 'md:ml-auto md:pl-8'}`}
                 >
-                  <Card className="group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500">
-                    {exhibition.image && (
-                      <div className="relative h-48 overflow-hidden">
-                        <Image
-                          src={exhibition.image}
-                          alt={getDisplayTitle(exhibition)}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-700"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                    )}
-
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-3">
-                        <motion.span
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={shouldAnimate ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-                          transition={{ delay: delay + 0.6 }}
-                          className="text-3xl font-light text-gray-900"
-                        >
-                          {exhibition.year}
-                        </motion.span>
-                        <Badge
-                          variant="outline"
-                          className={`${getExhibitionColor(exhibition.type)} capitalize`}
-                        >
-                          {exhibition.type}
-                        </Badge>
-                      </div>
-
-                      <motion.h3
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                        transition={{ delay: delay + 0.7 }}
-                        className="text-xl font-medium text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors"
-                      >
-                        {getDisplayTitle(exhibition)}
-                      </motion.h3>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                        transition={{ delay: delay + 0.8 }}
-                        className="space-y-2 text-sm text-gray-600"
-                      >
-                        <p className="font-medium">{exhibition.venue}</p>
-                        <div className="flex items-center space-x-1">
-                          <MapPin className="w-4 h-4" />
-                          <span>{exhibition.location}</span>
+                  <ExhibitionContextMenu exhibition={exhibition} onUpdate={handleUpdate}>
+                    <Card className="group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500">
+                      {exhibition.image && (
+                        <div className="relative h-48 overflow-hidden">
+                          <Image
+                            src={exhibition.image}
+                            alt={getDisplayTitle(exhibition)}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-700"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
-                        {getDisplayDescription(exhibition) && (
-                          <p className="line-clamp-3 mt-3 text-gray-700">
-                            {getDisplayDescription(exhibition)}
-                          </p>
-                        )}
-                      </motion.div>
-
-                      {exhibition.featured && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={shouldAnimate ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
-                          transition={{ delay: delay + 0.9 }}
-                          className="mt-4"
-                        >
-                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                            Featured Exhibition
-                          </Badge>
-                        </motion.div>
                       )}
-                    </CardContent>
-                  </Card>
+
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-3">
+                          <motion.span
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={shouldAnimate ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                            transition={{ delay: delay + 0.6 }}
+                            className="text-3xl font-light text-gray-900"
+                          >
+                            {exhibition.year}
+                          </motion.span>
+                          <Badge
+                            variant="outline"
+                            className={`${getExhibitionColor(exhibition.type)} capitalize`}
+                          >
+                            {exhibition.type}
+                          </Badge>
+                        </div>
+
+                        <motion.h3
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                          transition={{ delay: delay + 0.7 }}
+                          className="text-xl font-medium text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors"
+                        >
+                          {getDisplayTitle(exhibition)}
+                        </motion.h3>
+
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                          transition={{ delay: delay + 0.8 }}
+                          className="space-y-2 text-sm text-gray-600"
+                        >
+                          <p className="font-medium">{exhibition.venue}</p>
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="w-4 h-4" />
+                            <span>{exhibition.location}</span>
+                          </div>
+                          {getDisplayDescription(exhibition) && (
+                            <p className="line-clamp-3 mt-3 text-gray-700">
+                              {getDisplayDescription(exhibition)}
+                            </p>
+                          )}
+                        </motion.div>
+
+                      </CardContent>
+                    </Card>
+                  </ExhibitionContextMenu>
                 </motion.div>
 
               </motion.div>
@@ -292,9 +290,9 @@ const ExhibitionsTimeline = ({ id = "exhibitions", className = "" }: Exhibitions
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
-              { value: exhibitions.filter(e => e.type === 'solo').length, label: 'Solo Exhibitions', subLabel: 'Exposições Solo' },
-              { value: exhibitions.filter(e => e.type === 'group').length, label: 'Group Shows', subLabel: 'Mostras Coletivas' },
-              { value: exhibitions.filter(e => e.type === 'residency').length, label: 'Residencies', subLabel: 'Residências' }
+              { value: stats?.soloShows ?? 0, label: 'Solo Exhibitions', subLabel: 'Exposições Solo' },
+              { value: stats?.groupShows ?? 0, label: 'Group Shows', subLabel: 'Mostras Coletivas' },
+              { value: stats?.residencies ?? 0, label: 'Residencies', subLabel: 'Residências' }
             ].map((stat, index) => (
               <motion.div
                 key={index}
