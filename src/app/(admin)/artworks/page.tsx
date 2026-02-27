@@ -126,8 +126,8 @@ export default function ArtworksPage() {
   }
 
   const getStatusBadge = (artwork: Artwork) => {
+    if (artwork.isSold) return <Badge variant="destructive">Sold</Badge>
     if (!artwork.forSale) return <Badge variant="secondary">Not for Sale</Badge>
-    if (!artwork.isAvailable) return <Badge variant="destructive">Sold</Badge>
     return <Badge className="bg-green-100 text-green-800">Available</Badge>
   }
 
