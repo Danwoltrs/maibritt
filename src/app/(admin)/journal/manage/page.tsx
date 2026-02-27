@@ -409,6 +409,16 @@ export default function JournalAdminPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
+                          {post.published && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => window.open(`/journal/${post.slug}`, '_blank')}
+                              title="View public page"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
