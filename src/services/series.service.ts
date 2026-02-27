@@ -93,6 +93,7 @@ export class SeriesService {
       // Transform artworks
       const artworks = artworksData?.map(artwork => ({
         id: artwork.id,
+        slug: artwork.slug || artwork.id,
         title: {
           ptBR: artwork.title_pt,
           en: artwork.title_en
@@ -402,6 +403,7 @@ export class SeriesService {
 
           const transformedArtworks = artworks?.map(artwork => ({
             id: artwork.id,
+            slug: artwork.slug || artwork.id,
             title: {
               ptBR: artwork.title_pt,
               en: artwork.title_en

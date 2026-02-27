@@ -13,6 +13,7 @@ export interface Content {
 // Core artwork types
 export interface Artwork {
   id: string
+  slug: string
   title: Content
   year: number
   medium: Content

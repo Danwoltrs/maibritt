@@ -107,6 +107,7 @@ export default function SeriesDetailPage({ params }: PageProps) {
       // Transform artworks data
       const transformedArtworks: Artwork[] = (artworksData || []).map((a: any) => ({
         id: a.id,
+        slug: a.slug || a.id,
         title: { ptBR: a.title_pt || '', en: a.title_en || '' },
         year: a.year,
         medium: { ptBR: a.medium_pt || '', en: a.medium_en || '' },
@@ -136,6 +137,7 @@ export default function SeriesDetailPage({ params }: PageProps) {
 
       const transformedUnassigned: Artwork[] = (unassignedData || []).map((a: any) => ({
         id: a.id,
+        slug: a.slug || a.id,
         title: { ptBR: a.title_pt || '', en: a.title_en || '' },
         year: a.year,
         medium: { ptBR: a.medium_pt || '', en: a.medium_en || '' },

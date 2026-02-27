@@ -178,7 +178,7 @@ const CurrentAvailability = ({ id = "availability", className = "" }: CurrentAva
                       whileHover={{ scale: 1.02, y: -2 }}
                       className="group cursor-pointer"
                     >
-                      <Link href={`/artwork/${work.id}`}>
+                      <Link href={`/artwork/${work.slug}`}>
                         <Card className="overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300">
                           <div className="aspect-square overflow-hidden relative">
                             {work.images.length > 0 ? (

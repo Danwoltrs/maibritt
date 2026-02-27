@@ -79,6 +79,26 @@ export interface ArtworkStats {
   artworksSold: number
 }
 
+/**
+ * Generate a URL-friendly slug from artwork title, dimensions, and year
+ */
+function generateSlug(title: string, dimensions: string, year: number): string {
+  const titleSlug = title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // strip diacritics
+    .replace(/[^a-z0-9\s-]/g, '')   // strip special chars
+    .trim()
+    .replace(/\s+/g, '-')           // spaces to hyphens
+
+  const dimSlug = dimensions
+    .toLowerCase()
+    .replace(/\s+/g, '')            // collapse spaces: "100 x 80 cm" → "100x80cm"
+    .replace(/[^a-z0-9x.]/g, '')    // keep letters, digits, x, dot
+
+  return `${titleSlug}-${dimSlug}-${year}`
+}
+
 export class ArtworkService {
   /**
    * Get lightweight artwork stats without fetching full records
@@ -214,6 +234,64 @@ export class ArtworkService {
   }
 
   /**
+   * Get a single artwork by slug
+   */
+  static async getArtworkBySlug(slug: string): Promise<Artwork | null> {
+    try {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select(`
+          *,
+          art_series:series_id (
+            id,
+            name_pt,
+            name_en
+          )
+        `)
+        .eq('slug', slug)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null
+        }
+        throw error
+      }
+
+      return this.transformArtworkFromDB(data)
+    } catch (error) {
+      console.error('Error fetching artwork by slug:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Ensure slug uniqueness by appending -2, -3, etc. if needed
+   */
+  private static async ensureUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
+    let slug = baseSlug
+    let suffix = 1
+
+    while (true) {
+      let query = supabase
+        .from('artworks')
+        .select('id')
+        .eq('slug', slug)
+
+      if (excludeId) {
+        query = query.neq('id', excludeId)
+      }
+
+      const { data } = await query.maybeSingle()
+
+      if (!data) return slug
+
+      suffix++
+      slug = `${baseSlug}-${suffix}`
+    }
+  }
+
+  /**
    * Create a new artwork
    */
   static async createArtwork(
@@ -242,10 +320,15 @@ export class ArtworkService {
 
       const nextDisplayOrder = (maxOrderData?.[0]?.display_order || 0) + 1
 
+      // Generate slug
+      const baseSlug = generateSlug(artworkData.title.en, artworkData.dimensions, artworkData.year)
+      const slug = await this.ensureUniqueSlug(baseSlug)
+
       // Create artwork record
       const { data, error } = await supabase
         .from('artworks')
         .insert({
+          slug,
           title_pt: artworkData.title.ptBR,
           title_en: artworkData.title.en,
           year: artworkData.year,
@@ -323,6 +406,15 @@ export class ArtworkService {
       if (updateData.description) {
         updateObject.description_pt = updateData.description.ptBR
         updateObject.description_en = updateData.description.en
+      }
+
+      // Regenerate slug if title, dimensions, or year changed
+      if (updateData.title || updateData.dimensions !== undefined || updateData.year !== undefined) {
+        const title = updateData.title?.en ?? currentArtwork.title.en
+        const dimensions = updateData.dimensions ?? currentArtwork.dimensions
+        const year = updateData.year ?? currentArtwork.year
+        const baseSlug = generateSlug(title, dimensions, year)
+        updateObject.slug = await this.ensureUniqueSlug(baseSlug, id)
       }
 
       if (updateData.category !== undefined) updateObject.category = updateData.category
@@ -528,6 +620,7 @@ export class ArtworkService {
   private static transformArtworkFromDB(data: any): Artwork {
     return {
       id: data.id,
+      slug: data.slug || data.id,
       title: {
         ptBR: data.title_pt,
         en: data.title_en
