@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DialogFooter } from '@/components/ui/dialog'
-import { X, Upload } from 'lucide-react'
+import { X, Upload, Languages, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { TiptapEditor } from '@/components/editor/TiptapEditor'
 
@@ -58,6 +58,59 @@ export function JournalPostForm({
 }: JournalPostFormProps) {
   const [tagInput, setTagInput] = useState('')
   const [coverPreview, setCoverPreview] = useState<string | null>(existingCoverImage || null)
+  const [translating, setTranslating] = useState<string | null>(null)
+
+  const translateField = async (
+    field: 'title' | 'content' | 'excerpt',
+    direction: 'en-to-pt' | 'pt-to-en'
+  ) => {
+    const sourceIsEn = direction === 'en-to-pt'
+    const sourceLanguage = sourceIsEn ? 'en' : 'pt-BR'
+    const targetLanguage = sourceIsEn ? 'pt-BR' : 'en'
+
+    let text = ''
+    let format: 'plain' | 'tiptap' = 'plain'
+
+    if (field === 'title') {
+      text = sourceIsEn ? formData.titleEn : formData.titlePt
+    } else if (field === 'excerpt') {
+      text = sourceIsEn ? formData.excerptEn : formData.excerptPt
+    } else {
+      const content = sourceIsEn ? formData.contentEn : formData.contentPt
+      if (!content) return
+      text = JSON.stringify(content)
+      format = 'tiptap'
+    }
+
+    if (!text.trim()) return
+
+    const key = `${field}-${direction}`
+    setTranslating(key)
+
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, sourceLanguage, targetLanguage, format }),
+      })
+
+      if (!res.ok) throw new Error('Translation failed')
+      const { translated } = await res.json()
+
+      if (field === 'title') {
+        update(sourceIsEn ? 'titlePt' : 'titleEn', translated)
+      } else if (field === 'excerpt') {
+        update(sourceIsEn ? 'excerptPt' : 'excerptEn', translated)
+      } else {
+        const doc = JSON.parse(translated)
+        update(sourceIsEn ? 'contentPt' : 'contentEn', doc)
+      }
+    } catch (err) {
+      console.error('Translation error:', err)
+    } finally {
+      setTranslating(null)
+    }
+  }
 
   const update = <K extends keyof JournalFormData>(key: K, value: JournalFormData[K]) => {
     setFormData(prev => ({ ...prev, [key]: value }))
@@ -99,7 +152,20 @@ export function JournalPostForm({
           {/* Titles */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Title (English)</Label>
+              <div className="flex items-center justify-between">
+                <Label>Title (English)</Label>
+                {formData.titlePt && (
+                  <Button
+                    type="button" variant="ghost" size="sm"
+                    className="h-6 text-xs gap-1"
+                    disabled={translating === 'title-pt-to-en'}
+                    onClick={() => translateField('title', 'pt-to-en')}
+                  >
+                    {translating === 'title-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                    PT → EN
+                  </Button>
+                )}
+              </div>
               <Input
                 value={formData.titleEn}
                 onChange={(e) => update('titleEn', e.target.value)}
@@ -107,7 +173,20 @@ export function JournalPostForm({
               />
             </div>
             <div className="space-y-2">
-              <Label>Title (Portuguese)</Label>
+              <div className="flex items-center justify-between">
+                <Label>Title (Portuguese)</Label>
+                {formData.titleEn && (
+                  <Button
+                    type="button" variant="ghost" size="sm"
+                    className="h-6 text-xs gap-1"
+                    disabled={translating === 'title-en-to-pt'}
+                    onClick={() => translateField('title', 'en-to-pt')}
+                  >
+                    {translating === 'title-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                    EN → PT
+                  </Button>
+                )}
+              </div>
               <Input
                 value={formData.titlePt}
                 onChange={(e) => update('titlePt', e.target.value)}
@@ -118,10 +197,32 @@ export function JournalPostForm({
 
           {/* Rich text editors in language tabs */}
           <Tabs defaultValue="en">
-            <TabsList>
-              <TabsTrigger value="en">English Content</TabsTrigger>
-              <TabsTrigger value="pt">Portuguese Content</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between">
+              <TabsList>
+                <TabsTrigger value="en">English Content</TabsTrigger>
+                <TabsTrigger value="pt">Portuguese Content</TabsTrigger>
+              </TabsList>
+              <div className="flex gap-1">
+                <Button
+                  type="button" variant="outline" size="sm"
+                  className="h-7 text-xs gap-1"
+                  disabled={!formData.contentEn || translating === 'content-en-to-pt'}
+                  onClick={() => translateField('content', 'en-to-pt')}
+                >
+                  {translating === 'content-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                  EN → PT
+                </Button>
+                <Button
+                  type="button" variant="outline" size="sm"
+                  className="h-7 text-xs gap-1"
+                  disabled={!formData.contentPt || translating === 'content-pt-to-en'}
+                  onClick={() => translateField('content', 'pt-to-en')}
+                >
+                  {translating === 'content-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                  PT → EN
+                </Button>
+              </div>
+            </div>
             <TabsContent value="en" className="mt-2">
               <TiptapEditor
                 content={formData.contentEn}
@@ -168,7 +269,20 @@ export function JournalPostForm({
           {/* Excerpts */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Excerpt (English)</Label>
+              <div className="flex items-center justify-between">
+                <Label>Excerpt (English)</Label>
+                {formData.excerptPt && (
+                  <Button
+                    type="button" variant="ghost" size="sm"
+                    className="h-6 text-xs gap-1"
+                    disabled={translating === 'excerpt-pt-to-en'}
+                    onClick={() => translateField('excerpt', 'pt-to-en')}
+                  >
+                    {translating === 'excerpt-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                    PT → EN
+                  </Button>
+                )}
+              </div>
               <textarea
                 value={formData.excerptEn}
                 onChange={(e) => update('excerptEn', e.target.value)}
@@ -177,7 +291,20 @@ export function JournalPostForm({
               />
             </div>
             <div className="space-y-2">
-              <Label>Excerpt (Portuguese)</Label>
+              <div className="flex items-center justify-between">
+                <Label>Excerpt (Portuguese)</Label>
+                {formData.excerptEn && (
+                  <Button
+                    type="button" variant="ghost" size="sm"
+                    className="h-6 text-xs gap-1"
+                    disabled={translating === 'excerpt-en-to-pt'}
+                    onClick={() => translateField('excerpt', 'en-to-pt')}
+                  >
+                    {translating === 'excerpt-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+                    EN → PT
+                  </Button>
+                )}
+              </div>
               <textarea
                 value={formData.excerptPt}
                 onChange={(e) => update('excerptPt', e.target.value)}
