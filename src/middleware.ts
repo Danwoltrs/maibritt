@@ -6,8 +6,6 @@ function isAdminRoute(pathname: string): boolean {
   return (
     pathname.startsWith('/galleries') ||
     pathname.startsWith('/journal/manage') ||
-    pathname.startsWith('/journal/new') ||
-    (pathname.startsWith('/journal/') && pathname.endsWith('/edit')) ||
     pathname.startsWith('/quotes') ||
     pathname.startsWith('/sales') ||
     pathname.startsWith('/settings') ||

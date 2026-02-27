@@ -64,7 +64,7 @@ export function AdminHeader({ onMenuClick, title, subtitle }: AdminHeaderProps) 
                 <a href="/sales/new">Record Sale</a>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <a href="/journal/new">Write Journal Entry</a>
+                <a href="/journal/manage/new">Write Journal Entry</a>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

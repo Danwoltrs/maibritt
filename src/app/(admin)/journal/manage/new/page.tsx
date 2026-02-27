@@ -39,7 +39,7 @@ export default function NewJournalPage() {
       const post = await JournalService.createJournalPost(createData)
       setSuccess(true)
       setTimeout(() => {
-        router.push(`/journal/${post.id}/edit`)
+        router.push(`/journal/manage/${post.id}/edit`)
       }, 1000)
     } catch (err) {
       console.error('Error creating journal post:', err)

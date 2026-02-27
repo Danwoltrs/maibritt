@@ -116,7 +116,7 @@ const navigationItems = [
       },
       {
         name: 'New Entry',
-        href: '/journal/new',
+        href: '/journal/manage/new',
         description: 'Write new entry'
       }
     ]

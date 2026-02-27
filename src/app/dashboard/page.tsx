@@ -40,7 +40,7 @@ const quickActions = [
   {
     title: 'New Journal Entry',
     description: 'Document your creative process',
-    href: '/journal/new',
+    href: '/journal/manage/new',
   }
 ]
 

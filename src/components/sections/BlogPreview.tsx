@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { BlogService, BlogPost } from '@/services'
-import { useScrollAnimation, useParallax } from '@/hooks/useScrollAnimation'
+import { useParallax } from '@/hooks/useScrollAnimation'
 import { JournalContextMenu } from '@/components/admin/JournalContextMenu'
 
 interface BlogPreviewProps {
@@ -24,8 +24,8 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const [ref, isInView] = useScrollAnimation(0.1)
   const [parallaxRef, parallaxY] = useParallax(25)
+  const ref = useRef<HTMLElement>(null)
 
   const handleUpdate = () => setRefreshKey(k => k + 1)
 
@@ -101,14 +101,14 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
 
       <motion.div
         initial={{ opacity: 0 }}
-        animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         className="relative z-10 max-w-7xl mx-auto"
       >
         <div className="text-center mb-16">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-4xl md:text-5xl font-light text-gray-900 mb-4"
           >
@@ -116,7 +116,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="text-xl text-gray-600 max-w-2xl mx-auto"
           >
@@ -138,7 +138,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
                   <motion.div
                     key={post.id}
                     initial={{ opacity: 0, y: 60, scale: 0.9 }}
-                    animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 60, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{
                       duration: 0.8,
                       delay: delay,
@@ -195,7 +195,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
                         <CardContent className={`${isFeatured ? 'p-8' : 'p-6'}`}>
                           <motion.div
                             initial={{ opacity: 0, y: 20 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: delay + 0.3 }}
                           >
                             {/* Date and tags */}
@@ -246,7 +246,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
                             {post.tags.length > 1 && (
                               <motion.div
                                 initial={{ opacity: 0, y: 10 }}
-                                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: delay + 0.5 }}
                                 className="flex flex-wrap gap-2 mt-4"
                               >
@@ -281,7 +281,7 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
             {/* View all blog button */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
               className="text-center mt-12"
             >
@@ -321,12 +321,12 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
       {/* Floating decorative elements */}
       <motion.div
         initial={{ opacity: 0, scale: 0 }}
-        animate={isInView ? {
+        animate={{
           opacity: 1,
           scale: 1,
           y: [0, -12, 0],
           rotate: [0, 3, 0]
-        } : { opacity: 0, scale: 0 }}
+        }}
         transition={{
           opacity: { delay: 1.2, duration: 1 },
           scale: { delay: 1.2, duration: 1 },
@@ -338,12 +338,12 @@ const BlogPreview = ({ id = "blog", className = "", limit = 3 }: BlogPreviewProp
 
       <motion.div
         initial={{ opacity: 0, scale: 0 }}
-        animate={isInView ? {
+        animate={{
           opacity: 1,
           scale: 1,
           y: [0, 18, 0],
           rotate: [0, -5, 0]
-        } : { opacity: 0, scale: 0 }}
+        }}
         transition={{
           opacity: { delay: 1.4, duration: 1 },
           scale: { delay: 1.4, duration: 1 },
