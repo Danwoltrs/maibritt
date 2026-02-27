@@ -169,6 +169,7 @@ export function JournalPostForm({
               <Input
                 value={formData.titleEn}
                 onChange={(e) => update('titleEn', e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
                 placeholder="Enter title in English"
               />
             </div>
@@ -190,6 +191,7 @@ export function JournalPostForm({
               <Input
                 value={formData.titlePt}
                 onChange={(e) => update('titlePt', e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
                 placeholder="Digite o titulo em Portugues"
               />
             </div>
@@ -286,6 +288,7 @@ export function JournalPostForm({
               <textarea
                 value={formData.excerptEn}
                 onChange={(e) => update('excerptEn', e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
                 placeholder="Short summary in English..."
                 className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
               />
@@ -321,7 +324,7 @@ export function JournalPostForm({
               <Input
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
                 placeholder="Add a tag and press Enter"
                 className="flex-1"
               />
@@ -352,7 +355,12 @@ export function JournalPostForm({
               </div>
               <Switch
                 checked={formData.published}
-                onCheckedChange={(checked) => update('published', checked)}
+                onCheckedChange={(checked) => {
+                  update('published', checked)
+                  if (checked && !formData.publishedAt) {
+                    update('publishedAt', new Date().toISOString().slice(0, 16))
+                  }
+                }}
               />
             </div>
 
