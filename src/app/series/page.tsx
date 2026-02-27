@@ -94,7 +94,7 @@ export default function SeriesGalleryPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl md:text-5xl font-light text-gray-900"
           >
-            All Series
+            All Works
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -104,7 +104,7 @@ export default function SeriesGalleryPage() {
           >
             Explore curated collections exploring themes of cultural confluence and landscape memory
             <span className="block text-lg mt-1 opacity-80">
-              Todas as Séries • Coleções que exploram confluências culturais
+              Todos os Trabalhos • Coleções que exploram confluências culturais
             </span>
           </motion.p>
           <motion.p
@@ -113,7 +113,7 @@ export default function SeriesGalleryPage() {
             transition={{ delay: 0.2 }}
             className="text-sm text-gray-500 mt-4"
           >
-            {series.length} series available
+            {series.length} works available
           </motion.p>
         </div>
       </div>
@@ -123,7 +123,7 @@ export default function SeriesGalleryPage() {
         {series.length === 0 ? (
           <div className="text-center py-16">
             <Images className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500 text-lg">No series available yet.</p>
+            <p className="text-gray-500 text-lg">No works available yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -119,16 +119,16 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5" />
-            Add Series
+            Add Works
           </DialogTitle>
-          <DialogDescription>Create a new series or collection.</DialogDescription>
+          <DialogDescription>Create a new works collection.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Series Name</label>
+            <label className="text-sm font-medium">Works Name</label>
             <input
               className={inputClass}
-              placeholder="Series name"
+              placeholder="Works name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -208,7 +208,7 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
             <label className="text-sm font-medium">Description</label>
             <textarea
               className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Describe this series..."
+              placeholder="Describe this collection..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -216,7 +216,7 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleCreate}>Create Series</Button>
+          <Button onClick={handleCreate}>Create Works</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

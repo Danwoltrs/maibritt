@@ -150,7 +150,7 @@ export default function EmbedSearchModal({
   const TITLES: Record<EmbedSearchModalProps['type'], string> = {
     artwork: 'Insert Artwork',
     exhibition: 'Insert Exhibition',
-    series: 'Insert Series',
+    series: 'Insert Works',
   }
 
   function handleSelect(item: AnyResult) {

@@ -239,7 +239,7 @@ export default function SeriesManagementPage() {
         </div>
         <Button onClick={openCreateDialog} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          Create New Series
+          Create New Works
         </Button>
       </div>
 
@@ -255,7 +255,7 @@ export default function SeriesManagementPage() {
           <CardContent>
             <div className="flex flex-col items-center justify-center">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-gray-900 mb-4" />
-              <p className="text-gray-600">Loading series...</p>
+              <p className="text-gray-600">Loading works...</p>
             </div>
           </CardContent>
         </Card>
@@ -263,11 +263,11 @@ export default function SeriesManagementPage() {
         <Card className="text-center py-12">
           <CardContent>
             <FolderOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Series Yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Works Yet</h3>
             <p className="text-gray-600 mb-6">
-              Create your first art series to organize your portfolio into collections
+              Create your first works collection to organize your portfolio
             </p>
-            <Button onClick={openCreateDialog}>Create Your First Series</Button>
+            <Button onClick={openCreateDialog}>Create Your First Works</Button>
           </CardContent>
         </Card>
       ) : (
@@ -379,11 +379,11 @@ export default function SeriesManagementPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingSeries ? 'Edit Series' : 'Create New Series'}
+              {editingSeries ? 'Edit Works' : 'Create New Works'}
             </DialogTitle>
             <DialogDescription>
-              {editingSeries 
-                ? 'Update your series information and settings'
+              {editingSeries
+                ? 'Update your works information and settings'
                 : 'Create a new collection to organize related artworks'
               }
             </DialogDescription>
@@ -408,7 +408,7 @@ export default function SeriesManagementPage() {
                 <Input
                   id="nameEn"
                   {...register('nameEn')}
-                  placeholder="Series name"
+                  placeholder="Works name"
                 />
                 {errors.nameEn && (
                   <p className="text-sm text-red-600">{errors.nameEn.message}</p>
@@ -445,7 +445,7 @@ export default function SeriesManagementPage() {
                 <Textarea
                   id="descriptionEn"
                   {...register('descriptionEn')}
-                  placeholder="Series description..."
+                  placeholder="Works description..."
                   rows={3}
                 />
               </div>
@@ -454,8 +454,8 @@ export default function SeriesManagementPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="isActive">Active Series</Label>
-                  <p className="text-sm text-gray-500">Make this series visible in portfolio</p>
+                  <Label htmlFor="isActive">Active</Label>
+                  <p className="text-sm text-gray-500">Make this visible in portfolio</p>
                 </div>
                 <Switch
                   id="isActive"
@@ -514,7 +514,7 @@ export default function SeriesManagementPage() {
                     {editingSeries ? 'Updating...' : 'Creating...'}
                   </div>
                 ) : (
-                  editingSeries ? 'Update Series' : 'Create Series'
+                  editingSeries ? 'Update Works' : 'Create Works'
                 )}
               </Button>
             </DialogFooter>
@@ -526,9 +526,9 @@ export default function SeriesManagementPage() {
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Series</AlertDialogTitle>
+            <AlertDialogTitle>Delete Works</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this series? This action cannot be undone.
+              Are you sure you want to delete this? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

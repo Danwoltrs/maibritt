@@ -21,8 +21,8 @@ const sectionConfig = {
     color: 'bg-purple-500'
   },
   series: {
-    label: 'Series',
-    labelPt: 'Séries',
+    label: 'Works',
+    labelPt: 'Trabalhos',
     color: 'bg-green-500'
   },
   statement: {

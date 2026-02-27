@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DialogFooter } from '@/components/ui/dialog'
-import { X, Upload, Languages, Loader2 } from 'lucide-react'
+import { X, Upload, Languages, Loader2, Minimize2 } from 'lucide-react'
 import Image from 'next/image'
 import { TiptapEditor } from '@/components/editor/TiptapEditor'
 
@@ -59,6 +59,21 @@ export function JournalPostForm({
   const [tagInput, setTagInput] = useState('')
   const [coverPreview, setCoverPreview] = useState<string | null>(existingCoverImage || null)
   const [translating, setTranslating] = useState<string | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev)
+  }, [])
+
+  // ESC to exit fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isFullscreen])
 
   const translateField = async (
     field: 'title' | 'content' | 'excerpt',
@@ -138,17 +153,28 @@ export function JournalPostForm({
 
   const isValid = formData.titleEn.trim() || formData.titlePt.trim()
 
-  return (
-    <div className="space-y-4">
-      <Tabs defaultValue="content">
-        <TabsList className="w-full justify-start">
+  const formContent = (
+    <div className={`space-y-4 ${isFullscreen ? 'flex flex-col h-full' : ''}`}>
+      {isFullscreen && (
+        <div className="flex items-center justify-between border-b pb-3 mb-2 shrink-0">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {formData.titleEn || formData.titlePt || 'Journal Entry'}
+          </h2>
+          <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+            <Minimize2 className="h-4 w-4 mr-1.5" />
+            Exit Fullscreen
+          </Button>
+        </div>
+      )}
+      <Tabs defaultValue="content" className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
+        <TabsList className="w-full justify-start shrink-0">
           <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="meta">Meta & Cover</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         {/* Content Tab */}
-        <TabsContent value="content" className="space-y-4 mt-4">
+        <TabsContent value="content" className={`space-y-4 mt-4 ${isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}`}>
           {/* Titles */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -198,8 +224,8 @@ export function JournalPostForm({
           </div>
 
           {/* Rich text editors in language tabs */}
-          <Tabs defaultValue="en">
-            <div className="flex items-center justify-between">
+          <Tabs defaultValue="en" className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
+            <div className="flex items-center justify-between shrink-0">
               <TabsList>
                 <TabsTrigger value="en">English Content</TabsTrigger>
                 <TabsTrigger value="pt">Portuguese Content</TabsTrigger>
@@ -225,20 +251,24 @@ export function JournalPostForm({
                 </Button>
               </div>
             </div>
-            <TabsContent value="en" className="mt-2">
+            <TabsContent value="en" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0' : ''}`}>
               <TiptapEditor
                 content={formData.contentEn}
                 onChange={(json) => update('contentEn', json)}
                 placeholder="Write your journal entry in English..."
                 language="en"
+                onRequestFullscreen={toggleFullscreen}
+                isExternalFullscreen={isFullscreen}
               />
             </TabsContent>
-            <TabsContent value="pt" className="mt-2">
+            <TabsContent value="pt" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0' : ''}`}>
               <TiptapEditor
                 content={formData.contentPt}
                 onChange={(json) => update('contentPt', json)}
                 placeholder="Escreva sua entrada no diario em Portugues..."
                 language="ptBR"
+                onRequestFullscreen={toggleFullscreen}
+                isExternalFullscreen={isFullscreen}
               />
             </TabsContent>
           </Tabs>
@@ -390,12 +420,34 @@ export function JournalPostForm({
         </TabsContent>
       </Tabs>
 
-      <DialogFooter>
-        <Button variant="outline" onClick={onCancel} disabled={saving}>Cancel</Button>
-        <Button onClick={onSubmit} disabled={saving || !isValid}>
-          {saving ? 'Saving...' : submitLabel}
-        </Button>
-      </DialogFooter>
+      {!isFullscreen && (
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel} disabled={saving}>Cancel</Button>
+          <Button onClick={onSubmit} disabled={saving || !isValid}>
+            {saving ? 'Saving...' : submitLabel}
+          </Button>
+        </DialogFooter>
+      )}
+      {isFullscreen && (
+        <div className="flex justify-end gap-2 pt-3 border-t shrink-0">
+          <Button variant="outline" onClick={toggleFullscreen} size="sm">Back to Form</Button>
+          <Button onClick={onSubmit} disabled={saving || !isValid} size="sm">
+            {saving ? 'Saving...' : submitLabel}
+          </Button>
+        </div>
+      )}
     </div>
   )
+
+  if (isFullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white flex flex-col">
+        <div className="flex-1 max-w-5xl w-full mx-auto p-6 flex flex-col min-h-0">
+          {formContent}
+        </div>
+      </div>
+    )
+  }
+
+  return formContent
 }

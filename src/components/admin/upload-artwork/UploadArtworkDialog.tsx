@@ -234,7 +234,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   const commonApplied = {
     category: applyToAll.category ? commonMeta.category : undefined,
     seriesName: applyToAll.series && commonMeta.seriesId
-      ? (seriesList.find(s => s.id === commonMeta.seriesId)?.name.en || 'Series')
+      ? (seriesList.find(s => s.id === commonMeta.seriesId)?.name.en || 'Works')
       : undefined,
     year: applyToAll.year ? commonMeta.year : undefined,
     seriesId: applyToAll.series ? commonMeta.seriesId : undefined,

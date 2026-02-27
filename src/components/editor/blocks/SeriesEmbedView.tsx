@@ -114,7 +114,7 @@ export default function SeriesEmbedView({ node, deleteNode, editor, updateAttrib
         >
           {/* Layout controls */}
           <div className="flex items-center justify-between border-b border-violet-200 px-3 py-1.5">
-            <span className="text-xs font-medium text-violet-600">Series Embed</span>
+            <span className="text-xs font-medium text-violet-600">Works Embed</span>
             <div className="flex items-center gap-0.5">
               {layoutButtons.map(({ value, icon: Icon, label }) => (
                 <Button
@@ -135,13 +135,13 @@ export default function SeriesEmbedView({ node, deleteNode, editor, updateAttrib
           <div className="flex items-center gap-3 px-3 py-2.5">
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-violet-200">
               {coverImage ? (
-                <img src={coverImage} alt={name || 'Series'} className="h-full w-full object-cover" />
+                <img src={coverImage} alt={name || 'Works'} className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-xs text-violet-400">No image</div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-stone-800">{name || 'Untitled series'}</p>
+              <p className="truncate text-sm font-medium text-stone-800">{name || 'Untitled works'}</p>
               <Badge variant="secondary" className="text-xs mt-1">
                 {loading ? '...' : artworks.length} artworks · {layout}
               </Badge>
@@ -153,7 +153,7 @@ export default function SeriesEmbedView({ node, deleteNode, editor, updateAttrib
               type="button"
               onClick={deleteNode}
               className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow transition-opacity hover:bg-red-600"
-              aria-label="Remove series embed"
+              aria-label="Remove works embed"
             >
               <X className="h-3 w-3" />
             </button>
@@ -170,14 +170,14 @@ export default function SeriesEmbedView({ node, deleteNode, editor, updateAttrib
         {/* Series header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-medium text-gray-900">{name || 'Untitled series'}</h3>
+            <h3 className="text-lg font-medium text-gray-900">{name || 'Untitled works'}</h3>
             {!loading && (
               <p className="text-sm text-gray-500">
                 {artworks.length} {artworks.length === 1 ? 'artwork' : 'artworks'}
               </p>
             )}
           </div>
-          <Badge variant="outline" className="text-violet-700 border-violet-300">Series</Badge>
+          <Badge variant="outline" className="text-violet-700 border-violet-300">Works</Badge>
         </div>
 
         {/* Artwork grid */}
@@ -216,7 +216,7 @@ export default function SeriesEmbedView({ node, deleteNode, editor, updateAttrib
             })}
           </div>
         ) : (
-          <p className="text-sm text-gray-400 text-center py-6">No artworks in this series yet.</p>
+          <p className="text-sm text-gray-400 text-center py-6">No artworks in this collection yet.</p>
         )}
       </div>
     </NodeViewWrapper>

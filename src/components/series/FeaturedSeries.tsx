@@ -109,8 +109,8 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
     return (
       <section id={id} className={`py-24 px-8 bg-white ${className}`}>
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-3xl font-light text-gray-900 mb-4">Featured Series</h2>
-          <p className="text-gray-600">No series available yet.</p>
+          <h2 className="text-3xl font-light text-gray-900 mb-4">Featured Works</h2>
+          <p className="text-gray-600">No works available yet.</p>
         </div>
       </section>
     )
@@ -141,7 +141,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-4xl md:text-5xl font-light text-gray-900 mb-4"
           >
-            Featured Series
+            Featured Works
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 30 }}
@@ -151,7 +151,7 @@ const FeaturedSeries = ({ id = "series", className = "", limit = 6 }: FeaturedSe
           >
             Curated collections exploring themes of cultural confluence and landscape memory
             <span className="block text-lg mt-2 opacity-80">
-              Séries em Destaque • Coleções que exploram confluências culturais
+              Trabalhos em Destaque • Coleções que exploram confluências culturais
             </span>
           </motion.p>
         </div>

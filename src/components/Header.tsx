@@ -29,10 +29,10 @@ export default function Header() {
 
   const navigationItems = [
     { name: 'Portfolio', href: '/#hero', namePt: 'Portfolio' },
-    { name: 'Series', href: '/#series', namePt: 'Series' },
+    { name: 'Works', href: '/#series', namePt: 'Trabalhos' },
     { name: 'Exhibitions', href: '/#exhibitions', namePt: 'Exposicoes' },
     { name: 'About', href: '/#statement', namePt: 'Sobre' },
-    { name: 'Available Works', href: '/#availability', namePt: 'Obras Disponiveis' },
+    { name: 'Available Works', href: '/#availability', namePt: 'Trabalhos Disponíveis' },
     { name: 'Contact', href: '/#blog', namePt: 'Contato' },
   ]
 

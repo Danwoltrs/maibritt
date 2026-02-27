@@ -35,6 +35,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { QuickActionDialogs, type QuickAction } from '@/components/admin/QuickActionDialogs'
+import { SettingsDialog } from '@/components/admin/SettingsDialog'
 
 const navigationItems = [
   {
@@ -63,7 +64,7 @@ const navigationItems = [
       {
         name: 'Work',
         href: '/artworks/series',
-        description: 'Manage series'
+        description: 'Manage works'
       },
       {
         name: 'Locations',
@@ -121,12 +122,6 @@ const navigationItems = [
       }
     ]
   },
-  {
-    name: 'Settings',
-    href: '/settings',
-    icon: Settings,
-    description: 'Site settings'
-  }
 ]
 
 interface AdminSidebarProps {
@@ -139,6 +134,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   const { signOut, user } = useAuth()
   const [expandedItems, setExpandedItems] = React.useState<string[]>(['Artworks'])
   const [quickAction, setQuickAction] = useState<QuickAction>(null)
+  const [showSettings, setShowSettings] = useState(false)
 
   const handleSignOut = async () => {
     await signOut()
@@ -218,7 +214,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                     </ContextMenuItem>
                     <ContextMenuItem onClick={() => setQuickAction('add-series')}>
                       <FolderOpen className="mr-2 h-4 w-4" />
-                      Add Series
+                      Add Works
                     </ContextMenuItem>
                     <ContextMenuItem onClick={() => setQuickAction('record-sale')}>
                       <DollarSign className="mr-2 h-4 w-4" />
@@ -280,6 +276,18 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
 
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 space-y-3">
+        {/* Settings button */}
+        <div
+          className="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          onClick={() => setShowSettings(true)}
+        >
+          <Settings className="mr-3 h-5 w-5 text-gray-400" />
+          <div className="flex-1">
+            <div className="text-sm font-medium">Settings</div>
+            <div className="text-xs text-gray-500">Site settings</div>
+          </div>
+        </div>
+
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -310,6 +318,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
         activeAction={quickAction}
         onClose={() => setQuickAction(null)}
       />
+      <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
     </div>
   )
 }

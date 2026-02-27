@@ -28,10 +28,13 @@ interface TiptapEditorProps {
   onChange: (json: TiptapDoc) => void
   placeholder?: string
   language: 'en' | 'ptBR'
+  onRequestFullscreen?: () => void
+  isExternalFullscreen?: boolean
 }
 
-export function TiptapEditor({ content, onChange, placeholder, language }: TiptapEditorProps) {
+export function TiptapEditor({ content, onChange, placeholder, language, onRequestFullscreen, isExternalFullscreen }: TiptapEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const effectiveFullscreen = isExternalFullscreen ?? isFullscreen
 
   const editor = useEditor({
     extensions: [
@@ -81,25 +84,29 @@ export function TiptapEditor({ content, onChange, placeholder, language }: Tipta
   }, [content, editor])
 
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev)
-  }, [])
+    if (onRequestFullscreen) {
+      onRequestFullscreen()
+    } else {
+      setIsFullscreen(prev => !prev)
+    }
+  }, [onRequestFullscreen])
 
-  // Handle ESC key to exit fullscreen
+  // Handle ESC key to exit fullscreen (only for internal fullscreen)
   useEffect(() => {
-    if (!isFullscreen) return
+    if (!isFullscreen || onRequestFullscreen) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsFullscreen(false)
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isFullscreen])
+  }, [isFullscreen, onRequestFullscreen])
 
   if (!editor) return null
 
   const wordCount = editor.storage.characterCount?.words() ?? 0
 
   const editorContent = (
-    <div className={`border rounded-lg overflow-hidden bg-white ${isFullscreen ? 'flex flex-col h-full' : ''}`}>
+    <div className={`border rounded-lg overflow-hidden bg-white ${effectiveFullscreen ? 'flex flex-col h-full' : ''}`}>
       <div className="flex items-center justify-between border-b bg-gray-50 px-2">
         <EditorToolbar editor={editor} language={language} />
         <div className="flex items-center gap-2 px-2 py-1">
@@ -109,19 +116,20 @@ export function TiptapEditor({ content, onChange, placeholder, language }: Tipta
             size="sm"
             onClick={toggleFullscreen}
             className="h-7 w-7 p-0"
-            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            title={effectiveFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           >
-            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            {effectiveFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
         </div>
       </div>
-      <div className={`overflow-y-auto ${isFullscreen ? 'flex-1' : 'max-h-[600px]'}`}>
+      <div className={`overflow-y-auto ${effectiveFullscreen ? 'flex-1' : 'max-h-[600px]'}`}>
         <EditorContent editor={editor} />
       </div>
     </div>
   )
 
-  if (isFullscreen) {
+  // Only use internal fullscreen wrapper if not using external fullscreen
+  if (isFullscreen && !onRequestFullscreen) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex flex-col">
         <div className="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">

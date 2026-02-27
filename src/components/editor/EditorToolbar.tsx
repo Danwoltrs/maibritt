@@ -220,7 +220,7 @@ export function EditorToolbar({ editor, language }: EditorToolbarProps) {
         <ToolbarButton onClick={() => setEmbedModal({ open: true, type: 'exhibition' })} title="Insert exhibition">
           <CalendarDays className="h-3.5 w-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => setEmbedModal({ open: true, type: 'series' })} title="Insert series">
+        <ToolbarButton onClick={() => setEmbedModal({ open: true, type: 'series' })} title="Insert works">
           <GalleryVerticalEnd className="h-3.5 w-3.5" />
         </ToolbarButton>
         <ToolbarButton onClick={handleImageUpload} title="Insert image">
