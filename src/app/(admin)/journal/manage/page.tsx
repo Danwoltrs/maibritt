@@ -13,10 +13,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import dynamic from 'next/dynamic'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle
 } from '@/components/ui/dialog'
+
+const TiptapRenderer = dynamic(
+  () => import('@/components/editor/TiptapRenderer').then(mod => ({ default: mod.TiptapRenderer })),
+  { ssr: false, loading: () => <div className="animate-pulse h-32 bg-gray-100 rounded" /> }
+)
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select'
@@ -38,6 +44,7 @@ export default function JournalAdminPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false)
   const [selectedPost, setSelectedPost] = useState<JournalPost | null>(null)
 
   // Form state
@@ -409,16 +416,17 @@ export default function JournalAdminPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          {post.published && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => window.open(`/journal/${post.slug}`, '_blank')}
-                              title="View public page"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedPost(post)
+                              setShowPreviewDialog(true)
+                            }}
+                            title="Preview"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -508,6 +516,74 @@ export default function JournalAdminPage() {
             <Button variant="destructive" onClick={handleDelete} disabled={saving}>
               {saving ? 'Deleting...' : 'Delete'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedPost ? getDisplayTitle(selectedPost) : 'Preview'}</DialogTitle>
+            {selectedPost?.title.ptBR && selectedPost?.title.en && (
+              <DialogDescription>{selectedPost.title.ptBR}</DialogDescription>
+            )}
+          </DialogHeader>
+          {selectedPost && (
+            <div className="space-y-6">
+              {selectedPost.coverImage && (
+                <div className="relative aspect-[2/1] rounded-lg overflow-hidden">
+                  <Image
+                    src={selectedPost.coverImage}
+                    alt={getDisplayTitle(selectedPost)}
+                    fill
+                    className="object-cover object-center"
+                  />
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                {selectedPost.publishedAt && (
+                  <span>{new Date(selectedPost.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                )}
+                <span>{selectedPost.readingTime} min read</span>
+                <span>{selectedPost.viewCount} views</span>
+                {!selectedPost.published && <Badge variant="secondary">Draft</Badge>}
+              </div>
+
+              {selectedPost.content.en && (
+                <div>
+                  <TiptapRenderer content={selectedPost.content.en} className="prose-lg" />
+                </div>
+              )}
+
+              {selectedPost.content.ptBR && (
+                <div>
+                  {selectedPost.content.en && (
+                    <div className="border-t pt-6 mb-4">
+                      <p className="text-sm text-gray-400 uppercase tracking-wider mb-4">Portugues</p>
+                    </div>
+                  )}
+                  <TiptapRenderer content={selectedPost.content.ptBR} className="prose-lg" />
+                </div>
+              )}
+
+              {selectedPost.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 border-t pt-4">
+                  {selectedPost.tags.map(tag => (
+                    <Badge key={tag} variant="outline">{tag}</Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            {selectedPost?.published && (
+              <Button variant="outline" onClick={() => window.open(`/journal/${selectedPost.slug}`, '_blank')}>
+                Open Public Page
+              </Button>
+            )}
+            <Button onClick={() => setShowPreviewDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

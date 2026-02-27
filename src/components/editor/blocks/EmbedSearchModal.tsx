@@ -76,6 +76,7 @@ function mapSeries(s: ArtSeries): SeriesResult {
     title: s.name.en || s.name.ptBR,
     subtitle: String(s.year),
     imageUrl: s.coverImage || '',
+    artworkCount: s.artworks?.length ?? 0,
   }
 }
 
@@ -150,7 +151,7 @@ export default function EmbedSearchModal({
       onSelect({ exhibitionId: r.id, title: r.title, imageUrl: r.imageUrl })
     } else {
       const r = item as SeriesResult
-      onSelect({ seriesId: r.id, name: r.title, coverImage: r.imageUrl })
+      onSelect({ seriesId: r.id, name: r.title, coverImage: r.imageUrl, artworkCount: r.artworkCount ?? 0 })
     }
     onOpenChange(false)
   }

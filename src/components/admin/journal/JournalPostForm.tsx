@@ -251,7 +251,7 @@ export function JournalPostForm({
             <Label>Cover Image</Label>
             {coverPreview ? (
               <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-                <Image src={coverPreview} alt="Cover preview" fill className="object-cover" />
+                <Image src={coverPreview} alt="Cover preview" fill className="object-cover object-center" />
                 <button
                   onClick={() => { setCoverPreview(null); update('coverImageFile', null) }}
                   className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70"

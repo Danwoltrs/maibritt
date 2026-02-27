@@ -98,7 +98,7 @@ export default function JournalPostPage() {
               src={post.coverImage}
               alt={post.title.en || post.title.ptBR}
               fill
-              className="object-cover"
+              className="object-cover object-center"
               priority
             />
           </div>
