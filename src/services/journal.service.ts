@@ -223,11 +223,11 @@ export class JournalService {
       const { data, error } = await supabase
         .from('blog_posts')
         .insert({
-          title_pt: postData.title.ptBR,
-          title_en: postData.title.en,
+          title_pt: postData.title.ptBR || '',
+          title_en: postData.title.en || '',
           slug,
-          content_pt: postData.content.ptBR,
-          content_en: postData.content.en,
+          content_pt: postData.content.ptBR ?? '',
+          content_en: postData.content.en ?? '',
           excerpt_pt: postData.excerpt?.ptBR || '',
           excerpt_en: postData.excerpt?.en || '',
           cover_image: coverImageUrl,
@@ -260,8 +260,8 @@ export class JournalService {
       }
 
       if (updateData.content) {
-        updateObject.content_pt = updateData.content.ptBR
-        updateObject.content_en = updateData.content.en
+        updateObject.content_pt = updateData.content.ptBR ?? ''
+        updateObject.content_en = updateData.content.en ?? ''
         updateObject.reading_time = this.calculateReadingTime(updateData.content.en, updateData.content.ptBR)
       }
 

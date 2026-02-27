@@ -25,7 +25,7 @@ interface TiptapRendererProps {
 export function TiptapRenderer({ content, className = '' }: TiptapRendererProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Link.configure({
         openOnClick: true,

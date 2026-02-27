@@ -63,6 +63,8 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
   const [categories, setCategories] = useState<string[]>([])
   const [newCategory, setNewCategory] = useState('')
   const [showNewCategory, setShowNewCategory] = useState(false)
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
@@ -81,6 +83,14 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
     setShowNewCategory(false)
   }
 
+  const handleCoverImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setCoverImageFile(file)
+      setCoverPreview(URL.createObjectURL(file))
+    }
+  }
+
   const handleCreate = async () => {
     if (!name.trim()) return
     try {
@@ -89,11 +99,14 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
         description: { en: description, ptBR: '' },
         year: parseInt(yearVal) || new Date().getFullYear(),
         category: category || undefined,
+        coverImageFile: coverImageFile || undefined,
       })
       setName('')
       setDescription('')
       setYearVal(new Date().getFullYear().toString())
       setCategory('')
+      setCoverImageFile(null)
+      setCoverPreview(null)
       onClose()
     } catch (err) {
       console.error('Failed to create series:', err)
@@ -169,6 +182,27 @@ function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void
               value={yearVal}
               onChange={(e) => setYearVal(e.target.value)}
             />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Cover Image</label>
+            {coverPreview ? (
+              <div className="relative w-full h-32 rounded-lg overflow-hidden bg-gray-100">
+                <img src={coverPreview} alt="Cover preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => { setCoverImageFile(null); setCoverPreview(null) }}
+                  className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
+                <Upload className="h-6 w-6 text-gray-400 mb-1" />
+                <span className="text-xs text-gray-500">Click to upload cover image</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleCoverImage} />
+              </label>
+            )}
           </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium">Description</label>
