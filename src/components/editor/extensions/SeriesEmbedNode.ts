@@ -2,11 +2,14 @@ import { Node, mergeAttributes, Command } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import SeriesEmbedView from '../blocks/SeriesEmbedView'
 
+export type SeriesLayout = 'full' | 'left' | 'right' | 'center'
+
 export interface SeriesEmbedAttributes {
   seriesId: string
   name: string
   coverImage: string
   artworkCount: number
+  layout: SeriesLayout
 }
 
 declare module '@tiptap/core' {
@@ -28,6 +31,7 @@ export const SeriesEmbedNode = Node.create({
       name: { default: '' },
       coverImage: { default: '' },
       artworkCount: { default: 0 },
+      layout: { default: 'full' },
     }
   },
 
