@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import { useActiveSection } from '@/hooks/useScrollAnimation'
 import HeroCarousel from '@/components/carousel/HeroCarousel'
 import ExhibitionsTimeline from '@/components/exhibitions/ExhibitionsTimeline'
@@ -9,48 +10,45 @@ import GalleryLocations from '@/components/sections/GalleryLocations'
 import BlogPreview from '@/components/sections/BlogPreview'
 import ScrollNavigation from '@/components/navigation/ScrollNavigation'
 import UpcomingExhibitionPopup from '@/components/exhibitions/UpcomingExhibitionPopup'
-
-const sectionIds = [
-  'hero',
-  'series',
-  'exhibitions',
-  'statement',
-  'availability',
-  'blog'
-]
+import { SettingsService, HomepageSections } from '@/services/settings.service'
 
 export default function Home() {
+  const [sections, setSections] = useState<HomepageSections>({
+    showJournal: true,
+    showAvailableWorks: true,
+  })
+
+  useEffect(() => {
+    SettingsService.getHomepageSections().then(setSections)
+  }, [])
+
+  const sectionIds = useMemo(() => {
+    const ids = ['hero', 'series', 'exhibitions', 'statement']
+    if (sections.showAvailableWorks) ids.push('availability')
+    if (sections.showJournal) ids.push('blog')
+    return ids
+  }, [sections])
+
   const activeSection = useActiveSection(sectionIds)
 
   return (
     <div className="relative">
-      {/* Fixed Scroll Navigation */}
       <ScrollNavigation
         activeSection={activeSection}
         sections={sectionIds}
       />
 
-      {/* Hero Section - Rotating Carousel */}
       <section id="hero">
         <HeroCarousel />
       </section>
 
-      {/* Featured Series Preview */}
       <FeaturedSeries id="series" />
-
-      {/* Exhibitions Timeline with Continuous Parallax */}
       <ExhibitionsTimeline id="exhibitions" />
-
-      {/* Artist Statement */}
       <ArtistStatement id="statement" />
 
-      {/* Gallery Locations - Where to Find Work */}
-      <GalleryLocations id="availability" />
+      {sections.showAvailableWorks && <GalleryLocations id="availability" />}
+      {sections.showJournal && <BlogPreview id="blog" />}
 
-      {/* Blog Preview */}
-      <BlogPreview id="blog" />
-
-      {/* Upcoming Exhibition Popup */}
       <UpcomingExhibitionPopup delay={3000} />
     </div>
   )

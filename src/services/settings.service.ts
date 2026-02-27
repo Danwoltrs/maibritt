@@ -7,6 +7,11 @@ export interface SiteSettings {
   carouselPauseOnHover: boolean
 }
 
+export interface HomepageSections {
+  showJournal: boolean
+  showAvailableWorks: boolean
+}
+
 export class SettingsService {
   /**
    * Get a specific setting by key
@@ -89,6 +94,55 @@ export class SettingsService {
   }
 
   /**
+   * Get homepage section visibility settings
+   */
+  static async getHomepageSections(): Promise<HomepageSections> {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .in('key', ['show_journal', 'show_available_works'])
+
+      if (error) throw error
+
+      const sections: HomepageSections = {
+        showJournal: true,
+        showAvailableWorks: true,
+      }
+
+      data?.forEach(setting => {
+        if (setting.key === 'show_journal') {
+          sections.showJournal = setting.value === true || setting.value === 'true'
+        }
+        if (setting.key === 'show_available_works') {
+          sections.showAvailableWorks = setting.value === true || setting.value === 'true'
+        }
+      })
+
+      return sections
+    } catch (error) {
+      console.error('Error fetching homepage sections:', error)
+      return { showJournal: true, showAvailableWorks: true }
+    }
+  }
+
+  /**
+   * Update homepage section visibility
+   */
+  static async updateHomepageSections(sections: Partial<HomepageSections>): Promise<void> {
+    const updates: Array<{ key: string; value: boolean }> = []
+    if (sections.showJournal !== undefined) {
+      updates.push({ key: 'show_journal', value: sections.showJournal })
+    }
+    if (sections.showAvailableWorks !== undefined) {
+      updates.push({ key: 'show_available_works', value: sections.showAvailableWorks })
+    }
+    for (const u of updates) {
+      await this.upsertSetting(u.key, u.value)
+    }
+  }
+
+  /**
    * Update a specific setting
    */
   static async updateSetting(key: string, value: any): Promise<void> {
@@ -101,6 +155,22 @@ export class SettingsService {
       if (error) throw error
     } catch (error) {
       console.error(`Error updating setting ${key}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Upsert a setting (create if not exists, update if exists)
+   */
+  static async upsertSetting(key: string, value: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({ key, value }, { onConflict: 'key' })
+
+      if (error) throw error
+    } catch (error) {
+      console.error(`Error upserting setting ${key}:`, error)
       throw error
     }
   }

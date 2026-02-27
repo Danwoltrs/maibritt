@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { SettingsService, SiteSettings } from '@/services/settings.service'
+import { SettingsService, SiteSettings, HomepageSections } from '@/services/settings.service'
 
 const rotationSpeedOptions = [
   { value: '8000', label: 'Fast (8 seconds)' },
@@ -31,6 +31,10 @@ export default function SettingsPage() {
     carouselTransitionStyle: 'fade',
     carouselPauseOnHover: true
   })
+  const [sections, setSections] = useState<HomepageSections>({
+    showJournal: true,
+    showAvailableWorks: true,
+  })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -41,8 +45,12 @@ export default function SettingsPage() {
     const loadSettings = async () => {
       try {
         setLoading(true)
-        const carouselSettings = await SettingsService.getCarouselSettings()
+        const [carouselSettings, homepageSections] = await Promise.all([
+          SettingsService.getCarouselSettings(),
+          SettingsService.getHomepageSections(),
+        ])
         setSettings(carouselSettings)
+        setSections(homepageSections)
       } catch (err) {
         console.error('Error loading settings:', err)
         setError('Failed to load settings')
@@ -59,7 +67,10 @@ export default function SettingsPage() {
       setError(null)
       setSuccess(false)
 
-      await SettingsService.updateCarouselSettings(settings)
+      await Promise.all([
+        SettingsService.updateCarouselSettings(settings),
+        SettingsService.updateHomepageSections(sections),
+      ])
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -126,6 +137,49 @@ export default function SettingsPage() {
           <AlertDescription>Settings saved successfully!</AlertDescription>
         </Alert>
       )}
+
+      {/* Homepage Sections Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Homepage Sections</CardTitle>
+          <CardDescription>
+            Choose which sections to display on the front page
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          <div className="flex items-center justify-between py-4">
+            <div className="space-y-1">
+              <Label htmlFor="show-journal">Journal / Blog</Label>
+              <p className="text-sm text-gray-500">
+                Show the journal section with recent entries on the homepage
+              </p>
+            </div>
+            <Switch
+              id="show-journal"
+              checked={sections.showJournal}
+              onCheckedChange={(checked) =>
+                setSections(prev => ({ ...prev, showJournal: checked }))
+              }
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-4 border-t">
+            <div className="space-y-1">
+              <Label htmlFor="show-available-works">Available Works</Label>
+              <p className="text-sm text-gray-500">
+                Show the gallery locations / available works section on the homepage
+              </p>
+            </div>
+            <Switch
+              id="show-available-works"
+              checked={sections.showAvailableWorks}
+              onCheckedChange={(checked) =>
+                setSections(prev => ({ ...prev, showAvailableWorks: checked }))
+              }
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Carousel Settings Card */}
       <Card>
