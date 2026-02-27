@@ -14,7 +14,10 @@ export type {
   ArtworkCreateData,
   ArtworkUpdateData,
   PaginationOptions,
-  ArtworkListResponse
+  ArtworkListResponse,
+  SalesStats,
+  MonthlySale,
+  GallerySalesStats
 } from './artwork.service'
 
 export { SeriesService } from './series.service'

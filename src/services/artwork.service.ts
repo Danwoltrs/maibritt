@@ -84,6 +84,35 @@ export interface ArtworkStats {
   artworksSold: number
 }
 
+export interface MonthlySale {
+  month: string // "2025-01"
+  label: string // "Jan 2025"
+  gross: number
+  commission: number
+  net: number
+  count: number
+}
+
+export interface GallerySalesStats {
+  galleryId: string | null
+  galleryName: string
+  totalSales: number
+  totalGross: number
+  totalCommission: number
+  totalNet: number
+}
+
+export interface SalesStats {
+  totalRevenue: number
+  totalCommission: number
+  totalNet: number
+  salesCount: number
+  estimatedTax: number
+  monthlySales: MonthlySale[]
+  gallerySales: GallerySalesStats[]
+  currentMonthRevenue: number
+}
+
 /**
  * Generate a URL-friendly slug from artwork title, dimensions, and year
  */
@@ -621,6 +650,118 @@ export class ArtworkService {
     } catch (error) {
       console.error('Error fetching years:', error)
       throw error
+    }
+  }
+
+  /**
+   * Get sales statistics from sold artworks
+   */
+  static async getSalesStats(): Promise<SalesStats> {
+    try {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select('sold_price, sold_currency, commission_amount, net_amount, sold_date, sale_type, sold_through_gallery_id, galleries:sold_through_gallery_id(id, name)')
+        .eq('is_sold', true)
+
+      if (error) throw error
+
+      const sales = data || []
+
+      // Static conversion rates to BRL
+      const toBRL: Record<string, number> = { BRL: 1, USD: 5.0, EUR: 5.5 }
+
+      let totalRevenue = 0
+      let totalCommission = 0
+      let totalNet = 0
+      let currentMonthRevenue = 0
+
+      const now = new Date()
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+      const monthlyMap = new Map<string, MonthlySale>()
+      const galleryMap = new Map<string | null, GallerySalesStats>()
+
+      for (const sale of sales) {
+        const rate = toBRL[sale.sold_currency || 'BRL'] || 1
+        const gross = (sale.sold_price || 0) * rate
+        const commission = (sale.commission_amount || 0) * rate
+        const net = (sale.net_amount || 0) * rate
+
+        totalRevenue += gross
+        totalCommission += commission
+        totalNet += net
+
+        // Monthly grouping
+        if (sale.sold_date) {
+          const d = new Date(sale.sold_date)
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          const existing = monthlyMap.get(key)
+          const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+
+          if (existing) {
+            existing.gross += gross
+            existing.commission += commission
+            existing.net += net
+            existing.count += 1
+          } else {
+            monthlyMap.set(key, { month: key, label, gross, commission, net, count: 1 })
+          }
+
+          if (key === currentMonth) {
+            currentMonthRevenue += gross
+          }
+        }
+
+        // Gallery grouping
+        const gId = sale.sold_through_gallery_id || null
+        const gName = (sale as any).galleries?.name || (gId ? 'Unknown Gallery' : 'Direct Sale')
+        const gExisting = galleryMap.get(gId)
+        if (gExisting) {
+          gExisting.totalSales += 1
+          gExisting.totalGross += gross
+          gExisting.totalCommission += commission
+          gExisting.totalNet += net
+        } else {
+          galleryMap.set(gId, {
+            galleryId: gId,
+            galleryName: gName,
+            totalSales: 1,
+            totalGross: gross,
+            totalCommission: commission,
+            totalNet: net,
+          })
+        }
+      }
+
+      const monthlySales = Array.from(monthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month))
+      const gallerySales = Array.from(galleryMap.values()).sort((a, b) => b.totalGross - a.totalGross)
+
+      // Simples Nacional estimated tax (~6% for art sales)
+      const TAX_RATE = 0.06
+      const estimatedTax = totalRevenue * TAX_RATE
+
+      return {
+        totalRevenue,
+        totalCommission,
+        totalNet,
+        salesCount: sales.length,
+        estimatedTax,
+        monthlySales,
+        gallerySales,
+        currentMonthRevenue,
+      }
+    } catch (error) {
+      console.error('Error fetching sales stats:', error)
+      return {
+        totalRevenue: 0,
+        totalCommission: 0,
+        totalNet: 0,
+        salesCount: 0,
+        estimatedTax: 0,
+        monthlySales: [],
+        gallerySales: [],
+        currentMonthRevenue: 0,
+      }
     }
   }
 

@@ -1,10 +1,12 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { TrendingUp, Image, Building, DollarSign, Loader2, Sparkles } from 'lucide-react'
+import { TrendingUp, Image, Building, DollarSign, Loader2, Sparkles, Receipt, Percent } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArtworkService, GalleryService, AiUsageService } from '@/services'
+import type { SalesStats } from '@/services'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 function getDanishGreeting(): string {
   const hour = new Date().getHours()
@@ -44,12 +46,15 @@ const quickActions = [
   }
 ]
 
+function formatBRL(value: number): string {
+  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+}
+
 interface DashboardStats {
   totalArtworks: number
   artworksInGalleries: number
   artworksInStudio: number
   artworksSold: number
-  monthlyRevenue: number
   totalGalleries: number
   activeGalleries: number
   journalEntries: number
@@ -59,6 +64,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [salesStats, setSalesStats] = useState<SalesStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -71,17 +77,16 @@ export default function DashboardPage() {
 
   const greeting = getDanishGreeting()
 
-  // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true)
-        
-        // Fetch lightweight stats instead of full records
-        const [artworkStats, galleriesResponse, aiUsageStats] = await Promise.all([
+
+        const [artworkStats, galleriesResponse, aiUsageStats, salesData] = await Promise.all([
           ArtworkService.getArtworkStats(),
           GalleryService.getAll({}),
-          AiUsageService.getUsageStats()
+          AiUsageService.getUsageStats(),
+          ArtworkService.getSalesStats(),
         ])
         const galleries = galleriesResponse.data || []
 
@@ -91,26 +96,22 @@ export default function DashboardPage() {
 
         setStats({
           ...artworkStats,
-          monthlyRevenue: 0, // TODO: Calculate from sales data
           totalGalleries: galleries.length,
           activeGalleries,
-          journalEntries: 0, // TODO: Fetch from journal entries
+          journalEntries: 0,
           aiCallCount: aiUsageStats.totalCalls,
           aiCostTotal: aiUsageStats.totalCost
         })
-        
-        // Set empty recent activity for now
+        setSalesStats(salesData)
         setRecentActivity([])
-        
+
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error)
-        // Set zero stats if error
         setStats({
           totalArtworks: 0,
           artworksInGalleries: 0,
           artworksInStudio: 0,
           artworksSold: 0,
-          monthlyRevenue: 0,
           totalGalleries: 0,
           activeGalleries: 0,
           journalEntries: 0,
@@ -125,6 +126,13 @@ export default function DashboardPage() {
 
     fetchDashboardData()
   }, [])
+
+  const StatCardLoader = () => (
+    <div className="flex items-center space-x-2">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      <span className="text-sm text-gray-500">Loading...</span>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -152,7 +160,7 @@ export default function DashboardPage() {
                   {stats?.artworksInGalleries || 0} artworks in galleries
                 </span>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  {stats?.monthlyRevenue ? `R$ ${stats.monthlyRevenue.toLocaleString()}` : '-'} this month
+                  {salesStats?.currentMonthRevenue ? formatBRL(salesStats.currentMonthRevenue) : '-'} this month
                 </span>
               </>
             )}
@@ -161,24 +169,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Artworks</CardTitle>
             <Image className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-gray-500">Loading...</span>
-              </div>
-            ) : (
+            {loading ? <StatCardLoader /> : (
               <>
                 <div className="text-2xl font-bold">{stats?.totalArtworks || 0}</div>
-                <p className="text-xs text-gray-600">
-                  Total pieces in collection
-                </p>
+                <p className="text-xs text-gray-600">Total pieces in collection</p>
               </>
             )}
           </CardContent>
@@ -190,18 +191,13 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-gray-500">Loading...</span>
-              </div>
-            ) : (
+            {loading ? <StatCardLoader /> : (
               <>
                 <div className="text-2xl font-bold">
-                  {stats?.monthlyRevenue ? `R$ ${stats.monthlyRevenue.toLocaleString()}` : '-'}
+                  {salesStats?.currentMonthRevenue ? formatBRL(salesStats.currentMonthRevenue) : '-'}
                 </div>
                 <p className="text-xs text-gray-600">
-                  Sales tracking coming soon
+                  {salesStats?.totalRevenue ? `${formatBRL(salesStats.totalRevenue)} lifetime` : 'No sales yet'}
                 </p>
               </>
             )}
@@ -210,21 +206,55 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Net After Commission</CardTitle>
+            <Receipt className="h-4 w-4 text-gray-600" />
+          </CardHeader>
+          <CardContent>
+            {loading ? <StatCardLoader /> : (
+              <>
+                <div className="text-2xl font-bold">
+                  {salesStats?.totalNet ? formatBRL(salesStats.totalNet) : '-'}
+                </div>
+                <p className="text-xs text-gray-600">
+                  {salesStats?.totalCommission ? `${formatBRL(salesStats.totalCommission)} in commissions` : 'No commissions yet'}
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Est. Tax (Brazil)</CardTitle>
+            <Percent className="h-4 w-4 text-gray-600" />
+          </CardHeader>
+          <CardContent>
+            {loading ? <StatCardLoader /> : (
+              <>
+                <div className="text-2xl font-bold">
+                  {salesStats?.estimatedTax ? formatBRL(salesStats.estimatedTax) : '-'}
+                </div>
+                <p className="text-xs text-gray-600">
+                  ~6% Simples Nacional
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Second row of stat cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Galleries</CardTitle>
             <Building className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-gray-500">Loading...</span>
-              </div>
-            ) : (
+            {loading ? <StatCardLoader /> : (
               <>
                 <div className="text-2xl font-bold">{stats?.activeGalleries || 0}</div>
-                <p className="text-xs text-gray-600">
-                  {stats?.totalGalleries || 0} total partners
-                </p>
+                <p className="text-xs text-gray-600">{stats?.totalGalleries || 0} total partners</p>
               </>
             )}
           </CardContent>
@@ -236,17 +266,10 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-gray-500">Loading...</span>
-              </div>
-            ) : (
+            {loading ? <StatCardLoader /> : (
               <>
                 <div className="text-2xl font-bold">{stats?.artworksSold || 0}</div>
-                <p className="text-xs text-gray-600">
-                  Lifetime sales
-                </p>
+                <p className="text-xs text-gray-600">Lifetime sales</p>
               </>
             )}
           </CardContent>
@@ -258,12 +281,7 @@ export default function DashboardPage() {
             <Sparkles className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-gray-500">Loading...</span>
-              </div>
-            ) : (
+            {loading ? <StatCardLoader /> : (
               <>
                 <div className="text-2xl font-bold">{stats?.aiCallCount || 0}</div>
                 <p className="text-xs text-gray-600">
@@ -344,22 +362,43 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Revenue Chart Placeholder */}
+      {/* Revenue Chart */}
       <Card>
         <CardHeader>
           <CardTitle>Revenue Overview</CardTitle>
           <CardDescription>
-            Monthly revenue and sales performance
+            Monthly gross revenue vs net revenue (BRL)
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Revenue chart will be implemented here</p>
-              <p className="text-sm text-gray-500">Using Chart.js or Recharts</p>
+          {loading ? (
+            <div className="h-64 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
-          </div>
+          ) : salesStats && salesStats.monthlySales.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={salesStats.monthlySales}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="label" fontSize={12} tickLine={false} />
+                <YAxis fontSize={12} tickLine={false} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  formatter={(value) => formatBRL(Number(value))}
+                  labelStyle={{ fontWeight: 600 }}
+                />
+                <Legend />
+                <Bar dataKey="gross" name="Gross Revenue" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="net" name="Net Revenue" fill="#22c55e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No sales data yet</p>
+                <p className="text-sm text-gray-500">Revenue chart will appear once artworks are sold</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

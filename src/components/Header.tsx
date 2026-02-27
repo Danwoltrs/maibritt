@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Menu, X, User, Bell } from 'lucide-react'
 import {
   Image as ImageIcon,
@@ -21,13 +21,21 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { QuickActionDialogs, type QuickAction } from '@/components/admin/QuickActionDialogs'
+import { SettingsService } from '@/services'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, loading } = useAuth()
   const [quickAction, setQuickAction] = useState<QuickAction>(null)
+  const [showAvailableWorks, setShowAvailableWorks] = useState(true)
 
-  const navigationItems = [
+  useEffect(() => {
+    SettingsService.getHomepageSections().then(sections => {
+      setShowAvailableWorks(sections.showAvailableWorks)
+    })
+  }, [])
+
+  const allNavigationItems = [
     { name: 'Portfolio', href: '/#hero', namePt: 'Portfolio' },
     { name: 'Works', href: '/#series', namePt: 'Trabalhos' },
     { name: 'Exhibitions', href: '/#exhibitions', namePt: 'Exposicoes' },
@@ -35,6 +43,13 @@ export default function Header() {
     { name: 'Available Works', href: '/#availability', namePt: 'Trabalhos Disponíveis' },
     { name: 'Contact', href: '/#blog', namePt: 'Contato' },
   ]
+
+  const navigationItems = useMemo(() => {
+    if (!showAvailableWorks) {
+      return allNavigationItems.filter(item => item.name !== 'Available Works')
+    }
+    return allNavigationItems
+  }, [showAvailableWorks])
 
   const quickActions = [
     { key: 'upload-artwork' as QuickAction, label: 'Upload New Artwork', icon: ImageIcon },
