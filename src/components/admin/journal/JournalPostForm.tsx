@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -440,12 +441,13 @@ export function JournalPostForm({
   )
 
   if (isFullscreen) {
-    return (
-      <div className="fixed inset-0 z-50 bg-white flex flex-col">
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
         <div className="flex-1 max-w-5xl w-full mx-auto p-6 flex flex-col min-h-0">
           {formContent}
         </div>
-      </div>
+      </div>,
+      document.body
     )
   }
 
