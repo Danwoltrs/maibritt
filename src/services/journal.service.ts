@@ -6,6 +6,22 @@ import { StorageService } from './storage.service'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TiptapDoc = Record<string, any>
 
+// Parse content from TEXT column (string) or JSONB (object) to TiptapDoc
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseContent(raw: any): TiptapDoc | null {
+  if (!raw) return null
+  if (typeof raw === 'object') return raw
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      return typeof parsed === 'object' ? parsed : null
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
 export interface JournalPost {
   id: string
   title: Content
@@ -533,29 +549,14 @@ export class JournalService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static parseContent(raw: any): TiptapDoc | null {
-    if (!raw) return null
-    if (typeof raw === 'object') return raw
-    if (typeof raw === 'string') {
-      try {
-        const parsed = JSON.parse(raw)
-        return typeof parsed === 'object' ? parsed : null
-      } catch {
-        return null
-      }
-    }
-    return null
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static transformFromDB(data: any): JournalPost {
     return {
       id: data.id,
       title: { ptBR: data.title_pt || '', en: data.title_en || '' },
       slug: data.slug || '',
       content: {
-        ptBR: this.parseContent(data.content_pt),
-        en: this.parseContent(data.content_en),
+        ptBR: parseContent(data.content_pt),
+        en: parseContent(data.content_en),
       },
       excerpt: data.excerpt_pt || data.excerpt_en ? {
         ptBR: data.excerpt_pt || '',
