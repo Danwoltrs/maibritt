@@ -49,6 +49,13 @@ interface ArtworkContextMenuProps {
 export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkContextMenuProps) {
   const { isAuthenticated } = useAuth()
   const [activeModal, setActiveModal] = useState<ModalType>(null)
+  // Snapshot the artwork when a modal opens so carousel rotation doesn't change it
+  const [snapshotArtwork, setSnapshotArtwork] = useState<Artwork>(artwork)
+
+  const openModal = useCallback((modal: ModalType) => {
+    setSnapshotArtwork(artwork)
+    setActiveModal(modal)
+  }, [artwork])
 
   const closeModal = useCallback(() => setActiveModal(null), [])
 
@@ -58,11 +65,11 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
   }
 
   const handleDownload = () => {
-    if (artwork.images.length === 0) return
-    const url = artwork.images[0].original || artwork.images[0].display
+    if (snapshotArtwork.images.length === 0) return
+    const url = snapshotArtwork.images[0].original || snapshotArtwork.images[0].display
     const link = document.createElement('a')
     link.href = url
-    link.download = `${artwork.title.en.replace(/\s+/g, '-').toLowerCase()}.jpg`
+    link.download = `${snapshotArtwork.title.en.replace(/\s+/g, '-').toLowerCase()}.jpg`
     link.target = '_blank'
     document.body.appendChild(link)
     link.click()
@@ -70,7 +77,7 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
   }
 
   const handleMoveToStudio = async () => {
-    await ArtworkService.updateArtwork(artwork.id, {
+    await ArtworkService.updateArtwork(snapshotArtwork.id, {
       locationType: '',
       locationId: '',
     })
@@ -78,14 +85,14 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
   }
 
   const handleToggleFeatured = async () => {
-    await ArtworkService.updateArtwork(artwork.id, {
-      featured: !artwork.featured,
+    await ArtworkService.updateArtwork(snapshotArtwork.id, {
+      featured: !snapshotArtwork.featured,
     })
     onUpdate?.()
   }
 
   const handleDelete = async () => {
-    await ArtworkService.deleteArtwork(artwork.id)
+    await ArtworkService.deleteArtwork(snapshotArtwork.id)
     onUpdate?.()
   }
 
@@ -96,44 +103,44 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
           {children}
         </ContextMenuTrigger>
         <ContextMenuContent className="w-56">
-          <ContextMenuItem onClick={() => setActiveModal('preview')}>
+          <ContextMenuItem onClick={() => openModal('preview')}>
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => setActiveModal('edit')}>
+          <ContextMenuItem onClick={() => openModal('edit')}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit
           </ContextMenuItem>
 
           <ContextMenuSeparator />
 
-          <ContextMenuItem onClick={() => setActiveModal('markSold')}>
+          <ContextMenuItem onClick={() => openModal('markSold')}>
             <DollarSign className="mr-2 h-4 w-4" />
             Mark as Sold
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => setActiveModal('toggleForSale')}>
+          <ContextMenuItem onClick={() => openModal('toggleForSale')}>
             <Tag className="mr-2 h-4 w-4" />
             {artwork.forSale ? 'Remove from Sale' : 'Mark for Sale'}
           </ContextMenuItem>
 
           <ContextMenuSeparator />
 
-          <ContextMenuItem onClick={() => setActiveModal('assignGallery')}>
+          <ContextMenuItem onClick={() => openModal('assignGallery')}>
             <Building className="mr-2 h-4 w-4" />
             Assign to Gallery
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => setActiveModal('assignExhibition')}>
+          <ContextMenuItem onClick={() => openModal('assignExhibition')}>
             <CalendarDays className="mr-2 h-4 w-4" />
             Assign to Exhibition
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => setActiveModal('moveStudio')}>
+          <ContextMenuItem onClick={() => openModal('moveStudio')}>
             <Home className="mr-2 h-4 w-4" />
             Move to Studio
           </ContextMenuItem>
 
           <ContextMenuSeparator />
 
-          <ContextMenuItem onClick={() => setActiveModal('toggleFeatured')}>
+          <ContextMenuItem onClick={() => openModal('toggleFeatured')}>
             <Star className="mr-2 h-4 w-4" />
             {artwork.featured ? 'Remove Featured' : 'Mark as Featured'}
           </ContextMenuItem>
@@ -148,7 +155,7 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
           <ContextMenuSeparator />
 
           <ContextMenuItem
-            onClick={() => setActiveModal('delete')}
+            onClick={() => openModal('delete')}
             className="text-red-600 focus:text-red-600"
           >
             <Trash2 className="mr-2 h-4 w-4" />
@@ -157,43 +164,43 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
         </ContextMenuContent>
       </ContextMenu>
 
-      {/* Modals */}
+      {/* Modals — use snapshotArtwork so carousel rotation doesn't change the target */}
       <PreviewModal
-        artwork={artwork}
+        artwork={snapshotArtwork}
         open={activeModal === 'preview'}
         onOpenChange={(open) => !open && closeModal()}
       />
 
       <EditArtworkModal
-        artwork={artwork}
+        artwork={snapshotArtwork}
         open={activeModal === 'edit'}
         onOpenChange={(open) => !open && closeModal()}
         onUpdate={onUpdate}
       />
 
       <MarkAsSoldModal
-        artwork={artwork}
+        artwork={snapshotArtwork}
         open={activeModal === 'markSold'}
         onOpenChange={(open) => !open && closeModal()}
         onUpdate={onUpdate}
       />
 
       <AssignToGalleryModal
-        artwork={artwork}
+        artwork={snapshotArtwork}
         open={activeModal === 'assignGallery'}
         onOpenChange={(open) => !open && closeModal()}
         onUpdate={onUpdate}
       />
 
       <AssignToExhibitionModal
-        artwork={artwork}
+        artwork={snapshotArtwork}
         open={activeModal === 'assignExhibition'}
         onOpenChange={(open) => !open && closeModal()}
         onUpdate={onUpdate}
       />
 
       <ForSaleModal
-        artwork={artwork}
+        artwork={snapshotArtwork}
         open={activeModal === 'toggleForSale'}
         onOpenChange={(open) => !open && closeModal()}
         onUpdate={onUpdate}
@@ -203,7 +210,7 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
         open={activeModal === 'moveStudio'}
         onOpenChange={(open) => !open && closeModal()}
         title="Move to Studio"
-        description={`Move "${artwork.title.en}" back to the studio? This will clear the current gallery/exhibition assignment.`}
+        description={`Move "${snapshotArtwork.title.en}" back to the studio? This will clear the current gallery/exhibition assignment.`}
         confirmLabel="Move to Studio"
         onConfirm={handleMoveToStudio}
       />
@@ -211,13 +218,13 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
       <ConfirmActionModal
         open={activeModal === 'toggleFeatured'}
         onOpenChange={(open) => !open && closeModal()}
-        title={artwork.featured ? 'Remove Featured' : 'Mark as Featured'}
+        title={snapshotArtwork.featured ? 'Remove Featured' : 'Mark as Featured'}
         description={
-          artwork.featured
-            ? `Remove "${artwork.title.en}" from featured artworks?`
-            : `Feature "${artwork.title.en}" on the homepage?`
+          snapshotArtwork.featured
+            ? `Remove "${snapshotArtwork.title.en}" from featured artworks?`
+            : `Feature "${snapshotArtwork.title.en}" on the homepage?`
         }
-        confirmLabel={artwork.featured ? 'Remove Featured' : 'Mark as Featured'}
+        confirmLabel={snapshotArtwork.featured ? 'Remove Featured' : 'Mark as Featured'}
         onConfirm={handleToggleFeatured}
       />
 
@@ -225,7 +232,7 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
         open={activeModal === 'delete'}
         onOpenChange={(open) => !open && closeModal()}
         title="Delete Artwork"
-        description={`Are you sure you want to delete "${artwork.title.en}"? This action cannot be undone and will also delete all associated images.`}
+        description={`Are you sure you want to delete "${snapshotArtwork.title.en}"? This action cannot be undone and will also delete all associated images.`}
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={handleDelete}
