@@ -34,6 +34,25 @@ export interface Artwork {
   isAvailable: boolean
   displayOrder: number
   featured: boolean
+  // Sold tracking
+  isSold?: boolean
+  soldPrice?: number
+  soldCurrency?: 'BRL' | 'USD' | 'EUR'
+  soldDate?: Date
+  soldThroughGalleryId?: string
+  saleType?: 'gallery' | 'direct' | 'online'
+  commissionRate?: number
+  commissionAmount?: number
+  netAmount?: number
+  // Buyer info
+  buyerName?: string
+  buyerEmail?: string
+  buyerPhone?: string
+  buyerAddress?: string
+  buyerCity?: string
+  buyerState?: string
+  buyerCountry?: string
+  buyerZipCode?: string
   createdAt: Date
   updatedAt: Date
 }

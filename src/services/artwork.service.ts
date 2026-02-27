@@ -50,6 +50,11 @@ export interface ArtworkUpdateData {
   soldPrice?: number
   soldCurrency?: 'BRL' | 'USD' | 'EUR'
   soldDate?: Date
+  soldThroughGalleryId?: string | null
+  saleType?: 'gallery' | 'direct' | 'online'
+  commissionRate?: number
+  commissionAmount?: number
+  netAmount?: number
   buyerName?: string
   buyerEmail?: string
   buyerPhone?: string
@@ -443,6 +448,11 @@ export class ArtworkService {
       if (updateData.buyerState !== undefined) updateObject.buyer_state = updateData.buyerState
       if (updateData.buyerCountry !== undefined) updateObject.buyer_country = updateData.buyerCountry
       if (updateData.buyerZipCode !== undefined) updateObject.buyer_zip_code = updateData.buyerZipCode
+      if (updateData.soldThroughGalleryId !== undefined) updateObject.sold_through_gallery_id = updateData.soldThroughGalleryId
+      if (updateData.saleType !== undefined) updateObject.sale_type = updateData.saleType
+      if (updateData.commissionRate !== undefined) updateObject.commission_rate = updateData.commissionRate
+      if (updateData.commissionAmount !== undefined) updateObject.commission_amount = updateData.commissionAmount
+      if (updateData.netAmount !== undefined) updateObject.net_amount = updateData.netAmount
 
       // Always update images if we have new ones
       if (updateData.newImages && updateData.newImages.length > 0) {
@@ -644,6 +654,25 @@ export class ArtworkService {
       isAvailable: data.is_available,
       displayOrder: data.display_order,
       featured: data.featured,
+      // Sold tracking
+      isSold: data.is_sold || false,
+      soldPrice: data.sold_price,
+      soldCurrency: data.sold_currency,
+      soldDate: data.sold_date ? new Date(data.sold_date) : undefined,
+      soldThroughGalleryId: data.sold_through_gallery_id,
+      saleType: data.sale_type,
+      commissionRate: data.commission_rate,
+      commissionAmount: data.commission_amount,
+      netAmount: data.net_amount,
+      // Buyer info
+      buyerName: data.buyer_name,
+      buyerEmail: data.buyer_email,
+      buyerPhone: data.buyer_phone,
+      buyerAddress: data.buyer_address,
+      buyerCity: data.buyer_city,
+      buyerState: data.buyer_state,
+      buyerCountry: data.buyer_country,
+      buyerZipCode: data.buyer_zip_code,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     }
