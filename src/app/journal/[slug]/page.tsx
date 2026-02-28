@@ -9,11 +9,29 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import dynamic from 'next/dynamic'
 import { JournalService, JournalPost } from '@/services/journal.service'
+import { isPageBuilderDoc } from '@/components/admin/journal/page-builder/types'
+import { BlockRenderer } from '@/components/journal/BlockRenderer'
+import { normalizeContent } from '@/lib/content-migration'
+import type { PageBuilderDoc } from '@/components/admin/journal/page-builder/types'
 
 const TiptapRenderer = dynamic(
   () => import('@/components/editor/TiptapRenderer').then(mod => ({ default: mod.TiptapRenderer })),
   { ssr: false, loading: () => <div className="animate-pulse h-32 bg-gray-100 rounded" /> }
 )
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ContentRenderer({ content }: { content: Record<string, any> }) {
+  if (isPageBuilderDoc(content)) {
+    return <BlockRenderer content={content as PageBuilderDoc} className="prose-lg" />
+  }
+  // Auto-migrate legacy content for display
+  const migrated = normalizeContent(content)
+  if (migrated) {
+    return <BlockRenderer content={migrated} className="prose-lg" />
+  }
+  // Fallback: render as legacy Tiptap
+  return <TiptapRenderer content={content} className="prose-lg" />
+}
 
 export default function JournalPostPage() {
   const params = useParams()
@@ -135,7 +153,7 @@ export default function JournalPostPage() {
         {/* Content - English */}
         {post.content.en && (
           <div className="mb-12">
-            <TiptapRenderer content={post.content.en} className="prose-lg" />
+            <ContentRenderer content={post.content.en} />
           </div>
         )}
 
@@ -147,7 +165,7 @@ export default function JournalPostPage() {
                 <p className="text-sm text-gray-400 uppercase tracking-wider mb-4">Portugues</p>
               </div>
             )}
-            <TiptapRenderer content={post.content.ptBR} className="prose-lg" />
+            <ContentRenderer content={post.content.ptBR} />
           </div>
         )}
 

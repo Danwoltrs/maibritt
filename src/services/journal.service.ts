@@ -2,6 +2,8 @@ import { supabase } from '@/lib/supabase'
 import { sanitizeFilterValue } from '@/lib/utils'
 import { Content } from '@/types'
 import { StorageService } from './storage.service'
+import { isPageBuilderDoc } from '@/lib/content-migration'
+import { extractTextFromPageBuilder } from '@/lib/content-migration'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TiptapDoc = Record<string, any>
@@ -109,11 +111,20 @@ export class JournalService {
   }
 
   /**
-   * Calculate estimated reading time from Tiptap JSON content
+   * Extract text from content, handling both PageBuilder v2 and legacy Tiptap formats.
+   */
+  private static extractTextFromContent(doc: TiptapDoc | null): string {
+    if (!doc) return ''
+    if (isPageBuilderDoc(doc)) return extractTextFromPageBuilder(doc)
+    return this.extractTextFromTiptap(doc)
+  }
+
+  /**
+   * Calculate estimated reading time from content (supports both formats)
    */
   private static calculateReadingTime(contentEn: TiptapDoc | null, contentPt: TiptapDoc | null): number {
-    const textEn = this.extractTextFromTiptap(contentEn)
-    const textPt = this.extractTextFromTiptap(contentPt)
+    const textEn = this.extractTextFromContent(contentEn)
+    const textPt = this.extractTextFromContent(contentPt)
     const combined = (textEn + ' ' + textPt).trim()
     if (!combined) return 1
     const wordCount = combined.split(/\s+/).length

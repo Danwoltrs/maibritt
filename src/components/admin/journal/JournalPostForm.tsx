@@ -11,16 +11,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DialogFooter } from '@/components/ui/dialog'
 import { X, Upload, Languages, Loader2, Minimize2 } from 'lucide-react'
 import Image from 'next/image'
-import { TiptapEditor } from '@/components/editor/TiptapEditor'
+import { PageBuilderEditor } from './page-builder/PageBuilderEditor'
+import { normalizeContent, createEmptyPageBuilderDoc } from '@/lib/content-migration'
+import type { PageBuilderDoc, ContentBlock } from './page-builder/types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TiptapDoc = Record<string, any>
+type AnyDoc = Record<string, any>
 
 export interface JournalFormData {
   titleEn: string
   titlePt: string
-  contentEn: TiptapDoc | null
-  contentPt: TiptapDoc | null
+  contentEn: AnyDoc | null
+  contentPt: AnyDoc | null
   excerptEn: string
   excerptPt: string
   coverImageFile: File | null
@@ -54,6 +56,37 @@ interface JournalPostFormProps {
   existingCoverImage?: string
 }
 
+/**
+ * Translate a single PageBuilderDoc: translate text blocks, keep embeds/images as-is.
+ */
+async function translatePageBuilderContent(
+  doc: PageBuilderDoc,
+  sourceLanguage: string,
+  targetLanguage: string
+): Promise<PageBuilderDoc> {
+  const translatedBlocks: ContentBlock[] = []
+
+  for (const block of doc.blocks) {
+    if (block.type === 'text') {
+      const text = JSON.stringify(block.content.tiptapDoc)
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, sourceLanguage, targetLanguage, format: 'tiptap' }),
+      })
+      if (!res.ok) throw new Error('Translation failed')
+      const { translated } = await res.json()
+      const tiptapDoc = JSON.parse(translated)
+      translatedBlocks.push({ ...block, id: crypto.randomUUID(), content: { tiptapDoc } })
+    } else {
+      // Series, exhibition, image blocks stay the same (with new id)
+      translatedBlocks.push({ ...block, id: crypto.randomUUID() })
+    }
+  }
+
+  return { version: 2, blocks: translatedBlocks }
+}
+
 export function JournalPostForm({
   formData, setFormData, onSubmit, onCancel, saving, submitLabel, existingCoverImage
 }: JournalPostFormProps) {
@@ -62,11 +95,31 @@ export function JournalPostForm({
   const [translating, setTranslating] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  // Auto-migrate legacy content on mount
+  useEffect(() => {
+    let changed = false
+    let newEn = formData.contentEn
+    let newPt = formData.contentPt
+
+    if (formData.contentEn && !('version' in formData.contentEn && formData.contentEn.version === 2)) {
+      newEn = normalizeContent(formData.contentEn)
+      changed = true
+    }
+    if (formData.contentPt && !('version' in formData.contentPt && formData.contentPt.version === 2)) {
+      newPt = normalizeContent(formData.contentPt)
+      changed = true
+    }
+
+    if (changed) {
+      setFormData(prev => ({ ...prev, contentEn: newEn, contentPt: newPt }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev)
   }, [])
 
-  // ESC to exit fullscreen
   useEffect(() => {
     if (!isFullscreen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -84,18 +137,30 @@ export function JournalPostForm({
     const sourceLanguage = sourceIsEn ? 'en' : 'pt-BR'
     const targetLanguage = sourceIsEn ? 'pt-BR' : 'en'
 
-    let text = ''
-    let format: 'plain' | 'tiptap' = 'plain'
+    if (field === 'content') {
+      const raw = sourceIsEn ? formData.contentEn : formData.contentPt
+      const source = normalizeContent(raw)
+      if (!source) return
 
+      const key = `content-${direction}`
+      setTranslating(key)
+
+      try {
+        const translated = await translatePageBuilderContent(source, sourceLanguage, targetLanguage)
+        update(sourceIsEn ? 'contentPt' : 'contentEn', translated)
+      } catch (err) {
+        console.error('Translation error:', err)
+      } finally {
+        setTranslating(null)
+      }
+      return
+    }
+
+    let text = ''
     if (field === 'title') {
       text = sourceIsEn ? formData.titleEn : formData.titlePt
-    } else if (field === 'excerpt') {
-      text = sourceIsEn ? formData.excerptEn : formData.excerptPt
     } else {
-      const content = sourceIsEn ? formData.contentEn : formData.contentPt
-      if (!content) return
-      text = JSON.stringify(content)
-      format = 'tiptap'
+      text = sourceIsEn ? formData.excerptEn : formData.excerptPt
     }
 
     if (!text.trim()) return
@@ -107,7 +172,7 @@ export function JournalPostForm({
       const res = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, sourceLanguage, targetLanguage, format }),
+        body: JSON.stringify({ text, sourceLanguage, targetLanguage, format: 'plain' }),
       })
 
       if (!res.ok) throw new Error('Translation failed')
@@ -115,11 +180,8 @@ export function JournalPostForm({
 
       if (field === 'title') {
         update(sourceIsEn ? 'titlePt' : 'titleEn', translated)
-      } else if (field === 'excerpt') {
-        update(sourceIsEn ? 'excerptPt' : 'excerptEn', translated)
       } else {
-        const doc = JSON.parse(translated)
-        update(sourceIsEn ? 'contentPt' : 'contentEn', doc)
+        update(sourceIsEn ? 'excerptPt' : 'excerptEn', translated)
       }
     } catch (err) {
       console.error('Translation error:', err)
@@ -189,7 +251,7 @@ export function JournalPostForm({
                     onClick={() => translateField('title', 'pt-to-en')}
                   >
                     {translating === 'title-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                    PT → EN
+                    PT &rarr; EN
                   </Button>
                 )}
               </div>
@@ -211,7 +273,7 @@ export function JournalPostForm({
                     onClick={() => translateField('title', 'en-to-pt')}
                   >
                     {translating === 'title-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                    EN → PT
+                    EN &rarr; PT
                   </Button>
                 )}
               </div>
@@ -224,7 +286,7 @@ export function JournalPostForm({
             </div>
           </div>
 
-          {/* Rich text editors in language tabs */}
+          {/* Page builder editors in language tabs */}
           <Tabs defaultValue="en" className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
             <div className="flex items-center justify-between shrink-0">
               <TabsList>
@@ -239,7 +301,7 @@ export function JournalPostForm({
                   onClick={() => translateField('content', 'en-to-pt')}
                 >
                   {translating === 'content-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                  EN → PT
+                  EN &rarr; PT
                 </Button>
                 <Button
                   type="button" variant="outline" size="sm"
@@ -248,28 +310,20 @@ export function JournalPostForm({
                   onClick={() => translateField('content', 'pt-to-en')}
                 >
                   {translating === 'content-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                  PT → EN
+                  PT &rarr; EN
                 </Button>
               </div>
             </div>
-            <TabsContent value="en" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0' : ''}`}>
-              <TiptapEditor
-                content={formData.contentEn}
-                onChange={(json) => update('contentEn', json)}
-                placeholder="Write your journal entry in English..."
-                language="en"
-                onRequestFullscreen={toggleFullscreen}
-                isExternalFullscreen={isFullscreen}
+            <TabsContent value="en" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
+              <PageBuilderEditor
+                value={normalizeContent(formData.contentEn) || createEmptyPageBuilderDoc()}
+                onChange={(doc) => update('contentEn', doc)}
               />
             </TabsContent>
-            <TabsContent value="pt" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0' : ''}`}>
-              <TiptapEditor
-                content={formData.contentPt}
-                onChange={(json) => update('contentPt', json)}
-                placeholder="Escreva sua entrada no diario em Portugues..."
-                language="ptBR"
-                onRequestFullscreen={toggleFullscreen}
-                isExternalFullscreen={isFullscreen}
+            <TabsContent value="pt" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
+              <PageBuilderEditor
+                value={normalizeContent(formData.contentPt) || createEmptyPageBuilderDoc()}
+                onChange={(doc) => update('contentPt', doc)}
               />
             </TabsContent>
           </Tabs>
@@ -312,7 +366,7 @@ export function JournalPostForm({
                     onClick={() => translateField('excerpt', 'pt-to-en')}
                   >
                     {translating === 'excerpt-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                    PT → EN
+                    PT &rarr; EN
                   </Button>
                 )}
               </div>
@@ -335,7 +389,7 @@ export function JournalPostForm({
                     onClick={() => translateField('excerpt', 'en-to-pt')}
                   >
                     {translating === 'excerpt-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                    EN → PT
+                    EN &rarr; PT
                   </Button>
                 )}
               </div>
