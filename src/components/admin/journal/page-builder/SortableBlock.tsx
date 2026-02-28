@@ -20,7 +20,7 @@ const THUMB_SIZES: { value: ThumbnailSize; label: string }[] = [
   { value: 'lg', label: 'L' },
 ]
 
-const MAX_OPTIONS = [3, 5, 10, 20]
+const MAX_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1)
 
 export function SortableBlock({ block, onWidthChange, onDelete, onUpdateBlock, children }: SortableBlockProps) {
   const {
