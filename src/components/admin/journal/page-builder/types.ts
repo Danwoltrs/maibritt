@@ -11,6 +11,7 @@ export interface TextBlock {
 }
 
 export type EmbedDisplay = 'card' | 'link'
+export type ThumbnailSize = 'sm' | 'md' | 'lg'
 
 export interface SeriesBlock {
   id: string
@@ -21,6 +22,8 @@ export interface SeriesBlock {
   coverImage?: string
   artworkCount?: number
   display?: EmbedDisplay
+  thumbnailSize?: ThumbnailSize
+  maxThumbnails?: number
 }
 
 export interface ExhibitionBlock {
@@ -32,6 +35,8 @@ export interface ExhibitionBlock {
   imageUrl?: string
   subtitle?: string
   display?: EmbedDisplay
+  thumbnailSize?: ThumbnailSize
+  maxThumbnails?: number
 }
 
 export interface ImageBlock {

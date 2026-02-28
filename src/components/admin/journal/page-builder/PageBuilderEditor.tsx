@@ -106,6 +106,8 @@ export function PageBuilderEditor({ value, onChange, hideAddMenu }: PageBuilderE
             coverImage={block.coverImage}
             artworkCount={block.artworkCount}
             display={block.display}
+            thumbnailSize={block.thumbnailSize}
+            maxThumbnails={block.maxThumbnails}
           />
         )
       case 'exhibition':
@@ -116,6 +118,8 @@ export function PageBuilderEditor({ value, onChange, hideAddMenu }: PageBuilderE
             imageUrl={block.imageUrl}
             subtitle={block.subtitle}
             display={block.display}
+            thumbnailSize={block.thumbnailSize}
+            maxThumbnails={block.maxThumbnails}
           />
         )
       case 'image':
@@ -157,6 +161,7 @@ export function PageBuilderEditor({ value, onChange, hideAddMenu }: PageBuilderE
                 block={block}
                 onWidthChange={(width) => changeWidth(block.id, width)}
                 onDelete={() => deleteBlock(block.id)}
+                onUpdateBlock={(updates) => updateBlock(block.id, updates)}
               >
                 {renderBlock(block)}
               </SortableBlock>

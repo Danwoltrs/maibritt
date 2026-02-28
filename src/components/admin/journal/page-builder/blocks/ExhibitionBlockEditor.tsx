@@ -5,7 +5,13 @@ import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { ImageLightbox } from '@/components/journal/ImageLightbox'
-import type { EmbedDisplay } from '../types'
+import type { EmbedDisplay, ThumbnailSize } from '../types'
+
+const THUMB_PX: Record<ThumbnailSize, { box: string }> = {
+  sm: { box: 'h-20 w-20' },
+  md: { box: 'h-32 w-32' },
+  lg: { box: 'h-48 w-48' },
+}
 
 interface ExhibitionImageData {
   url: string
@@ -20,9 +26,11 @@ interface ExhibitionBlockEditorProps {
   imageUrl?: string
   subtitle?: string
   display?: EmbedDisplay
+  thumbnailSize?: ThumbnailSize
+  maxThumbnails?: number
 }
 
-export function ExhibitionBlockEditor({ exhibitionId, title, imageUrl, subtitle, display = 'card' }: ExhibitionBlockEditorProps) {
+export function ExhibitionBlockEditor({ exhibitionId, title, imageUrl, subtitle, display = 'card', thumbnailSize = 'sm', maxThumbnails = 20 }: ExhibitionBlockEditorProps) {
   const [exTitle, setExTitle] = useState(title || '')
   const [exSubtitle, setExSubtitle] = useState(subtitle || '')
   const [images, setImages] = useState<ExhibitionImageData[]>([])
@@ -166,19 +174,22 @@ export function ExhibitionBlockEditor({ exhibitionId, title, imageUrl, subtitle,
               className="flex gap-1.5 overflow-x-auto"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {images.map((img, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="shrink-0 group cursor-pointer"
-                  title={img.captionEn || exTitle}
-                  onClick={() => setLightbox({ open: true, index: i })}
-                >
-                  <div className="h-20 w-20 overflow-hidden rounded bg-amber-200 ring-0 group-hover:ring-2 ring-amber-400 transition-all">
-                    <img src={img.url} alt={img.captionEn || exTitle} className="h-full w-full object-cover" />
-                  </div>
-                </button>
-              ))}
+              {images.slice(0, maxThumbnails).map((img, i) => {
+                const sz = THUMB_PX[thumbnailSize]
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    className="shrink-0 group cursor-pointer"
+                    title={img.captionEn || exTitle}
+                    onClick={() => setLightbox({ open: true, index: i })}
+                  >
+                    <div className={`${sz.box} overflow-hidden rounded bg-amber-200 ring-0 group-hover:ring-2 ring-amber-400 transition-all`}>
+                      <img src={img.url} alt={img.captionEn || exTitle} className="h-full w-full object-cover" />
+                    </div>
+                  </button>
+                )
+              })}
             </div>
 
             {canScrollRight && (

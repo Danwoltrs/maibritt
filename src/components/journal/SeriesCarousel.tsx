@@ -28,11 +28,21 @@ function getImageUrl(artwork: SeriesArtwork, size: 'display' | 'thumbnail' = 'di
   return img?.[size] || img?.display || img?.thumbnail || img?.original || ''
 }
 
-interface SeriesCarouselProps {
-  seriesId: string
+type ThumbnailSize = 'sm' | 'md' | 'lg'
+
+const THUMB_PX: Record<ThumbnailSize, { box: string; w: string }> = {
+  sm: { box: 'h-32 w-32', w: 'w-32' },
+  md: { box: 'h-48 w-48', w: 'w-48' },
+  lg: { box: 'h-64 w-64', w: 'w-64' },
 }
 
-export function SeriesCarousel({ seriesId }: SeriesCarouselProps) {
+interface SeriesCarouselProps {
+  seriesId: string
+  thumbnailSize?: ThumbnailSize
+  maxThumbnails?: number
+}
+
+export function SeriesCarousel({ seriesId, thumbnailSize = 'md', maxThumbnails = 20 }: SeriesCarouselProps) {
   const [artworks, setArtworks] = useState<SeriesArtwork[]>([])
   const [seriesName, setSeriesName] = useState('')
   const [loading, setLoading] = useState(true)
@@ -131,9 +141,10 @@ export function SeriesCarousel({ seriesId }: SeriesCarouselProps) {
             className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {artworks.map((artwork, i) => {
-              const imageUrl = getImageUrl(artwork, 'thumbnail')
+            {artworks.slice(0, maxThumbnails).map((artwork, i) => {
+              const imageUrl = getImageUrl(artwork, thumbnailSize === 'sm' ? 'thumbnail' : 'display')
               const title = artwork.title_en || artwork.title_pt || 'Untitled'
+              const sz = THUMB_PX[thumbnailSize]
 
               return (
                 <motion.div
@@ -143,7 +154,7 @@ export function SeriesCarousel({ seriesId }: SeriesCarouselProps) {
                   transition={{ duration: 0.2 }}
                   onClick={() => setLightbox({ open: true, index: i })}
                 >
-                  <div className="h-48 w-48 overflow-hidden rounded-lg bg-gray-200">
+                  <div className={`${sz.box} overflow-hidden rounded-lg bg-gray-200`}>
                     {imageUrl ? (
                       <img
                         src={imageUrl}
@@ -156,7 +167,7 @@ export function SeriesCarousel({ seriesId }: SeriesCarouselProps) {
                       </div>
                     )}
                   </div>
-                  <p className="mt-1.5 text-xs text-gray-700 font-medium truncate w-48">{title}</p>
+                  <p className={`mt-1.5 text-xs text-gray-700 font-medium truncate ${sz.w}`}>{title}</p>
                   {artwork.year && <p className="text-xs text-gray-400">{artwork.year}</p>}
                 </motion.div>
               )

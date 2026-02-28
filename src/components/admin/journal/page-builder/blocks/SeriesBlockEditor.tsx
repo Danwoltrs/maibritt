@@ -5,7 +5,13 @@ import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { ImageLightbox } from '@/components/journal/ImageLightbox'
-import type { EmbedDisplay } from '../types'
+import type { EmbedDisplay, ThumbnailSize } from '../types'
+
+const THUMB_PX: Record<ThumbnailSize, { box: string; h: string }> = {
+  sm: { box: 'h-20 w-20', h: 'h-20' },
+  md: { box: 'h-32 w-32', h: 'h-32' },
+  lg: { box: 'h-48 w-48', h: 'h-48' },
+}
 
 interface ArtworkImage {
   original: string
@@ -34,9 +40,11 @@ interface SeriesBlockEditorProps {
   coverImage?: string
   artworkCount?: number
   display?: EmbedDisplay
+  thumbnailSize?: ThumbnailSize
+  maxThumbnails?: number
 }
 
-export function SeriesBlockEditor({ seriesId, name, display = 'card' }: SeriesBlockEditorProps) {
+export function SeriesBlockEditor({ seriesId, name, display = 'card', thumbnailSize = 'sm', maxThumbnails = 20 }: SeriesBlockEditorProps) {
   const [artworks, setArtworks] = useState<SeriesArtwork[]>([])
   const [seriesName, setSeriesName] = useState(name || '')
   const [loading, setLoading] = useState(true)
@@ -172,9 +180,10 @@ export function SeriesBlockEditor({ seriesId, name, display = 'card' }: SeriesBl
               className="flex gap-1.5 overflow-x-auto"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {artworks.map((artwork, i) => {
-                const thumb = getUrl(artwork, 'thumbnail')
+              {artworks.slice(0, maxThumbnails).map((artwork, i) => {
+                const thumb = getUrl(artwork, thumbnailSize === 'lg' ? 'display' : 'thumbnail')
                 const title = artwork.title_en || artwork.title_pt || 'Untitled'
+                const sz = THUMB_PX[thumbnailSize]
 
                 return (
                   <button
@@ -184,7 +193,7 @@ export function SeriesBlockEditor({ seriesId, name, display = 'card' }: SeriesBl
                     title={title}
                     onClick={() => setLightbox({ open: true, index: i })}
                   >
-                    <div className="h-20 w-20 overflow-hidden rounded bg-violet-200 ring-0 group-hover:ring-2 ring-violet-400 transition-all">
+                    <div className={`${sz.box} overflow-hidden rounded bg-violet-200 ring-0 group-hover:ring-2 ring-violet-400 transition-all`}>
                       {thumb ? (
                         <img src={thumb} alt={title} className="h-full w-full object-cover" />
                       ) : (

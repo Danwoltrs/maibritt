@@ -37,12 +37,12 @@ function BlockItem({ block }: { block: ContentBlock }) {
       {block.type === 'series' && (
         block.display === 'link'
           ? <SeriesLinkPublic seriesId={block.seriesId} />
-          : <SeriesCarousel seriesId={block.seriesId} />
+          : <SeriesCarousel seriesId={block.seriesId} thumbnailSize={block.thumbnailSize} maxThumbnails={block.maxThumbnails} />
       )}
       {block.type === 'exhibition' && (
         block.display === 'link'
           ? <ExhibitionLinkPublic exhibitionId={block.exhibitionId} />
-          : <ExhibitionBlockPublic exhibitionId={block.exhibitionId} />
+          : <ExhibitionBlockPublic exhibitionId={block.exhibitionId} thumbnailSize={block.thumbnailSize} maxThumbnails={block.maxThumbnails} />
       )}
       {block.type === 'image' && <ImageBlockPublic block={block} />}
     </div>
@@ -263,7 +263,15 @@ interface ExhibitionData {
   images?: any[]
 }
 
-function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
+type ThumbnailSize = 'sm' | 'md' | 'lg'
+
+const THUMB_PX: Record<ThumbnailSize, { box: string }> = {
+  sm: { box: 'h-32 w-32' },
+  md: { box: 'h-48 w-48' },
+  lg: { box: 'h-64 w-64' },
+}
+
+function ExhibitionBlockPublic({ exhibitionId, thumbnailSize = 'md', maxThumbnails = 20 }: { exhibitionId: string; thumbnailSize?: ThumbnailSize; maxThumbnails?: number }) {
   const [exhibition, setExhibition] = useState<ExhibitionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [lightbox, setLightbox] = useState<{ open: boolean; index: number }>({ open: false, index: 0 })
@@ -295,12 +303,11 @@ function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
   if (loading) {
     return (
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 animate-pulse">
+        <div className="h-5 w-40 bg-gray-200 rounded mb-4" />
         <div className="flex gap-4">
-          <div className="h-20 w-20 bg-gray-200 rounded-lg" />
-          <div className="space-y-2">
-            <div className="h-4 w-32 bg-gray-200 rounded" />
-            <div className="h-3 w-24 bg-gray-200 rounded" />
-          </div>
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className={`${THUMB_PX[thumbnailSize].box} shrink-0 bg-gray-200 rounded-lg`} />
+          ))}
         </div>
       </div>
     )
@@ -311,33 +318,52 @@ function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
   const title = exhibition.title_en || exhibition.title_pt || 'Untitled'
   const subtitle = [exhibition.year, exhibition.venue].filter(Boolean).join(' · ')
   const imgs = getExhibitionImages(exhibition)
+  const visibleImgs = imgs.slice(0, maxThumbnails)
   const lightboxImages = imgs.map(img => ({
     src: img.url,
     alt: img.captionEn || title,
     caption: img.captionEn || img.captionPt,
   }))
-  const coverUrl = imgs[0]?.url
+  const sz = THUMB_PX[thumbnailSize]
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => imgs.length > 0 && setLightbox({ open: true, index: 0 })}
-        className="w-full text-left rounded-xl border border-gray-200 bg-gray-50 p-5 flex items-center gap-4 cursor-pointer hover:bg-gray-100 transition-colors"
-      >
-        {coverUrl && (
-          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
-            <img src={coverUrl} alt={title} className="h-full w-full object-cover" />
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs">Exhibition</Badge>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+          </div>
+          <span className="text-sm text-gray-400">{imgs.length} {imgs.length === 1 ? 'image' : 'images'}</span>
+        </div>
+
+        {visibleImgs.length > 0 && (
+          <div
+            className="flex gap-4 overflow-x-auto pb-2"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {visibleImgs.map((img, i) => (
+              <button
+                key={i}
+                type="button"
+                className="shrink-0 cursor-pointer group"
+                onClick={() => setLightbox({ open: true, index: i })}
+              >
+                <div className={`${sz.box} overflow-hidden rounded-lg bg-gray-200`}>
+                  <img
+                    src={img.url}
+                    alt={img.captionEn || title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+              </button>
+            ))}
           </div>
         )}
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs">Exhibition</Badge>
-          </div>
-          <h4 className="text-base font-medium text-gray-900 truncate">{title}</h4>
-          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
-        </div>
-      </button>
+      </div>
 
       <ImageLightbox
         images={lightboxImages}
