@@ -172,10 +172,28 @@ function SeriesLinkPublic({ seriesId }: { seriesId: string }) {
   )
 }
 
+interface ExhibitionImageData {
+  url: string
+  captionPt?: string
+  captionEn?: string
+  isCover?: boolean
+}
+
+function getExhibitionImages(data: ExhibitionData): ExhibitionImageData[] {
+  const imgs: ExhibitionImageData[] = []
+  if (data.images && Array.isArray(data.images)) {
+    imgs.push(...(data.images as ExhibitionImageData[]))
+  }
+  if (imgs.length === 0 && data.image) {
+    imgs.push({ url: data.image })
+  }
+  return imgs
+}
+
 function ExhibitionLinkPublic({ exhibitionId }: { exhibitionId: string }) {
   const [exhibition, setExhibition] = useState<ExhibitionData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightbox, setLightbox] = useState<{ open: boolean; index: number }>({ open: false, index: 0 })
 
   useEffect(() => {
     if (!exhibitionId) return
@@ -185,7 +203,7 @@ function ExhibitionLinkPublic({ exhibitionId }: { exhibitionId: string }) {
       try {
         const { data } = await supabase
           .from('exhibitions')
-          .select('title_en, title_pt, year, venue, image')
+          .select('title_en, title_pt, year, venue, image, images')
           .eq('id', exhibitionId)
           .single()
 
@@ -206,27 +224,31 @@ function ExhibitionLinkPublic({ exhibitionId }: { exhibitionId: string }) {
 
   const title = exhibition.title_en || exhibition.title_pt || 'Untitled exhibition'
   const subtitle = [exhibition.year, exhibition.venue].filter(Boolean).join(' · ')
+  const imgs = getExhibitionImages(exhibition)
+  const lightboxImages = imgs.map(img => ({
+    src: img.url,
+    alt: img.captionEn || title,
+    caption: img.captionEn || img.captionPt,
+  }))
 
   return (
     <>
       <button
         type="button"
-        onClick={() => exhibition.image && setLightboxOpen(true)}
+        onClick={() => imgs.length > 0 && setLightbox({ open: true, index: 0 })}
         className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900 font-medium underline underline-offset-2 decoration-amber-300 hover:decoration-amber-500 transition-colors"
       >
         {title}
         {subtitle && <span className="text-amber-400 no-underline text-xs">({subtitle})</span>}
       </button>
 
-      {exhibition.image && (
-        <ImageLightbox
-          images={[{ src: exhibition.image, alt: title, caption: subtitle }]}
-          currentIndex={0}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onNavigate={() => {}}
-        />
-      )}
+      <ImageLightbox
+        images={lightboxImages}
+        currentIndex={lightbox.index}
+        open={lightbox.open}
+        onClose={() => setLightbox({ open: false, index: 0 })}
+        onNavigate={(index) => setLightbox({ open: true, index })}
+      />
     </>
   )
 }
@@ -237,12 +259,14 @@ interface ExhibitionData {
   year: number | null
   venue: string
   image: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  images?: any[]
 }
 
 function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
   const [exhibition, setExhibition] = useState<ExhibitionData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightbox, setLightbox] = useState<{ open: boolean; index: number }>({ open: false, index: 0 })
 
   useEffect(() => {
     if (!exhibitionId) return
@@ -252,7 +276,7 @@ function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
       try {
         const { data } = await supabase
           .from('exhibitions')
-          .select('title_en, title_pt, year, venue, image')
+          .select('title_en, title_pt, year, venue, image, images')
           .eq('id', exhibitionId)
           .single()
 
@@ -286,17 +310,24 @@ function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
 
   const title = exhibition.title_en || exhibition.title_pt || 'Untitled'
   const subtitle = [exhibition.year, exhibition.venue].filter(Boolean).join(' · ')
+  const imgs = getExhibitionImages(exhibition)
+  const lightboxImages = imgs.map(img => ({
+    src: img.url,
+    alt: img.captionEn || title,
+    caption: img.captionEn || img.captionPt,
+  }))
+  const coverUrl = imgs[0]?.url
 
   return (
     <>
       <button
         type="button"
-        onClick={() => exhibition.image && setLightboxOpen(true)}
+        onClick={() => imgs.length > 0 && setLightbox({ open: true, index: 0 })}
         className="w-full text-left rounded-xl border border-gray-200 bg-gray-50 p-5 flex items-center gap-4 cursor-pointer hover:bg-gray-100 transition-colors"
       >
-        {exhibition.image && (
+        {coverUrl && (
           <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
-            <img src={exhibition.image} alt={title} className="h-full w-full object-cover" />
+            <img src={coverUrl} alt={title} className="h-full w-full object-cover" />
           </div>
         )}
         <div className="min-w-0">
@@ -308,15 +339,13 @@ function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
         </div>
       </button>
 
-      {exhibition.image && (
-        <ImageLightbox
-          images={[{ src: exhibition.image, alt: title, caption: subtitle }]}
-          currentIndex={0}
-          open={lightboxOpen}
-          onClose={() => setLightboxOpen(false)}
-          onNavigate={() => {}}
-        />
-      )}
+      <ImageLightbox
+        images={lightboxImages}
+        currentIndex={lightbox.index}
+        open={lightbox.open}
+        onClose={() => setLightbox({ open: false, index: 0 })}
+        onNavigate={(index) => setLightbox({ open: true, index })}
+      />
     </>
   )
 }
