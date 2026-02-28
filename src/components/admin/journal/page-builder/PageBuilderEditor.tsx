@@ -13,7 +13,7 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable'
 import { AddContentMenu } from './AddContentMenu'
@@ -141,7 +141,7 @@ export function PageBuilderEditor({ value, onChange, hideAddMenu }: PageBuilderE
       >
         <SortableContext
           items={value.blocks.map(b => b.id)}
-          strategy={verticalListSortingStrategy}
+          strategy={rectSortingStrategy}
         >
           <div className="flex flex-wrap gap-4 min-h-[100px]">
             {value.blocks.length === 0 && (
