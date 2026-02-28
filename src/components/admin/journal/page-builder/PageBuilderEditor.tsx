@@ -27,9 +27,10 @@ import type { PageBuilderDoc, ContentBlock, BlockWidth } from './types'
 interface PageBuilderEditorProps {
   value: PageBuilderDoc
   onChange: (doc: PageBuilderDoc) => void
+  hideAddMenu?: boolean
 }
 
-export function PageBuilderEditor({ value, onChange }: PageBuilderEditorProps) {
+export function PageBuilderEditor({ value, onChange, hideAddMenu }: PageBuilderEditorProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -131,7 +132,7 @@ export function PageBuilderEditor({ value, onChange }: PageBuilderEditorProps) {
 
   return (
     <div className="space-y-4">
-      <AddContentMenu onAddBlock={addBlock} />
+      {!hideAddMenu && <AddContentMenu onAddBlock={addBlock} />}
 
       <DndContext
         sensors={sensors}

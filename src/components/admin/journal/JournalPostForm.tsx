@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DialogFooter } from '@/components/ui/dialog'
-import { X, Upload, Languages, Loader2, Minimize2 } from 'lucide-react'
+import { X, Upload, Languages, Loader2, Minimize2, Maximize2 } from 'lucide-react'
 import Image from 'next/image'
 import { PageBuilderEditor } from './page-builder/PageBuilderEditor'
+import { AddContentMenu } from './page-builder/AddContentMenu'
 import { normalizeContent, createEmptyPageBuilderDoc } from '@/lib/content-migration'
 import type { PageBuilderDoc, ContentBlock } from './page-builder/types'
 
@@ -94,6 +95,7 @@ export function JournalPostForm({
   const [coverPreview, setCoverPreview] = useState<string | null>(existingCoverImage || null)
   const [translating, setTranslating] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [contentLang, setContentLang] = useState<'en' | 'pt'>('en')
 
   // Auto-migrate legacy content on mount
   useEffect(() => {
@@ -214,6 +216,12 @@ export function JournalPostForm({
     update('tags', formData.tags.filter(t => t !== tag))
   }
 
+  const addBlockToActiveContent = (block: ContentBlock) => {
+    const key = contentLang === 'en' ? 'contentEn' : 'contentPt'
+    const current = normalizeContent(formData[key]) || createEmptyPageBuilderDoc()
+    update(key, { ...current, blocks: [...current.blocks, block] })
+  }
+
   const isValid = formData.titleEn.trim() || formData.titlePt.trim()
 
   const formContent = (
@@ -230,69 +238,81 @@ export function JournalPostForm({
         </div>
       )}
       <Tabs defaultValue="content" className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
-        <TabsList className="w-full justify-start shrink-0">
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="meta">Meta & Cover</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between shrink-0">
+          <TabsList>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="meta">Meta & Cover</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+          {!isFullscreen && (
+            <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="h-8 w-8 p-0" title="Fullscreen">
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
 
         {/* Content Tab */}
         <TabsContent value="content" className={`space-y-4 mt-4 ${isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}`}>
           {/* Titles */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Title (English)</Label>
+            <div className="space-y-1.5">
+              <Label>Title (English)</Label>
+              <div className="flex gap-1.5">
+                <Input
+                  value={formData.titleEn}
+                  onChange={(e) => update('titleEn', e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="Enter title in English"
+                  className="flex-1"
+                />
                 {formData.titlePt && (
                   <Button
                     type="button" variant="ghost" size="sm"
-                    className="h-6 text-xs gap-1"
+                    className="h-9 w-9 p-0 shrink-0"
                     disabled={translating === 'title-pt-to-en'}
                     onClick={() => translateField('title', 'pt-to-en')}
+                    title="Translate PT to EN"
                   >
-                    {translating === 'title-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                    PT &rarr; EN
+                    {translating === 'title-pt-to-en' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
                   </Button>
                 )}
               </div>
-              <Input
-                value={formData.titleEn}
-                onChange={(e) => update('titleEn', e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
-                placeholder="Enter title in English"
-              />
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Title (Portuguese)</Label>
+            <div className="space-y-1.5">
+              <Label>Title (Portuguese)</Label>
+              <div className="flex gap-1.5">
+                <Input
+                  value={formData.titlePt}
+                  onChange={(e) => update('titlePt', e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="Digite o titulo em Portugues"
+                  className="flex-1"
+                />
                 {formData.titleEn && (
                   <Button
                     type="button" variant="ghost" size="sm"
-                    className="h-6 text-xs gap-1"
+                    className="h-9 w-9 p-0 shrink-0"
                     disabled={translating === 'title-en-to-pt'}
                     onClick={() => translateField('title', 'en-to-pt')}
+                    title="Translate EN to PT"
                   >
-                    {translating === 'title-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                    EN &rarr; PT
+                    {translating === 'title-en-to-pt' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
                   </Button>
                 )}
               </div>
-              <Input
-                value={formData.titlePt}
-                onChange={(e) => update('titlePt', e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
-                placeholder="Digite o titulo em Portugues"
-              />
             </div>
           </div>
 
           {/* Page builder editors in language tabs */}
-          <Tabs defaultValue="en" className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
+          <Tabs defaultValue="en" value={contentLang} onValueChange={(v) => setContentLang(v as 'en' | 'pt')} className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
             <div className="flex items-center justify-between shrink-0">
-              <TabsList>
-                <TabsTrigger value="en">English Content</TabsTrigger>
-                <TabsTrigger value="pt">Portuguese Content</TabsTrigger>
-              </TabsList>
+              <div className="flex items-center gap-2">
+                <TabsList>
+                  <TabsTrigger value="en">English Content</TabsTrigger>
+                  <TabsTrigger value="pt">Portuguese Content</TabsTrigger>
+                </TabsList>
+                <AddContentMenu onAddBlock={addBlockToActiveContent} />
+              </div>
               <div className="flex gap-1">
                 <Button
                   type="button" variant="outline" size="sm"
@@ -318,12 +338,14 @@ export function JournalPostForm({
               <PageBuilderEditor
                 value={normalizeContent(formData.contentEn) || createEmptyPageBuilderDoc()}
                 onChange={(doc) => update('contentEn', doc)}
+                hideAddMenu
               />
             </TabsContent>
             <TabsContent value="pt" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
               <PageBuilderEditor
                 value={normalizeContent(formData.contentPt) || createEmptyPageBuilderDoc()}
                 onChange={(doc) => update('contentPt', doc)}
+                hideAddMenu
               />
             </TabsContent>
           </Tabs>
