@@ -105,6 +105,7 @@ export function PageBuilderEditor({ value, onChange, hideAddMenu }: PageBuilderE
             name={block.name}
             coverImage={block.coverImage}
             artworkCount={block.artworkCount}
+            display={block.display}
           />
         )
       case 'exhibition':
@@ -114,6 +115,7 @@ export function PageBuilderEditor({ value, onChange, hideAddMenu }: PageBuilderE
             title={block.title}
             imageUrl={block.imageUrl}
             subtitle={block.subtitle}
+            display={block.display}
           />
         )
       case 'image':

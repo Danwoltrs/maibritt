@@ -34,8 +34,16 @@ function BlockItem({ block }: { block: ContentBlock }) {
   return (
     <div className={widthClass}>
       {block.type === 'text' && <TextBlockPublic block={block} />}
-      {block.type === 'series' && <SeriesCarousel seriesId={block.seriesId} />}
-      {block.type === 'exhibition' && <ExhibitionBlockPublic exhibitionId={block.exhibitionId} />}
+      {block.type === 'series' && (
+        block.display === 'link'
+          ? <SeriesLinkPublic seriesId={block.seriesId} />
+          : <SeriesCarousel seriesId={block.seriesId} />
+      )}
+      {block.type === 'exhibition' && (
+        block.display === 'link'
+          ? <ExhibitionLinkPublic exhibitionId={block.exhibitionId} />
+          : <ExhibitionBlockPublic exhibitionId={block.exhibitionId} />
+      )}
       {block.type === 'image' && <ImageBlockPublic block={block} />}
     </div>
   )
@@ -78,6 +86,151 @@ function ImageBlockPublic({ block }: { block: Extract<ContentBlock, { type: 'ima
   )
 }
 
+interface ArtworkImage {
+  original: string
+  display: string
+  thumbnail: string
+}
+
+interface SeriesArtwork {
+  id: string
+  title_en: string
+  title_pt: string
+  year: number
+  images: ArtworkImage[]
+}
+
+function getArtworkUrl(artwork: SeriesArtwork, size: 'thumbnail' | 'display'): string {
+  if (!artwork.images || !Array.isArray(artwork.images) || artwork.images.length === 0) return ''
+  const img = artwork.images[0]
+  if (typeof img === 'string') return img
+  return img?.[size] || img?.display || img?.thumbnail || img?.original || ''
+}
+
+function SeriesLinkPublic({ seriesId }: { seriesId: string }) {
+  const [seriesName, setSeriesName] = useState('')
+  const [artworks, setArtworks] = useState<SeriesArtwork[]>([])
+  const [loading, setLoading] = useState(true)
+  const [lightbox, setLightbox] = useState<{ open: boolean; index: number }>({ open: false, index: 0 })
+
+  useEffect(() => {
+    if (!seriesId) return
+    let cancelled = false
+
+    async function load() {
+      try {
+        const [{ data: series }, { data: works }] = await Promise.all([
+          supabase.from('series').select('name_en, name_pt').eq('id', seriesId).single(),
+          supabase.from('artworks').select('id, title_en, title_pt, year, images')
+            .eq('series_id', seriesId)
+            .order('display_order', { ascending: true })
+            .limit(20),
+        ])
+
+        if (!cancelled) {
+          setSeriesName(series?.name_en || series?.name_pt || '')
+          setArtworks((works || []) as SeriesArtwork[])
+        }
+      } catch (err) {
+        console.error('SeriesLinkPublic: fetch error', err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [seriesId])
+
+  const lightboxImages = artworks.map(a => ({
+    src: getArtworkUrl(a, 'display'),
+    alt: a.title_en || a.title_pt || 'Artwork',
+    caption: [a.title_en || a.title_pt, a.year].filter(Boolean).join(', '),
+  }))
+
+  if (loading) return <span className="text-sm text-gray-400">Loading...</span>
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => artworks.length > 0 && setLightbox({ open: true, index: 0 })}
+        className="inline-flex items-center gap-1 text-violet-700 hover:text-violet-900 font-medium underline underline-offset-2 decoration-violet-300 hover:decoration-violet-500 transition-colors"
+      >
+        {seriesName || 'Untitled works'}
+        {artworks.length > 0 && <span className="text-violet-400 no-underline text-xs">({artworks.length})</span>}
+      </button>
+
+      <ImageLightbox
+        images={lightboxImages}
+        currentIndex={lightbox.index}
+        open={lightbox.open}
+        onClose={() => setLightbox({ open: false, index: 0 })}
+        onNavigate={(index) => setLightbox({ open: true, index })}
+      />
+    </>
+  )
+}
+
+function ExhibitionLinkPublic({ exhibitionId }: { exhibitionId: string }) {
+  const [exhibition, setExhibition] = useState<ExhibitionData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+
+  useEffect(() => {
+    if (!exhibitionId) return
+    let cancelled = false
+
+    async function load() {
+      try {
+        const { data } = await supabase
+          .from('exhibitions')
+          .select('title_en, title_pt, year, venue, image')
+          .eq('id', exhibitionId)
+          .single()
+
+        if (!cancelled && data) setExhibition(data)
+      } catch (err) {
+        console.error('ExhibitionLinkPublic: fetch error', err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [exhibitionId])
+
+  if (loading) return <span className="text-sm text-gray-400">Loading...</span>
+  if (!exhibition) return null
+
+  const title = exhibition.title_en || exhibition.title_pt || 'Untitled exhibition'
+  const subtitle = [exhibition.year, exhibition.venue].filter(Boolean).join(' · ')
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => exhibition.image && setLightboxOpen(true)}
+        className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900 font-medium underline underline-offset-2 decoration-amber-300 hover:decoration-amber-500 transition-colors"
+      >
+        {title}
+        {subtitle && <span className="text-amber-400 no-underline text-xs">({subtitle})</span>}
+      </button>
+
+      {exhibition.image && (
+        <ImageLightbox
+          images={[{ src: exhibition.image, alt: title, caption: subtitle }]}
+          currentIndex={0}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onNavigate={() => {}}
+        />
+      )}
+    </>
+  )
+}
+
 interface ExhibitionData {
   title_en: string
   title_pt: string
@@ -89,6 +242,7 @@ interface ExhibitionData {
 function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
   const [exhibition, setExhibition] = useState<ExhibitionData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   useEffect(() => {
     if (!exhibitionId) return
@@ -134,19 +288,35 @@ function ExhibitionBlockPublic({ exhibitionId }: { exhibitionId: string }) {
   const subtitle = [exhibition.year, exhibition.venue].filter(Boolean).join(' · ')
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 flex items-center gap-4">
+    <>
+      <button
+        type="button"
+        onClick={() => exhibition.image && setLightboxOpen(true)}
+        className="w-full text-left rounded-xl border border-gray-200 bg-gray-50 p-5 flex items-center gap-4 cursor-pointer hover:bg-gray-100 transition-colors"
+      >
+        {exhibition.image && (
+          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
+            <img src={exhibition.image} alt={title} className="h-full w-full object-cover" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs">Exhibition</Badge>
+          </div>
+          <h4 className="text-base font-medium text-gray-900 truncate">{title}</h4>
+          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+        </div>
+      </button>
+
       {exhibition.image && (
-        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
-          <img src={exhibition.image} alt={title} className="h-full w-full object-cover" />
-        </div>
+        <ImageLightbox
+          images={[{ src: exhibition.image, alt: title, caption: subtitle }]}
+          currentIndex={0}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onNavigate={() => {}}
+        />
       )}
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs">Exhibition</Badge>
-        </div>
-        <h4 className="text-base font-medium text-gray-900 truncate">{title}</h4>
-        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
-      </div>
-    </div>
+    </>
   )
 }

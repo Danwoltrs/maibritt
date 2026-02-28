@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Type, GalleryVerticalEnd, CalendarDays, ImageIcon } from 'lucide-react'
+import { Plus, Type, GalleryVerticalEnd, CalendarDays, ImageIcon, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import EmbedSearchModal from '@/components/editor/blocks/EmbedSearchModal'
-import type { ContentBlock } from './types'
+import type { ContentBlock, EmbedDisplay } from './types'
 
 interface AddContentMenuProps {
   onAddBlock: (block: ContentBlock) => void
@@ -20,7 +21,8 @@ export function AddContentMenu({ onAddBlock }: AddContentMenuProps) {
   const [embedModal, setEmbedModal] = useState<{
     open: boolean
     type: 'series' | 'exhibition'
-  }>({ open: false, type: 'series' })
+    display: EmbedDisplay
+  }>({ open: false, type: 'series', display: 'card' })
 
   const addTextBlock = () => {
     onAddBlock({
@@ -42,20 +44,25 @@ export function AddContentMenu({ onAddBlock }: AddContentMenuProps) {
     })
   }
 
+  const openEmbed = (type: 'series' | 'exhibition', display: EmbedDisplay) => {
+    setEmbedModal({ open: true, type, display })
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEmbedSelect = (data: Record<string, any>) => {
-    const type = embedModal.type
-    setEmbedModal({ open: false, type: 'series' })
+    const { type, display } = embedModal
+    setEmbedModal({ open: false, type: 'series', display: 'card' })
 
     if (type === 'series') {
       onAddBlock({
         id: crypto.randomUUID(),
         type: 'series',
-        width: 'full',
+        width: display === 'link' ? 'half' : 'full',
         seriesId: data.seriesId,
         name: data.name,
         coverImage: data.coverImage,
         artworkCount: data.artworkCount,
+        display,
       })
     } else {
       onAddBlock({
@@ -66,6 +73,7 @@ export function AddContentMenu({ onAddBlock }: AddContentMenuProps) {
         title: data.title,
         imageUrl: data.imageUrl,
         subtitle: data.subtitle,
+        display,
       })
     }
   }
@@ -84,14 +92,25 @@ export function AddContentMenu({ onAddBlock }: AddContentMenuProps) {
             <Type className="h-4 w-4 mr-2" />
             Text
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEmbedModal({ open: true, type: 'series' })}>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => openEmbed('series', 'card')}>
             <GalleryVerticalEnd className="h-4 w-4 mr-2" />
             Works
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEmbedModal({ open: true, type: 'exhibition' })}>
+          <DropdownMenuItem onClick={() => openEmbed('series', 'link')}>
+            <Link2 className="h-4 w-4 mr-2" />
+            Works (Link)
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => openEmbed('exhibition', 'card')}>
             <CalendarDays className="h-4 w-4 mr-2" />
             Exhibition
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => openEmbed('exhibition', 'link')}>
+            <Link2 className="h-4 w-4 mr-2" />
+            Exhibition (Link)
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={addImageBlock}>
             <ImageIcon className="h-4 w-4 mr-2" />
             Picture

@@ -10,6 +10,8 @@ export interface TextBlock {
   content: { tiptapDoc: TiptapDoc }
 }
 
+export type EmbedDisplay = 'card' | 'link'
+
 export interface SeriesBlock {
   id: string
   type: 'series'
@@ -18,6 +20,7 @@ export interface SeriesBlock {
   name?: string
   coverImage?: string
   artworkCount?: number
+  display?: EmbedDisplay
 }
 
 export interface ExhibitionBlock {
@@ -28,6 +31,7 @@ export interface ExhibitionBlock {
   title?: string
   imageUrl?: string
   subtitle?: string
+  display?: EmbedDisplay
 }
 
 export interface ImageBlock {
