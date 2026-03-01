@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react'
 import {
   Eye, Pencil, DollarSign, Building, CalendarDays, Home,
-  Star, Tag, Download, Trash2,
+  Star, Tag, Download, Trash2, Clock, Briefcase,
 } from 'lucide-react'
 
 import {
@@ -11,6 +11,9 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 
@@ -91,6 +94,22 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
     onUpdate?.()
   }
 
+  const handleToggleTimeline = async () => {
+    const { error } = await (await import('@/lib/supabase')).supabase
+      .from('artworks')
+      .update({ show_on_timeline: !snapshotArtwork.showOnTimeline })
+      .eq('id', snapshotArtwork.id)
+    if (!error) onUpdate?.()
+  }
+
+  const handleSetStatus = async (status: string) => {
+    const { error } = await (await import('@/lib/supabase')).supabase
+      .from('artworks')
+      .update({ artwork_status: status })
+      .eq('id', snapshotArtwork.id)
+    if (!error) onUpdate?.()
+  }
+
   const handleDelete = async () => {
     await ArtworkService.deleteArtwork(snapshotArtwork.id)
     onUpdate?.()
@@ -144,6 +163,30 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
             <Star className="mr-2 h-4 w-4" />
             {artwork.featured ? 'Remove Featured' : 'Mark as Featured'}
           </ContextMenuItem>
+          <ContextMenuItem onClick={handleToggleTimeline}>
+            <Clock className="mr-2 h-4 w-4" />
+            {artwork.showOnTimeline ? 'Hide from Timeline' : 'Show on Timeline'}
+          </ContextMenuItem>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <Briefcase className="mr-2 h-4 w-4" />
+              Set Status
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              {[
+                { value: 'studio', label: 'Studio' },
+                { value: 'gallery', label: 'At Gallery' },
+                { value: 'on_loan', label: 'On Loan' },
+                { value: 'nfs', label: 'NFS' },
+                { value: 'sold', label: 'Sold' },
+              ].map(s => (
+                <ContextMenuItem key={s.value} onClick={() => handleSetStatus(s.value)}>
+                  {s.label}
+                  {artwork.artworkStatus === s.value && <span className="ml-auto text-xs">✓</span>}
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
           <ContextMenuItem
             onClick={handleDownload}
             disabled={artwork.images.length === 0}

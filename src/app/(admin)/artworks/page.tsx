@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, Filter, Grid3X3, List, Eye, Edit, Trash2, Star, DollarSign, Calendar, Tag, Image as ImageIcon, AlertCircle } from 'lucide-react'
+import { Plus, Search, Filter, Grid3X3, List, Eye, Edit, Trash2, Star, DollarSign, Calendar, Tag, Image as ImageIcon, AlertCircle, Clock } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -437,6 +437,12 @@ export default function ArtworksPage() {
                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
                     <Star className="h-3 w-3 mr-1" />
                     Featured
+                  </Badge>
+                )}
+                {artwork.showOnTimeline && (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Timeline
                   </Badge>
                 )}
               </div>

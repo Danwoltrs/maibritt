@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/table'
 
 import { ExhibitionsService, ExhibitionCreateData, ExhibitionUpdateData } from '@/services/exhibitions.service'
+import { Switch } from '@/components/ui/switch'
 import { Exhibition } from '@/types'
 import { ExhibitionRichForm, ExhibitionFormData, defaultFormData } from '@/components/admin/exhibitions/ExhibitionRichForm'
 
@@ -270,6 +271,21 @@ export default function ExhibitionsAdminPage() {
     }
   }
 
+  // Handle toggle timeline
+  const handleToggleTimeline = async (exhibition: Exhibition) => {
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      await supabase
+        .from('exhibitions')
+        .update({ show_on_timeline: !exhibition.showOnTimeline })
+        .eq('id', exhibition.id)
+      await loadExhibitions()
+    } catch (err) {
+      console.error('Error toggling timeline:', err)
+      setError('Failed to update exhibition')
+    }
+  }
+
   // Handle toggle featured
   const handleToggleFeatured = async (exhibition: Exhibition) => {
     try {
@@ -439,6 +455,7 @@ export default function ExhibitionsAdminPage() {
                     <TableHead className="w-[80px]">Year</TableHead>
                     <TableHead className="w-[100px]">Type</TableHead>
                     <TableHead className="w-[80px]">Featured</TableHead>
+                    <TableHead className="w-[80px]">Timeline</TableHead>
                     <TableHead className="w-[150px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -490,6 +507,12 @@ export default function ExhibitionsAdminPage() {
                             <StarOff className="w-4 h-4 text-gray-400" />
                           )}
                         </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={exhibition.showOnTimeline !== false}
+                          onCheckedChange={() => handleToggleTimeline(exhibition)}
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

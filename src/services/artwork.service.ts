@@ -818,6 +818,34 @@ export class ArtworkService {
   }
 
   /**
+   * Get artworks flagged for the timeline, ordered by year DESC
+   */
+  static async getTimelineArtworks(): Promise<Artwork[]> {
+    try {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select(`
+          *,
+          art_series:series_id (
+            id,
+            name_pt,
+            name_en
+          )
+        `)
+        .eq('show_on_timeline', true)
+        .order('year', { ascending: false })
+        .order('display_order', { ascending: true })
+
+      if (error) throw error
+
+      return data?.map(this.transformArtworkFromDB) || []
+    } catch (error) {
+      console.error('Error fetching timeline artworks:', error)
+      return []
+    }
+  }
+
+  /**
    * Transform database record to Artwork type
    */
   private static transformArtworkFromDB(data: any): Artwork {
@@ -840,6 +868,11 @@ export class ArtworkService {
       },
       category: data.category,
       series: data.series_id,
+      artSeries: data.art_series ? {
+        id: data.art_series.id,
+        namePt: data.art_series.name_pt,
+        nameEn: data.art_series.name_en,
+      } : undefined,
       images: data.images || [],
       forSale: data.for_sale,
       price: data.price,
@@ -866,6 +899,8 @@ export class ArtworkService {
       buyerState: data.buyer_state,
       buyerCountry: data.buyer_country,
       buyerZipCode: data.buyer_zip_code,
+      showOnTimeline: data.show_on_timeline || false,
+      artworkStatus: data.artwork_status || 'studio',
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     }

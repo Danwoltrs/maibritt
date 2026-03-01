@@ -1,10 +1,21 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Cormorant_Garamond, Jost } from 'next/font/google'
 import './globals.css'
 import ConditionalHeader from '@/components/ConditionalHeader'
 import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['300', '400', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-serif',
+})
+const jost = Jost({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500'],
+  variable: '--font-display',
+})
 
 export const metadata: Metadata = {
   title: 'Mai-Britt Wolthers - Contemporary Artist',
@@ -46,7 +57,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
-        className={`${inter.className} antialiased min-h-screen bg-white`}
+        className={`${inter.className} ${cormorant.variable} ${jost.variable} antialiased min-h-screen bg-white`}
         suppressHydrationWarning
       >
         <AuthProvider>

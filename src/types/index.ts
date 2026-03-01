@@ -53,6 +53,11 @@ export interface Artwork {
   buyerState?: string
   buyerCountry?: string
   buyerZipCode?: string
+  // Timeline
+  showOnTimeline?: boolean
+  artworkStatus?: 'studio' | 'gallery' | 'on_loan' | 'nfs' | 'sold'
+  // Series join data
+  artSeries?: { id: string; namePt: string; nameEn: string }
   createdAt: Date
   updatedAt: Date
 }
@@ -186,6 +191,9 @@ export interface Exhibition {
   // Links
   externalUrl?: string
   catalogUrl?: string
+
+  // Timeline
+  showOnTimeline?: boolean
 
   // Timestamps
   createdAt?: Date

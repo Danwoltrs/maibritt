@@ -761,6 +761,28 @@ export class ExhibitionsService {
   }
 
   /**
+   * Get exhibitions flagged for the timeline, visible and ordered by year DESC
+   */
+  static async getTimelineExhibitions(): Promise<Exhibition[]> {
+    try {
+      const { data, error } = await supabase
+        .from('exhibitions')
+        .select('*')
+        .eq('show_on_timeline', true)
+        .eq('is_visible', true)
+        .order('year', { ascending: false })
+        .order('display_order', { ascending: true })
+
+      if (error) throw error
+
+      return data?.map(this.transformExhibitionFromDB) || []
+    } catch (error) {
+      console.error('Error fetching timeline exhibitions:', error)
+      return []
+    }
+  }
+
+  /**
    * Transform database record to Exhibition type
    * Supports both legacy (single language) and new (bilingual) data
    */
@@ -819,6 +841,8 @@ export class ExhibitionsService {
       // Links
       externalUrl: data.external_url || undefined,
       catalogUrl: data.catalog_url || undefined,
+      // Timeline
+      showOnTimeline: data.show_on_timeline !== false,
       // Timestamps
       createdAt: data.created_at ? new Date(data.created_at) : undefined,
       updatedAt: data.updated_at ? new Date(data.updated_at) : undefined

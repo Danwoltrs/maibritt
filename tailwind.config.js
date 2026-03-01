@@ -10,6 +10,8 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Cormorant Garamond', 'serif'],
+        display: ['var(--font-display)', 'Jost', 'sans-serif'],
       },
       colors: {
         // Artist's signature colors from her work

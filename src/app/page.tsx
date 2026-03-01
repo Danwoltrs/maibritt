@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useActiveSection } from '@/hooks/useScrollAnimation'
 import HeroCarousel from '@/components/carousel/HeroCarousel'
-import ExhibitionsTimeline from '@/components/exhibitions/ExhibitionsTimeline'
+import RiverMagazineTimeline from '@/components/timeline/RiverMagazineTimeline'
 import FeaturedSeries from '@/components/series/FeaturedSeries'
 import ArtistStatement from '@/components/sections/ArtistStatement'
 import GalleryLocations from '@/components/sections/GalleryLocations'
@@ -43,7 +43,7 @@ export default function Home() {
       </section>
 
       <FeaturedSeries id="series" />
-      <ExhibitionsTimeline id="exhibitions" />
+      <RiverMagazineTimeline id="exhibitions" />
       <ArtistStatement id="statement" />
 
       {sections.showAvailableWorks && <GalleryLocations id="availability" />}
