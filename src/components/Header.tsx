@@ -36,7 +36,6 @@ export default function Header() {
 
   const allNavigationItems = [
     { name: 'Portfolio', href: '/#hero', namePt: 'Portfolio' },
-    { name: 'Works', href: '/#series', namePt: 'Trabalhos' },
     { name: 'Exhibitions', href: '/#exhibitions', namePt: 'Exposicoes' },
     { name: 'About', href: '/#statement', namePt: 'Sobre' },
     { name: 'Available Works', href: '/#availability', namePt: 'Trabalhos Disponíveis' },

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useActiveSection } from '@/hooks/useScrollAnimation'
 import HeroCarousel from '@/components/carousel/HeroCarousel'
 import RiverMagazineTimeline from '@/components/timeline/RiverMagazineTimeline'
-import FeaturedSeries from '@/components/series/FeaturedSeries'
 import ArtistStatement from '@/components/sections/ArtistStatement'
 import GalleryLocations from '@/components/sections/GalleryLocations'
 import BlogPreview from '@/components/sections/BlogPreview'
@@ -23,7 +22,7 @@ export default function Home() {
   }, [])
 
   const sectionIds = useMemo(() => {
-    const ids = ['hero', 'series', 'exhibitions', 'statement']
+    const ids = ['hero', 'exhibitions', 'statement']
     if (sections.showAvailableWorks) ids.push('availability')
     if (sections.showJournal) ids.push('blog')
     return ids
@@ -42,7 +41,6 @@ export default function Home() {
         <HeroCarousel />
       </section>
 
-      <FeaturedSeries id="series" />
       <RiverMagazineTimeline id="exhibitions" />
       <ArtistStatement id="statement" />
 
