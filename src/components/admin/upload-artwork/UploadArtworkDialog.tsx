@@ -66,7 +66,7 @@ const WORKS = [
 const generateYearOptions = () => {
   const currentYear = new Date().getFullYear()
   const years = []
-  for (let i = 0; i <= 56; i++) years.push(currentYear - i)
+  for (let y = currentYear; y >= 2012; y--) years.push(y)
   return years
 }
 

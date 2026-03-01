@@ -16,15 +16,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 import { ArtworkService } from '@/services/artwork.service'
-import { SeriesService } from '@/services/series.service'
 import { GalleryService, Gallery } from '@/services/gallery.service'
 import { ExhibitionsService } from '@/services/exhibitions.service'
 import { Artwork, Exhibition } from '@/types'
-
-interface SeriesOption {
-  id: string
-  name: { ptBR: string; en: string }
-}
 
 const categories = [
   { value: 'painting', label: 'Painting / Pintura' },
@@ -52,9 +46,7 @@ const locationTypes = [
 const generateYearOptions = () => {
   const currentYear = new Date().getFullYear()
   const years = []
-  for (let i = 0; i <= 60; i++) {
-    years.push(currentYear - i)
-  }
+  for (let y = currentYear; y >= 2012; y--) years.push(y)
   return years
 }
 
@@ -82,18 +74,10 @@ export default function EditArtworkPage({ params }: PageProps) {
   const [descriptionPt, setDescriptionPt] = useState('')
   const [descriptionEn, setDescriptionEn] = useState('')
   const [category, setCategory] = useState<string>('')
-  const [seriesId, setSeriesId] = useState<string | undefined>()
   const [forSale, setForSale] = useState(false)
   const [price, setPrice] = useState<number | undefined>()
   const [currency, setCurrency] = useState<'BRL' | 'USD' | 'EUR'>('BRL')
   const [featured, setFeatured] = useState(false)
-
-  // Series
-  const [series, setSeries] = useState<SeriesOption[]>([])
-  const [showNewSeriesDialog, setShowNewSeriesDialog] = useState(false)
-  const [newSeriesNamePt, setNewSeriesNamePt] = useState('')
-  const [newSeriesNameEn, setNewSeriesNameEn] = useState('')
-  const [newSeriesYear, setNewSeriesYear] = useState(new Date().getFullYear())
 
   // Location
   const [locationType, setLocationType] = useState<string>('studio')
@@ -144,7 +128,6 @@ export default function EditArtworkPage({ params }: PageProps) {
         setDescriptionPt(data.description?.ptBR || '')
         setDescriptionEn(data.description?.en || '')
         setCategory(data.category)
-        setSeriesId(data.series || undefined)
         setForSale(data.forSale)
         setPrice(data.price)
         setCurrency(data.currency || 'BRL')
@@ -178,22 +161,6 @@ export default function EditArtworkPage({ params }: PageProps) {
 
     loadArtwork()
   }, [id])
-
-  // Load series options
-  useEffect(() => {
-    const loadSeries = async () => {
-      try {
-        const seriesData = await SeriesService.getSeries()
-        setSeries(seriesData.map(s => ({
-          id: s.id,
-          name: s.name
-        })))
-      } catch (error) {
-        console.error('Failed to load series:', error)
-      }
-    }
-    loadSeries()
-  }, [])
 
   // Load galleries and exhibitions for location selection
   useEffect(() => {
@@ -246,31 +213,6 @@ export default function EditArtworkPage({ params }: PageProps) {
     }
   }
 
-  const handleCreateNewSeries = async () => {
-    if (!newSeriesNamePt || !newSeriesNameEn) {
-      setError('Please fill in both Portuguese and English series names')
-      return
-    }
-
-    try {
-      const newSeries = await SeriesService.createSeries({
-        name: { ptBR: newSeriesNamePt, en: newSeriesNameEn },
-        description: { ptBR: '', en: '' },
-        year: newSeriesYear,
-        isSeasonal: false
-      })
-
-      setSeries(prev => [...prev, { id: newSeries.id, name: newSeries.name }])
-      setSeriesId(newSeries.id)
-      setShowNewSeriesDialog(false)
-      setNewSeriesNamePt('')
-      setNewSeriesNameEn('')
-    } catch (error) {
-      console.error('Failed to create series:', error)
-      setError('Failed to create new series')
-    }
-  }
-
   const handleSave = async () => {
     if (!titlePt || !titleEn || !mediumPt || !mediumEn || !dimensions || !category) {
       setError('Please fill in all required fields')
@@ -288,7 +230,6 @@ export default function EditArtworkPage({ params }: PageProps) {
         dimensions,
         description: { ptBR: descriptionPt, en: descriptionEn },
         category: category as any,
-        seriesId: seriesId || null,
         forSale,
         price: forSale ? price : undefined,
         currency: forSale ? currency : undefined,
@@ -535,78 +476,6 @@ export default function EditArtworkPage({ params }: PageProps) {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            {/* Series */}
-            <div className="space-y-2">
-              <Label>Series / Collection</Label>
-              <div className="flex gap-2">
-                <Select value={seriesId || 'none'} onValueChange={(v) => setSeriesId(v === 'none' ? undefined : v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select series (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No series</SelectItem>
-                    {series.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name.en} / {s.name.ptBR}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Dialog open={showNewSeriesDialog} onOpenChange={setShowNewSeriesDialog}>
-                  <DialogTrigger asChild>
-                    <Button type="button" variant="outline" size="icon">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Series</DialogTitle>
-                      <DialogDescription>Add a new series/collection</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label>Name (Portuguese)</Label>
-                        <Input
-                          value={newSeriesNamePt}
-                          onChange={(e) => setNewSeriesNamePt(e.target.value)}
-                          placeholder="Nome da série"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Name (English)</Label>
-                        <Input
-                          value={newSeriesNameEn}
-                          onChange={(e) => setNewSeriesNameEn(e.target.value)}
-                          placeholder="Series name"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Year</Label>
-                        <Select
-                          value={newSeriesYear.toString()}
-                          onValueChange={(v) => setNewSeriesYear(parseInt(v))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {generateYearOptions().map((y) => (
-                              <SelectItem key={y} value={y.toString()}>
-                                {y}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button onClick={handleCreateNewSeries} className="w-full">
-                        Create Series
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
               </div>
             </div>
 

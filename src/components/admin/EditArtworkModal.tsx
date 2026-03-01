@@ -14,15 +14,9 @@ import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 import { ArtworkService } from '@/services/artwork.service'
-import { SeriesService } from '@/services/series.service'
 import { GalleryService, Gallery } from '@/services/gallery.service'
 import { ExhibitionsService } from '@/services/exhibitions.service'
 import { Artwork, Exhibition } from '@/types'
-
-interface SeriesOption {
-  id: string
-  name: { ptBR: string; en: string }
-}
 
 const categories = [
   { value: 'painting', label: 'Painting / Pintura' },
@@ -50,9 +44,7 @@ const locationTypes = [
 const generateYearOptions = () => {
   const currentYear = new Date().getFullYear()
   const years = []
-  for (let i = 0; i <= 60; i++) {
-    years.push(currentYear - i)
-  }
+  for (let y = currentYear; y >= 2012; y--) years.push(y)
   return years
 }
 
@@ -78,18 +70,10 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
   const [descriptionPt, setDescriptionPt] = useState('')
   const [descriptionEn, setDescriptionEn] = useState('')
   const [category, setCategory] = useState<string>('')
-  const [seriesId, setSeriesId] = useState<string | undefined>()
   const [forSale, setForSale] = useState(false)
   const [price, setPrice] = useState<number | undefined>()
   const [currency, setCurrency] = useState<'BRL' | 'USD' | 'EUR'>('BRL')
   const [featured, setFeatured] = useState(false)
-
-  // Series
-  const [series, setSeries] = useState<SeriesOption[]>([])
-  const [showNewSeries, setShowNewSeries] = useState(false)
-  const [newSeriesNamePt, setNewSeriesNamePt] = useState('')
-  const [newSeriesNameEn, setNewSeriesNameEn] = useState('')
-  const [newSeriesYear, setNewSeriesYear] = useState(new Date().getFullYear())
 
   // Location
   const [locationType, setLocationType] = useState<string>('studio')
@@ -134,9 +118,8 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
       setLoading(true)
       setError(null)
       try {
-        const [data, seriesData, galleriesRes, exhibitionsData, mediums, dims] = await Promise.all([
+        const [data, galleriesRes, exhibitionsData, mediums, dims] = await Promise.all([
           ArtworkService.getArtworkById(artwork.id),
-          SeriesService.getSeries(),
           GalleryService.getAll({ includeInactive: false }),
           ExhibitionsService.getExhibitions(),
           ArtworkService.getDistinctMediums(),
@@ -160,7 +143,6 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
         setDescriptionPt(data.description?.ptBR || '')
         setDescriptionEn(data.description?.en || '')
         setCategory(data.category)
-        setSeriesId(data.series || undefined)
         setForSale(data.forSale)
         setPrice(data.price)
         setCurrency(data.currency || 'BRL')
@@ -185,8 +167,6 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
         setBuyerCountry(artworkData.buyerCountry || artworkData.buyer_country || '')
         setBuyerZipCode(artworkData.buyerZipCode || artworkData.buyer_zip_code || '')
 
-        // Options
-        setSeries(seriesData.map(s => ({ id: s.id, name: s.name })))
         if (galleriesRes.success && galleriesRes.data) setGalleries(galleriesRes.data)
         setExhibitions(exhibitionsData)
 
@@ -235,29 +215,6 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
     }
   }
 
-  const handleCreateNewSeries = async () => {
-    if (!newSeriesNamePt || !newSeriesNameEn) {
-      setError('Please fill in both Portuguese and English series names')
-      return
-    }
-    try {
-      const newSeries = await SeriesService.createSeries({
-        name: { ptBR: newSeriesNamePt, en: newSeriesNameEn },
-        description: { ptBR: '', en: '' },
-        year: newSeriesYear,
-        isSeasonal: false
-      })
-      setSeries(prev => [...prev, { id: newSeries.id, name: newSeries.name }])
-      setSeriesId(newSeries.id)
-      setShowNewSeries(false)
-      setNewSeriesNamePt('')
-      setNewSeriesNameEn('')
-    } catch (err) {
-      console.error('Failed to create series:', err)
-      setError('Failed to create new series')
-    }
-  }
-
   const handleSave = async () => {
     setSaving(true)
     setError(null)
@@ -270,7 +227,6 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
         dimensions,
         description: { ptBR: descriptionPt, en: descriptionEn },
         category: category as any,
-        seriesId: seriesId || null,
         forSale,
         price: forSale ? price : undefined,
         currency: forSale ? currency : undefined,
@@ -378,48 +334,6 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* Series */}
-            <div className="space-y-2">
-              <Label>Series / Collection</Label>
-              <div className="flex gap-2">
-                <Select value={seriesId || 'none'} onValueChange={(v) => setSeriesId(v === 'none' ? undefined : v)}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select series (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No series</SelectItem>
-                    {series.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name.en} / {s.name.ptBR}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button type="button" variant="outline" size="icon" onClick={() => setShowNewSeries(!showNewSeries)}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {showNewSeries && (
-                <div className="p-4 border rounded-lg space-y-3 bg-gray-50">
-                  <p className="text-sm font-medium">Create New Series</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input value={newSeriesNamePt} onChange={(e) => setNewSeriesNamePt(e.target.value)} placeholder="Nome da série" />
-                    <Input value={newSeriesNameEn} onChange={(e) => setNewSeriesNameEn(e.target.value)} placeholder="Series name" />
-                  </div>
-                  <div className="flex gap-2 items-end">
-                    <Select value={newSeriesYear.toString()} onValueChange={(v) => setNewSeriesYear(parseInt(v))}>
-                      <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {generateYearOptions().map((y) => (
-                          <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button size="sm" onClick={handleCreateNewSeries}>Create</Button>
-                    <Button size="sm" variant="ghost" onClick={() => setShowNewSeries(false)}>Cancel</Button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Medium - Dropdown */}
