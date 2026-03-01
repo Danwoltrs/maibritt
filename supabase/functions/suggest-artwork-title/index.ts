@@ -40,8 +40,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const prompt = [
-      "You are an art curator helping a contemporary artist name their artwork.",
-      "Look at this artwork image and suggest a poetic, evocative title.",
+      "You are helping Mai-Britt Wolthers, a Danish-Brazilian contemporary artist living in Brazil, name her artwork.",
+      "She is deeply inspired by all Brazilian biomes — the Amazon, Cerrado, Caatinga, Atlantic Forest, Pantanal, and Pampas.",
+      "Analyze the colors, forms, geometry, lines, textures, and emotional atmosphere of this image.",
+      "Create a unique, poetic, and evocative title that feels personal to her artistic vision.",
+      "Avoid generic or cliché art titles. Be creative and specific to what you see.",
       "Provide the title in both English and Brazilian Portuguese.",
       'Respond ONLY with valid JSON: {"titleEn": "English Title", "titlePt": "Titulo em Portugues"}',
     ].join(" ");

@@ -88,6 +88,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   const [applyToAll, setApplyToAll] = useState<ApplyToAll>({ category: false, series: false, year: false })
   const [seriesList, setSeriesList] = useState<ArtSeries[]>([])
   const [showNewSeries, setShowNewSeries] = useState(false)
+  const [worksName, setWorksName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   // Step 2 state
@@ -110,6 +111,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     setImages([])
     setCommonMeta({ year: new Date().getFullYear() })
     setApplyToAll({ category: false, series: false, year: false })
+    setWorksName('')
     setArtworkDetails({})
     setError(null)
     setIsSubmitting(false)
@@ -138,14 +140,28 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   }
 
   // Proceed to step 2
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (images.length === 0) {
       setError('Please upload at least one image')
       return
     }
-    if (applyToAll.category && !commonMeta.category) {
-      setError('Please select a work since "Same for all" is checked')
-      return
+
+    // Auto-create series from Works Name if provided and no series selected
+    if (worksName.trim() && !commonMeta.seriesId) {
+      try {
+        const created = await SeriesService.createSeries({
+          name: { en: worksName.trim(), ptBR: worksName.trim() },
+          description: { en: '', ptBR: '' },
+          year: commonMeta.year || new Date().getFullYear(),
+        })
+        if (created) {
+          setSeriesList(prev => [created, ...prev])
+          setCommonMeta(prev => ({ ...prev, seriesId: created.id }))
+          setApplyToAll(prev => ({ ...prev, series: true }))
+        }
+      } catch (err) {
+        console.error('Failed to auto-create series:', err)
+      }
     }
 
     // Initialize per-image details
@@ -171,23 +187,9 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
 
   // Submit all artworks
   const handleSubmit = async () => {
-    // Validate required fields
-    for (let i = 0; i < images.length; i++) {
-      const d = artworkDetails[i]
-      if (!d?.titlePt && !d?.titleEn) {
-        setError(`Please fill in at least one title for image ${i + 1}`)
-        return
-      }
-    }
-
     const category = applyToAll.category ? commonMeta.category : undefined
     const year = applyToAll.year ? commonMeta.year : new Date().getFullYear()
     const seriesId = applyToAll.series ? commonMeta.seriesId : undefined
-
-    if (!category) {
-      setError('Please go back and set a work with "Same for all" checked')
-      return
-    }
 
     setIsSubmitting(true)
     setError(null)
@@ -198,7 +200,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
         const d = artworkDetails[i]
         await ArtworkService.createArtwork({
           title: { ptBR: d.titlePt, en: d.titleEn },
-          year: year!,
+          year: year,
           medium: { ptBR: d.mediumPt, en: d.mediumEn },
           dimensions: d.dimensions,
           description: { ptBR: d.descriptionPt, en: d.descriptionEn },
@@ -371,6 +373,19 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
             <div className="space-y-4 pt-2 border-t">
               <h3 className="text-sm font-semibold text-gray-700">Common Properties</h3>
 
+              {/* Works Name */}
+              <div className="space-y-2">
+                <Label>Works Name</Label>
+                <Input
+                  value={worksName}
+                  onChange={(e) => setWorksName(e.target.value)}
+                  placeholder="Type a name to auto-create a series"
+                />
+                {worksName.trim() && !commonMeta.seriesId && (
+                  <p className="text-xs text-muted-foreground">A new series will be created on continue</p>
+                )}
+              </div>
+
               {/* Series */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -392,10 +407,9 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
                   <Select
                     value={commonMeta.seriesId}
                     onValueChange={(v) => setCommonMeta(prev => ({ ...prev, seriesId: v }))}
-                    disabled={!applyToAll.series}
                   >
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder={applyToAll.series ? 'Select series' : "Enable 'Same for all'"} />
+                      <SelectValue placeholder="Select series" />
                     </SelectTrigger>
                     <SelectContent>
                       {seriesList.map(s => (
@@ -409,7 +423,6 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
                     variant="outline"
                     size="icon"
                     onClick={() => setShowNewSeries(true)}
-                    disabled={!applyToAll.series}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -419,7 +432,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
               {/* Work (category) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Work *</Label>
+                  <Label>Work</Label>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="applyCatAll"
@@ -436,10 +449,9 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
                 <Select
                   value={commonMeta.category}
                   onValueChange={(v) => setCommonMeta(prev => ({ ...prev, category: v as any }))}
-                  disabled={!applyToAll.category}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={applyToAll.category ? 'Select work' : "Enable 'Same for all'"} />
+                    <SelectValue placeholder="Select work" />
                   </SelectTrigger>
                   <SelectContent>
                     {WORKS.map(c => (
@@ -452,7 +464,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
               {/* Year */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Year *</Label>
+                  <Label>Year</Label>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="applyYearAll"
@@ -469,10 +481,9 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
                 <Select
                   value={commonMeta.year?.toString()}
                   onValueChange={(v) => setCommonMeta(prev => ({ ...prev, year: parseInt(v) }))}
-                  disabled={!applyToAll.year}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={applyToAll.year ? 'Select year' : "Enable 'Same for all'"} />
+                    <SelectValue placeholder="Select year" />
                   </SelectTrigger>
                   <SelectContent>
                     {generateYearOptions().map(y => (

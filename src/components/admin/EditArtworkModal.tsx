@@ -112,6 +112,15 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
   const [buyerCountry, setBuyerCountry] = useState('')
   const [buyerZipCode, setBuyerZipCode] = useState('')
 
+  // Medium/dimensions dropdowns
+  const [knownMediums, setKnownMediums] = useState<{ ptBR: string; en: string }[]>([])
+  const [knownDimensions, setKnownDimensions] = useState<string[]>([])
+  const [showNewMedium, setShowNewMedium] = useState(false)
+  const [newMediumPtVal, setNewMediumPtVal] = useState('')
+  const [newMediumEnVal, setNewMediumEnVal] = useState('')
+  const [showNewDimension, setShowNewDimension] = useState(false)
+  const [newDimensionVal, setNewDimensionVal] = useState('')
+
   // Images
   const [existingImages, setExistingImages] = useState<Artwork['images']>([])
   const [newImages, setNewImages] = useState<{ file: File; preview: string }[]>([])
@@ -125,12 +134,16 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
       setLoading(true)
       setError(null)
       try {
-        const [data, seriesData, galleriesRes, exhibitionsData] = await Promise.all([
+        const [data, seriesData, galleriesRes, exhibitionsData, mediums, dims] = await Promise.all([
           ArtworkService.getArtworkById(artwork.id),
           SeriesService.getSeries(),
           GalleryService.getAll({ includeInactive: false }),
           ExhibitionsService.getExhibitions(),
+          ArtworkService.getDistinctMediums(),
+          ArtworkService.getDistinctDimensions(),
         ])
+        setKnownMediums(mediums)
+        setKnownDimensions(dims)
 
         if (!data) {
           setError('Artwork not found')
@@ -246,11 +259,6 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
   }
 
   const handleSave = async () => {
-    if (!titlePt || !titleEn || !mediumPt || !mediumEn || !dimensions || !category) {
-      setError('Please fill in all required fields')
-      return
-    }
-
     setSaving(true)
     setError(null)
 
@@ -337,19 +345,19 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
             {/* Titles */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Title (Portuguese) *</Label>
+                <Label>Title (Portuguese)</Label>
                 <Input value={titlePt} onChange={(e) => setTitlePt(e.target.value)} placeholder="Título da obra" />
               </div>
               <div className="space-y-2">
-                <Label>Title (English) *</Label>
+                <Label>Title (English)</Label>
                 <Input value={titleEn} onChange={(e) => setTitleEn(e.target.value)} placeholder="Artwork title" />
               </div>
             </div>
 
-            {/* Category and Year */}
+            {/* Category and Year/}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Category *</Label>
+                <Label>Category</Label>
                 <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
@@ -360,7 +368,7 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Year *</Label>
+                <Label>Year</Label>
                 <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -414,22 +422,117 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
               )}
             </div>
 
-            {/* Medium */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Medium (Portuguese) *</Label>
-                <Input value={mediumPt} onChange={(e) => setMediumPt(e.target.value)} placeholder="Acrílica sobre tela" />
+            {/* Medium - Dropdown */}
+            <div className="space-y-2">
+              <Label>Medium</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={knownMediums.find(m => m.en === mediumEn && m.ptBR === mediumPt)?.en || ''}
+                  onValueChange={(v) => {
+                    if (v === '__new__') { setShowNewMedium(true); return }
+                    const m = knownMediums.find(m => m.en === v)
+                    if (m) { setMediumPt(m.ptBR); setMediumEn(m.en) }
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select medium" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {knownMediums.map((m, i) => (
+                      <SelectItem key={i} value={m.en}>{m.en} / {m.ptBR}</SelectItem>
+                    ))}
+                    <SelectItem value="__new__">
+                      <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Add new medium</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" size="icon" onClick={() => setShowNewMedium(true)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Medium (English) *</Label>
-                <Input value={mediumEn} onChange={(e) => setMediumEn(e.target.value)} placeholder="Acrylic on canvas" />
-              </div>
+              {showNewMedium && (
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">English</Label>
+                    <Input value={newMediumEnVal} onChange={(e) => setNewMediumEnVal(e.target.value)} placeholder="Acrylic on canvas" autoFocus />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">Portuguese</Label>
+                    <Input value={newMediumPtVal} onChange={(e) => setNewMediumPtVal(e.target.value)} placeholder="Acrílica sobre tela" />
+                  </div>
+                  <Button size="sm" onClick={() => {
+                    if (!newMediumEnVal.trim() && !newMediumPtVal.trim()) return
+                    const nm = { ptBR: newMediumPtVal.trim(), en: newMediumEnVal.trim() }
+                    setKnownMediums(prev => [...prev, nm].sort((a, b) => a.en.localeCompare(b.en)))
+                    setMediumPt(nm.ptBR); setMediumEn(nm.en)
+                    setNewMediumPtVal(''); setNewMediumEnVal(''); setShowNewMedium(false)
+                  }}>Add</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowNewMedium(false); setNewMediumPtVal(''); setNewMediumEnVal('') }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {(mediumEn || mediumPt) && !knownMediums.find(m => m.en === mediumEn && m.ptBR === mediumPt) && (
+                <p className="text-xs text-muted-foreground">Current: {mediumEn} / {mediumPt}</p>
+              )}
             </div>
 
-            {/* Dimensions */}
+            {/* Dimensions - Dropdown */}
             <div className="space-y-2">
-              <Label>Dimensions *</Label>
-              <Input value={dimensions} onChange={(e) => setDimensions(e.target.value)} placeholder="100 x 80 cm" />
+              <Label>Dimensions</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={knownDimensions.includes(dimensions) ? dimensions : ''}
+                  onValueChange={(v) => {
+                    if (v === '__new__') { setShowNewDimension(true); return }
+                    setDimensions(v)
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select dimensions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {knownDimensions.map((d) => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                    <SelectItem value="__new__">
+                      <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Add new dimensions</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" size="icon" onClick={() => setShowNewDimension(true)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {showNewDimension && (
+                <div className="flex gap-2">
+                  <Input
+                    value={newDimensionVal}
+                    onChange={(e) => setNewDimensionVal(e.target.value)}
+                    placeholder="100 x 80 cm"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newDimensionVal.trim()) {
+                        const d = newDimensionVal.trim()
+                        if (!knownDimensions.includes(d)) setKnownDimensions(prev => [...prev, d].sort())
+                        setDimensions(d); setNewDimensionVal(''); setShowNewDimension(false)
+                      }
+                    }}
+                  />
+                  <Button size="sm" onClick={() => {
+                    if (!newDimensionVal.trim()) return
+                    const d = newDimensionVal.trim()
+                    if (!knownDimensions.includes(d)) setKnownDimensions(prev => [...prev, d].sort())
+                    setDimensions(d); setNewDimensionVal(''); setShowNewDimension(false)
+                  }}>Add</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowNewDimension(false); setNewDimensionVal('') }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {dimensions && !knownDimensions.includes(dimensions) && (
+                <p className="text-xs text-muted-foreground">Current: {dimensions}</p>
+              )}
             </div>
 
             {/* Descriptions */}

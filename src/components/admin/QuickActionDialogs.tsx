@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import {
-  FolderOpen,
   TrendingUp,
   Building,
   PenTool,
@@ -19,16 +18,12 @@ import {
   PartyPopper,
   Upload,
   X,
-  Plus,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
-import { SeriesService } from '@/services'
-import type { ArtSeries } from '@/types'
 import { UploadArtworkDialog } from './upload-artwork'
 
 export type QuickAction =
   | 'upload-artwork'
-  | 'add-series'
   | 'record-sale'
   | 'view-galleries'
   | 'write-journal'
@@ -44,7 +39,6 @@ export function QuickActionDialogs({ activeAction, onClose }: QuickActionDialogs
   return (
     <>
       <UploadArtworkDialog open={activeAction === 'upload-artwork'} onClose={onClose} />
-      <AddSeriesDialog open={activeAction === 'add-series'} onClose={onClose} />
       <RecordSaleDialog open={activeAction === 'record-sale'} onClose={onClose} />
       <ViewGalleriesDialog open={activeAction === 'view-galleries'} onClose={onClose} />
       <WriteJournalDialog open={activeAction === 'write-journal'} onClose={onClose} />
@@ -54,174 +48,6 @@ export function QuickActionDialogs({ activeAction, onClose }: QuickActionDialogs
 }
 
 /* UploadArtworkDialog is now imported from ./upload-artwork */
-
-function AddSeriesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [yearVal, setYearVal] = useState(new Date().getFullYear().toString())
-  const [category, setCategory] = useState('')
-  const [categories, setCategories] = useState<string[]>([])
-  const [newCategory, setNewCategory] = useState('')
-  const [showNewCategory, setShowNewCategory] = useState(false)
-  const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
-  const [coverPreview, setCoverPreview] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (open) {
-      SeriesService.getCategories().then(setCategories).catch(console.error)
-    }
-  }, [open])
-
-  const handleAddCategory = () => {
-    if (!newCategory.trim()) return
-    const cat = newCategory.trim()
-    if (!categories.includes(cat)) {
-      setCategories((prev) => [...prev, cat].sort())
-    }
-    setCategory(cat)
-    setNewCategory('')
-    setShowNewCategory(false)
-  }
-
-  const handleCoverImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setCoverImageFile(file)
-      setCoverPreview(URL.createObjectURL(file))
-    }
-  }
-
-  const handleCreate = async () => {
-    if (!name.trim()) return
-    try {
-      await SeriesService.createSeries({
-        name: { en: name, ptBR: '' },
-        description: { en: description, ptBR: '' },
-        year: parseInt(yearVal) || new Date().getFullYear(),
-        category: category || undefined,
-        coverImageFile: coverImageFile || undefined,
-      })
-      setName('')
-      setDescription('')
-      setYearVal(new Date().getFullYear().toString())
-      setCategory('')
-      setCoverImageFile(null)
-      setCoverPreview(null)
-      onClose()
-    } catch (err) {
-      console.error('Failed to create series:', err)
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5" />
-            Add Works
-          </DialogTitle>
-          <DialogDescription>Create a new works collection.</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Works Name</label>
-            <input
-              className={inputClass}
-              placeholder="Works name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Category</label>
-            <div className="flex gap-2">
-              <select
-                className={inputClass + ' flex-1'}
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="">No category</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                onClick={() => setShowNewCategory(true)}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New
-              </Button>
-            </div>
-            {showNewCategory && (
-              <div className="flex gap-2 mt-1">
-                <input
-                  className={inputClass + ' flex-1'}
-                  placeholder="e.g. Paintings, Sculptures..."
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-                  autoFocus
-                />
-                <Button size="sm" onClick={handleAddCategory}>Add</Button>
-                <Button size="sm" variant="ghost" onClick={() => { setShowNewCategory(false); setNewCategory('') }}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Year</label>
-            <input
-              className={inputClass}
-              placeholder="e.g. 2024"
-              value={yearVal}
-              onChange={(e) => setYearVal(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Cover Image</label>
-            {coverPreview ? (
-              <div className="relative w-full h-32 rounded-lg overflow-hidden bg-gray-100">
-                <img src={coverPreview} alt="Cover preview" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => { setCoverImageFile(null); setCoverPreview(null) }}
-                  className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
-                <Upload className="h-6 w-6 text-gray-400 mb-1" />
-                <span className="text-xs text-gray-500">Click to upload cover image</span>
-                <input type="file" accept="image/*" className="hidden" onChange={handleCoverImage} />
-              </label>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Description</label>
-            <textarea
-              className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Describe this collection..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleCreate}>Create Works</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 function fireConfetti() {
   // Initial burst

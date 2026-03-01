@@ -13,12 +13,12 @@ export interface ArtworkFilters {
 }
 
 export interface ArtworkCreateData {
-  title: Content
-  year: number
-  medium: Content
-  dimensions: string
+  title?: Content
+  year?: number
+  medium?: Content
+  dimensions?: string
   description?: Content
-  category: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
+  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   seriesId?: string
   images: File[]
   forSale?: boolean
@@ -117,7 +117,8 @@ export interface SalesStats {
  * Generate a URL-friendly slug from artwork title, dimensions, and year
  */
 function generateSlug(title: string, dimensions: string, year: number): string {
-  const titleSlug = title
+  const rawTitle = title?.trim() || 'untitled'
+  const titleSlug = rawTitle
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // strip diacritics
@@ -125,12 +126,13 @@ function generateSlug(title: string, dimensions: string, year: number): string {
     .trim()
     .replace(/\s+/g, '-')           // spaces to hyphens
 
-  const dimSlug = dimensions
+  const dimSlug = (dimensions || '')
     .toLowerCase()
     .replace(/\s+/g, '')            // collapse spaces: "100 x 80 cm" → "100x80cm"
     .replace(/[^a-z0-9x.]/g, '')    // keep letters, digits, x, dot
 
-  return `${titleSlug}-${dimSlug}-${year}`
+  const parts = [titleSlug, dimSlug, year.toString()].filter(Boolean)
+  return parts.join('-')
 }
 
 export class ArtworkService {
@@ -355,7 +357,11 @@ export class ArtworkService {
       const nextDisplayOrder = (maxOrderData?.[0]?.display_order || 0) + 1
 
       // Generate slug
-      const baseSlug = generateSlug(artworkData.title.en, artworkData.dimensions, artworkData.year)
+      const titleEn = artworkData.title?.en || ''
+      const titlePt = artworkData.title?.ptBR || ''
+      const dims = artworkData.dimensions || ''
+      const yr = artworkData.year || new Date().getFullYear()
+      const baseSlug = generateSlug(titleEn, dims, yr)
       const slug = await this.ensureUniqueSlug(baseSlug)
 
       // Create artwork record
@@ -363,15 +369,15 @@ export class ArtworkService {
         .from('artworks')
         .insert({
           slug,
-          title_pt: artworkData.title.ptBR,
-          title_en: artworkData.title.en,
-          year: artworkData.year,
-          medium_pt: artworkData.medium.ptBR,
-          medium_en: artworkData.medium.en,
-          dimensions: artworkData.dimensions,
+          title_pt: titlePt,
+          title_en: titleEn,
+          year: yr,
+          medium_pt: artworkData.medium?.ptBR || '',
+          medium_en: artworkData.medium?.en || '',
+          dimensions: dims,
           description_pt: artworkData.description?.ptBR || '',
           description_en: artworkData.description?.en || '',
-          category: artworkData.category,
+          category: artworkData.category || 'painting',
           series_id: artworkData.seriesId || null,
           images: imageUrls,
           for_sale: artworkData.forSale || false,
@@ -762,6 +768,52 @@ export class ArtworkService {
         gallerySales: [],
         currentMonthRevenue: 0,
       }
+    }
+  }
+
+  /**
+   * Get distinct medium pairs (PT/EN) from existing artworks
+   */
+  static async getDistinctMediums(): Promise<{ ptBR: string; en: string }[]> {
+    try {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select('medium_pt, medium_en')
+
+      if (error) throw error
+
+      const seen = new Set<string>()
+      const mediums: { ptBR: string; en: string }[] = []
+      for (const row of data || []) {
+        const key = `${row.medium_pt}|||${row.medium_en}`
+        if (row.medium_pt && row.medium_en && !seen.has(key)) {
+          seen.add(key)
+          mediums.push({ ptBR: row.medium_pt, en: row.medium_en })
+        }
+      }
+      return mediums.sort((a, b) => a.en.localeCompare(b.en))
+    } catch (error) {
+      console.error('Error fetching distinct mediums:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get distinct dimension strings from existing artworks
+   */
+  static async getDistinctDimensions(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select('dimensions')
+
+      if (error) throw error
+
+      const dims = [...new Set((data || []).map(r => r.dimensions).filter(Boolean))]
+      return dims.sort()
+    } catch (error) {
+      console.error('Error fetching distinct dimensions:', error)
+      return []
     }
   }
 

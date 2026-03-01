@@ -16,7 +16,6 @@ import {
   LogOut,
   ChevronRight,
   ChevronDown,
-  FolderOpen,
   Quote,
   Calendar,
   Search,
@@ -211,10 +210,6 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                     <ContextMenuItem onClick={() => setQuickAction('upload-artwork')}>
                       <Upload className="mr-2 h-4 w-4" />
                       Upload New Artwork
-                    </ContextMenuItem>
-                    <ContextMenuItem onClick={() => setQuickAction('add-series')}>
-                      <FolderOpen className="mr-2 h-4 w-4" />
-                      Add Works
                     </ContextMenuItem>
                     <ContextMenuItem onClick={() => setQuickAction('record-sale')}>
                       <DollarSign className="mr-2 h-4 w-4" />

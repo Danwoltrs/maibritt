@@ -1,12 +1,15 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
   Loader2,
   Maximize2,
+  Minimize2,
+  Plus,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { ArtworkService } from '@/services/artwork.service'
 
 interface UploadedImage {
   file: File
@@ -47,12 +51,6 @@ interface CommonApplied {
   seriesId?: string
 }
 
-const currencies = [
-  { value: 'BRL', label: 'R$ BRL' },
-  { value: 'USD', label: '$ USD' },
-  { value: 'EUR', label: '€ EUR' },
-]
-
 interface PerImageDetailsStepProps {
   images: UploadedImage[]
   artworkDetails: Record<number, ArtworkDetails>
@@ -79,6 +77,22 @@ export function PerImageDetailsStep({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Medium/dimensions dropdowns
+  const [knownMediums, setKnownMediums] = useState<{ ptBR: string; en: string }[]>([])
+  const [knownDimensions, setKnownDimensions] = useState<string[]>([])
+  const [showNewMedium, setShowNewMedium] = useState(false)
+  const [newMediumPt, setNewMediumPt] = useState('')
+  const [newMediumEn, setNewMediumEn] = useState('')
+  const [showNewDimension, setShowNewDimension] = useState(false)
+  const [newDimension, setNewDimension] = useState('')
+  const [aiMessage, setAiMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+
+  useEffect(() => {
+    ArtworkService.getDistinctMediums().then(setKnownMediums).catch(console.error)
+    ArtworkService.getDistinctDimensions().then(setKnownDimensions).catch(console.error)
+  }, [])
 
   const current = artworkDetails[currentIndex] || {
     titlePt: '', titleEn: '', mediumPt: '', mediumEn: '',
@@ -119,25 +133,82 @@ export function PerImageDetailsStep({
         }
       )
 
-      if (!res.ok) throw new Error('Failed to get suggestions')
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || `AI suggestion failed (${res.status})`)
+      }
       const data = await res.json()
       if (data.titleEn || data.titlePt) {
         onUpdateDetails(currentIndex, {
           titleEn: data.titleEn || current.titleEn,
           titlePt: data.titlePt || current.titlePt,
         })
+        setAiMessage({ text: 'AI suggestion applied. Click again to regenerate.', type: 'success' })
+        setTimeout(() => setAiMessage(null), 4000)
       }
     } catch (err) {
       console.error('AI suggestion failed:', err)
+      setAiMessage({
+        text: err instanceof Error ? err.message : 'Could not generate title. Please try again.',
+        type: 'error',
+      })
+      setTimeout(() => setAiMessage(null), 5000)
     } finally {
       setAiLoading(false)
     }
   }
 
+  const handleSelectMedium = (value: string) => {
+    if (value === '__new__') {
+      setShowNewMedium(true)
+      return
+    }
+    const medium = knownMediums.find(m => m.en === value)
+    if (medium) {
+      onUpdateDetails(currentIndex, { mediumPt: medium.ptBR, mediumEn: medium.en })
+    }
+  }
+
+  const handleAddNewMedium = () => {
+    if (!newMediumEn.trim() && !newMediumPt.trim()) return
+    const newMedium = { ptBR: newMediumPt.trim(), en: newMediumEn.trim() }
+    setKnownMediums(prev => [...prev, newMedium].sort((a, b) => a.en.localeCompare(b.en)))
+    onUpdateDetails(currentIndex, { mediumPt: newMedium.ptBR, mediumEn: newMedium.en })
+    setNewMediumPt('')
+    setNewMediumEn('')
+    setShowNewMedium(false)
+  }
+
+  const handleSelectDimension = (value: string) => {
+    if (value === '__new__') {
+      setShowNewDimension(true)
+      return
+    }
+    onUpdateDetails(currentIndex, { dimensions: value })
+  }
+
+  const handleAddNewDimension = () => {
+    if (!newDimension.trim()) return
+    const dim = newDimension.trim()
+    if (!knownDimensions.includes(dim)) {
+      setKnownDimensions(prev => [...prev, dim].sort())
+    }
+    onUpdateDetails(currentIndex, { dimensions: dim })
+    setNewDimension('')
+    setShowNewDimension(false)
+  }
+
   const progressPercent = ((currentIndex + 1) / images.length) * 100
 
-  return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-hidden">
+  // Determine the current medium select value
+  const currentMediumValue = knownMediums.find(
+    m => m.en === current.mediumEn && m.ptBR === current.mediumPt
+  )?.en || ''
+
+  const currentDimensionValue = knownDimensions.includes(current.dimensions) ? current.dimensions : ''
+
+  const content = (
+    <>
       {/* Top bar */}
       <div className="shrink-0 border-b px-6 py-3 flex items-center justify-between bg-white">
         <div className="flex items-center gap-3">
@@ -152,7 +223,6 @@ export function PerImageDetailsStep({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Common applied badges */}
           {commonApplied.category && (
             <Badge variant="secondary">{commonApplied.category}</Badge>
           )}
@@ -162,6 +232,14 @@ export function PerImageDetailsStep({
           {commonApplied.year && (
             <Badge variant="secondary">{commonApplied.year}</Badge>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsFullscreen(prev => !prev)}
+            className="h-8 w-8 p-0"
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
@@ -204,11 +282,20 @@ export function PerImageDetailsStep({
 
           {/* Form */}
           <div className="space-y-5">
+            {/* AI message */}
+            {aiMessage && (
+              <div className={`text-sm px-3 py-2 rounded-md ${
+                aiMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+              }`}>
+                {aiMessage.text}
+              </div>
+            )}
+
             {/* Titles + AI button */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Title (Portuguese) *</Label>
+                  <Label>Title (Portuguese)</Label>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -231,7 +318,7 @@ export function PerImageDetailsStep({
                 />
               </div>
               <div className="space-y-2">
-                <Label>Title (English) *</Label>
+                <Label>Title (English)</Label>
                 <Input
                   value={current.titleEn}
                   onChange={(e) => onUpdateDetails(currentIndex, { titleEn: e.target.value })}
@@ -240,34 +327,103 @@ export function PerImageDetailsStep({
               </div>
             </div>
 
-            {/* Medium */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Medium (Portuguese) *</Label>
-                <Input
-                  value={current.mediumPt}
-                  onChange={(e) => onUpdateDetails(currentIndex, { mediumPt: e.target.value })}
-                  placeholder="Acrílica sobre tela"
-                />
+            {/* Medium - Dropdown */}
+            <div className="space-y-2">
+              <Label>Medium</Label>
+              <div className="flex gap-2">
+                <Select value={currentMediumValue} onValueChange={handleSelectMedium}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select medium" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {knownMediums.map((m, i) => (
+                      <SelectItem key={i} value={m.en}>
+                        {m.en} / {m.ptBR}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__new__">
+                      <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Add new medium</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="icon" onClick={() => setShowNewMedium(true)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Medium (English) *</Label>
-                <Input
-                  value={current.mediumEn}
-                  onChange={(e) => onUpdateDetails(currentIndex, { mediumEn: e.target.value })}
-                  placeholder="Acrylic on canvas"
-                />
-              </div>
+              {showNewMedium && (
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">English</Label>
+                    <Input
+                      value={newMediumEn}
+                      onChange={(e) => setNewMediumEn(e.target.value)}
+                      placeholder="Acrylic on canvas"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">Portuguese</Label>
+                    <Input
+                      value={newMediumPt}
+                      onChange={(e) => setNewMediumPt(e.target.value)}
+                      placeholder="Acrílica sobre tela"
+                    />
+                  </div>
+                  <Button size="sm" onClick={handleAddNewMedium}>Add</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowNewMedium(false); setNewMediumPt(''); setNewMediumEn('') }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {/* Show current values if set but not matching a known medium */}
+              {(current.mediumEn || current.mediumPt) && !currentMediumValue && (
+                <p className="text-xs text-muted-foreground">
+                  Current: {current.mediumEn} / {current.mediumPt}
+                </p>
+              )}
             </div>
 
-            {/* Dimensions */}
+            {/* Dimensions - Dropdown */}
             <div className="space-y-2">
-              <Label>Dimensions *</Label>
-              <Input
-                value={current.dimensions}
-                onChange={(e) => onUpdateDetails(currentIndex, { dimensions: e.target.value })}
-                placeholder="100 x 80 cm"
-              />
+              <Label>Dimensions</Label>
+              <div className="flex gap-2">
+                <Select value={currentDimensionValue} onValueChange={handleSelectDimension}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select dimensions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {knownDimensions.map((d) => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                    <SelectItem value="__new__">
+                      <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Add new dimensions</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="icon" onClick={() => setShowNewDimension(true)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {showNewDimension && (
+                <div className="flex gap-2">
+                  <Input
+                    value={newDimension}
+                    onChange={(e) => setNewDimension(e.target.value)}
+                    placeholder="100 x 80 cm"
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddNewDimension()}
+                  />
+                  <Button size="sm" onClick={handleAddNewDimension}>Add</Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowNewDimension(false); setNewDimension('') }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {current.dimensions && !currentDimensionValue && (
+                <p className="text-xs text-muted-foreground">
+                  Current: {current.dimensions}
+                </p>
+              )}
             </div>
 
             {/* Descriptions */}
@@ -394,6 +550,26 @@ export function PerImageDetailsStep({
           />
         </DialogContent>
       </Dialog>
+    </>
+  )
+
+  if (isFullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-hidden">
+        {content}
+      </div>
+    )
+  }
+
+  // Modal (non-fullscreen) mode
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={onBack} />
+      {/* Panel */}
+      <div className="relative z-10 bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden mx-4">
+        {content}
+      </div>
     </div>
   )
 }

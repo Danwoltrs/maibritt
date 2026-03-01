@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { Menu, X, User, Bell } from 'lucide-react'
 import {
   Image as ImageIcon,
-  FolderOpen,
   TrendingUp,
   Building,
   PenTool,
@@ -53,7 +52,6 @@ export default function Header() {
 
   const quickActions = [
     { key: 'upload-artwork' as QuickAction, label: 'Upload New Artwork', icon: ImageIcon },
-    { key: 'add-series' as QuickAction, label: 'Add Series', icon: FolderOpen },
     { key: 'record-sale' as QuickAction, label: 'Record Sale', icon: TrendingUp },
     { key: 'view-galleries' as QuickAction, label: 'View Active Galleries', icon: Building },
     { key: 'write-journal' as QuickAction, label: 'Write Journal Entry', icon: PenTool },
