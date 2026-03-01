@@ -35,7 +35,7 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
       const [exhibitions, artworks, quotes] = await Promise.all([
         ExhibitionsService.getTimelineExhibitions(),
         ArtworkService.getTimelineArtworks(),
-        QuotesService.getActiveQuotes('press'),
+        QuotesService.getActiveQuotes('press').catch(() => [] as Quote[]),
       ])
 
       // Collect all unique years
