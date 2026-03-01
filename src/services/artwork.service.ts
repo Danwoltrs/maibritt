@@ -10,6 +10,8 @@ export interface ArtworkFilters {
   forSale?: boolean
   featured?: boolean
   searchTerm?: string
+  artworkStatus?: string
+  galleryId?: string
 }
 
 export interface ArtworkCreateData {
@@ -63,6 +65,12 @@ export interface ArtworkUpdateData {
   buyerState?: string
   buyerCountry?: string
   buyerZipCode?: string
+  // Freight
+  freightCost?: number | null
+  freightCurrency?: string
+  freightNotes?: string
+  // Exhibition assignment
+  exhibitionId?: string | null
 }
 
 export interface PaginationOptions {
@@ -198,6 +206,14 @@ export class ArtworkService {
 
       if (filters.featured !== undefined) {
         query = query.eq('featured', filters.featured)
+      }
+
+      if (filters.artworkStatus) {
+        query = query.eq('artwork_status', filters.artworkStatus)
+      }
+
+      if (filters.galleryId) {
+        query = query.eq('location_id', filters.galleryId)
       }
 
       // Search functionality
@@ -488,6 +504,13 @@ export class ArtworkService {
       if (updateData.commissionRate !== undefined) updateObject.commission_rate = updateData.commissionRate
       if (updateData.commissionAmount !== undefined) updateObject.commission_amount = updateData.commissionAmount
       if (updateData.netAmount !== undefined) updateObject.net_amount = updateData.netAmount
+
+      // Freight fields
+      if (updateData.freightCost !== undefined) updateObject.freight_cost = updateData.freightCost
+      if (updateData.freightCurrency !== undefined) updateObject.freight_currency = updateData.freightCurrency
+      if (updateData.freightNotes !== undefined) updateObject.freight_notes = updateData.freightNotes
+      // Exhibition assignment
+      if (updateData.exhibitionId !== undefined) updateObject.exhibition_id = updateData.exhibitionId
 
       // Always update images if we have new ones
       if (updateData.newImages && updateData.newImages.length > 0) {
@@ -899,6 +922,13 @@ export class ArtworkService {
       buyerState: data.buyer_state,
       buyerCountry: data.buyer_country,
       buyerZipCode: data.buyer_zip_code,
+      locationType: data.location_type,
+      locationId: data.location_id,
+      locationNotes: data.location_notes,
+      freightCost: data.freight_cost,
+      freightCurrency: data.freight_currency,
+      freightNotes: data.freight_notes,
+      exhibitionId: data.exhibition_id,
       showOnTimeline: data.show_on_timeline || false,
       artworkStatus: data.artwork_status || 'studio',
       createdAt: new Date(data.created_at),

@@ -61,11 +61,6 @@ const navigationItems = [
         description: 'Add new artwork'
       },
       {
-        name: 'Work',
-        href: '/artworks/series',
-        description: 'Manage works'
-      },
-      {
         name: 'Locations',
         href: '/artworks/locations',
         description: 'Track locations'

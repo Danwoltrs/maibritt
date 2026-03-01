@@ -53,6 +53,16 @@ export interface Artwork {
   buyerState?: string
   buyerCountry?: string
   buyerZipCode?: string
+  // Location
+  locationType?: string
+  locationId?: string
+  locationNotes?: string
+  // Freight
+  freightCost?: number
+  freightCurrency?: string
+  freightNotes?: string
+  // Exhibition assignment
+  exhibitionId?: string
   // Timeline
   showOnTimeline?: boolean
   artworkStatus?: 'studio' | 'gallery' | 'on_loan' | 'nfs' | 'sold'

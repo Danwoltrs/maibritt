@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback } from 'react'
 import {
-  Eye, Pencil, DollarSign, Building, CalendarDays, Home,
-  Star, Tag, Download, Trash2, Clock, Briefcase,
+  Eye, Pencil, DollarSign, Building, CalendarDays,
+  Star, Download, Trash2, Clock, Briefcase, Truck,
 } from 'lucide-react'
 
 import {
@@ -27,7 +27,7 @@ import {
   AssignToGalleryModal,
   AssignToExhibitionModal,
   ConfirmActionModal,
-  ForSaleModal,
+  FreightCostModal,
 } from './artwork-context-modals'
 import { EditArtworkModal } from './EditArtworkModal'
 
@@ -37,9 +37,8 @@ type ModalType =
   | 'markSold'
   | 'assignGallery'
   | 'assignExhibition'
-  | 'moveStudio'
+  | 'freightCost'
   | 'toggleFeatured'
-  | 'toggleForSale'
   | 'delete'
   | null
 
@@ -52,7 +51,6 @@ interface ArtworkContextMenuProps {
 export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkContextMenuProps) {
   const { isAuthenticated } = useAuth()
   const [activeModal, setActiveModal] = useState<ModalType>(null)
-  // Snapshot the artwork when a modal opens so carousel rotation doesn't change it
   const [snapshotArtwork, setSnapshotArtwork] = useState<Artwork>(artwork)
 
   const openModal = useCallback((modal: ModalType) => {
@@ -62,7 +60,6 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
 
   const closeModal = useCallback(() => setActiveModal(null), [])
 
-  // If not authenticated, just render children without context menu
   if (!isAuthenticated) {
     return <>{children}</>
   }
@@ -77,14 +74,6 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }
-
-  const handleMoveToStudio = async () => {
-    await ArtworkService.updateArtwork(snapshotArtwork.id, {
-      locationType: '',
-      locationId: '',
-    })
-    onUpdate?.()
   }
 
   const handleToggleFeatured = async () => {
@@ -137,10 +126,25 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
             <DollarSign className="mr-2 h-4 w-4" />
             Mark as Sold
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => openModal('toggleForSale')}>
-            <Tag className="mr-2 h-4 w-4" />
-            {artwork.forSale ? 'Remove from Sale' : 'Mark for Sale'}
-          </ContextMenuItem>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <Briefcase className="mr-2 h-4 w-4" />
+              Set Status
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              {[
+                { value: 'studio', label: 'Studio' },
+                { value: 'gallery', label: 'At Gallery' },
+                { value: 'on_loan', label: 'On Loan' },
+                { value: 'nfs', label: 'NFS' },
+              ].map(s => (
+                <ContextMenuItem key={s.value} onClick={() => handleSetStatus(s.value)}>
+                  {s.label}
+                  {artwork.artworkStatus === s.value && <span className="ml-auto text-xs">&#10003;</span>}
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
 
           <ContextMenuSeparator />
 
@@ -152,9 +156,9 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
             <CalendarDays className="mr-2 h-4 w-4" />
             Assign to Exhibition
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => openModal('moveStudio')}>
-            <Home className="mr-2 h-4 w-4" />
-            Move to Studio
+          <ContextMenuItem onClick={() => openModal('freightCost')}>
+            <Truck className="mr-2 h-4 w-4" />
+            {artwork.freightCost ? 'Edit Freight Cost' : 'Add Freight Cost'}
           </ContextMenuItem>
 
           <ContextMenuSeparator />
@@ -167,26 +171,6 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
             <Clock className="mr-2 h-4 w-4" />
             {artwork.showOnTimeline ? 'Hide from Timeline' : 'Show on Timeline'}
           </ContextMenuItem>
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <Briefcase className="mr-2 h-4 w-4" />
-              Set Status
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              {[
-                { value: 'studio', label: 'Studio' },
-                { value: 'gallery', label: 'At Gallery' },
-                { value: 'on_loan', label: 'On Loan' },
-                { value: 'nfs', label: 'NFS' },
-                { value: 'sold', label: 'Sold' },
-              ].map(s => (
-                <ContextMenuItem key={s.value} onClick={() => handleSetStatus(s.value)}>
-                  {s.label}
-                  {artwork.artworkStatus === s.value && <span className="ml-auto text-xs">✓</span>}
-                </ContextMenuItem>
-              ))}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
           <ContextMenuItem
             onClick={handleDownload}
             disabled={artwork.images.length === 0}
@@ -207,7 +191,7 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
         </ContextMenuContent>
       </ContextMenu>
 
-      {/* Modals — use snapshotArtwork so carousel rotation doesn't change the target */}
+      {/* Modals */}
       <PreviewModal
         artwork={snapshotArtwork}
         open={activeModal === 'preview'}
@@ -242,20 +226,11 @@ export function ArtworkContextMenu({ artwork, children, onUpdate }: ArtworkConte
         onUpdate={onUpdate}
       />
 
-      <ForSaleModal
+      <FreightCostModal
         artwork={snapshotArtwork}
-        open={activeModal === 'toggleForSale'}
+        open={activeModal === 'freightCost'}
         onOpenChange={(open) => !open && closeModal()}
         onUpdate={onUpdate}
-      />
-
-      <ConfirmActionModal
-        open={activeModal === 'moveStudio'}
-        onOpenChange={(open) => !open && closeModal()}
-        title="Move to Studio"
-        description={`Move "${snapshotArtwork.title.en}" back to the studio? This will clear the current gallery/exhibition assignment.`}
-        confirmLabel="Move to Studio"
-        onConfirm={handleMoveToStudio}
       />
 
       <ConfirmActionModal

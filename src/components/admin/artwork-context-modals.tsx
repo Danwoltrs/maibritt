@@ -353,40 +353,41 @@ export function ConfirmActionModal({
   )
 }
 
-// ─── For Sale Modal ──────────────────────────────────────────────────────────
+// ─── Freight Cost Modal ──────────────────────────────────────────────────────
 
-interface ForSaleModalProps {
+interface FreightCostModalProps {
   artwork: Artwork
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdate?: () => void
 }
 
-export function ForSaleModal({ artwork, open, onOpenChange, onUpdate }: ForSaleModalProps) {
-  const isCurrentlyForSale = artwork.forSale
-  const [price, setPrice] = useState(artwork.price?.toString() || '')
-  const [currency, setCurrency] = useState<'BRL' | 'USD' | 'EUR'>(artwork.currency || 'BRL')
+export function FreightCostModal({ artwork, open, onOpenChange, onUpdate }: FreightCostModalProps) {
+  const [amount, setAmount] = useState(artwork.freightCost?.toString() || '')
+  const [currency, setCurrency] = useState(artwork.freightCurrency || 'BRL')
+  const [notes, setNotes] = useState(artwork.freightNotes || '')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (open) {
-      setPrice(artwork.price?.toString() || '')
-      setCurrency(artwork.currency || 'BRL')
+      setAmount(artwork.freightCost?.toString() || '')
+      setCurrency(artwork.freightCurrency || 'BRL')
+      setNotes(artwork.freightNotes || '')
     }
   }, [open, artwork])
 
   const handleSubmit = async () => {
     setSaving(true)
     try {
-      if (isCurrentlyForSale) {
-        await ArtworkService.toggleSaleStatus(artwork.id, false)
-      } else {
-        await ArtworkService.toggleSaleStatus(artwork.id, true, parseFloat(price), currency)
-      }
+      await ArtworkService.updateArtwork(artwork.id, {
+        freightCost: amount ? parseFloat(amount) : null,
+        freightCurrency: currency,
+        freightNotes: notes,
+      })
       onOpenChange(false)
       onUpdate?.()
     } catch (error) {
-      console.error('Error toggling for sale:', error)
+      console.error('Error updating freight cost:', error)
     } finally {
       setSaving(false)
     }
@@ -396,50 +397,56 @@ export function ForSaleModal({ artwork, open, onOpenChange, onUpdate }: ForSaleM
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isCurrentlyForSale ? 'Remove from Sale' : 'Mark for Sale'}</DialogTitle>
+          <DialogTitle>Freight Cost</DialogTitle>
           <DialogDescription>
-            {isCurrentlyForSale
-              ? `Remove "${artwork.title.en}" from sale listings?`
-              : `Set a price for "${artwork.title.en}"`}
+            Set freight / shipping cost for &quot;{artwork.title.en}&quot;
           </DialogDescription>
         </DialogHeader>
 
-        {!isCurrentlyForSale && (
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Price</Label>
+              <Label>Amount</Label>
               <Input
                 type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
               />
             </div>
             <div className="space-y-2">
               <Label>Currency</Label>
-              <Select value={currency} onValueChange={(v) => setCurrency(v as any)}>
+              <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="BRL">BRL (R$)</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                  <SelectItem value="DKK">DKK</SelectItem>
                   <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="EUR">EUR (&euro;)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-        )}
+          <div className="space-y-2">
+            <Label>Notes</Label>
+            <textarea
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Shipping details, carrier, tracking..."
+            />
+          </div>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={saving || (!isCurrentlyForSale && !price)}
-          >
-            {saving ? 'Saving...' : isCurrentlyForSale ? 'Remove from Sale' : 'Mark for Sale'}
+          <Button onClick={handleSubmit} disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>
