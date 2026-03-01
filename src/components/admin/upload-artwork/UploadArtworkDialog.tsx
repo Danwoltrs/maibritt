@@ -405,7 +405,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
                 </div>
                 <div className="flex gap-2">
                   <Select
-                    value={commonMeta.seriesId}
+                    value={commonMeta.seriesId || ''}
                     onValueChange={(v) => setCommonMeta(prev => ({ ...prev, seriesId: v }))}
                   >
                     <SelectTrigger className="flex-1">
@@ -447,7 +447,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
                   </div>
                 </div>
                 <Select
-                  value={commonMeta.category}
+                  value={commonMeta.category || ''}
                   onValueChange={(v) => setCommonMeta(prev => ({ ...prev, category: v as any }))}
                 >
                   <SelectTrigger>

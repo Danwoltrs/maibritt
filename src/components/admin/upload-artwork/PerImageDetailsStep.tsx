@@ -125,6 +125,7 @@ export function PerImageDetailsStep({
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
           },
           body: JSON.stringify({
             image: base64,
