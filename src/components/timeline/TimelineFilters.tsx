@@ -38,17 +38,17 @@ export default function TimelineFilters({ activeFilters, onFiltersChange }: Time
   }
 
   return (
-    <div className="flex gap-1.5 justify-center flex-wrap py-4 px-5 border-b border-[#e8e0d5] bg-white sticky top-[52px] z-[90]">
+    <div className="flex gap-1.5 justify-center flex-wrap py-4 px-5 border-b border-gray-200 bg-white sticky top-[52px] z-[90]">
       {FILTER_OPTIONS.map(opt => (
         <button
           key={opt.id}
           onClick={() => toggle(opt.id)}
           className={`
             font-display text-[9px] tracking-[2px] uppercase
-            py-1 px-3.5 border cursor-pointer transition-all duration-200
+            py-1 px-3.5 border cursor-pointer transition-all duration-200 rounded-sm
             ${activeFilters.includes(opt.id)
-              ? 'bg-[#1a1612] border-[#1a1612] text-[#f7f2eb]'
-              : 'bg-transparent border-[#d8d0c6] text-[#9a9080] hover:border-[#b8956a] hover:text-[#b8956a]'
+              ? 'bg-gray-900 border-gray-900 text-white'
+              : 'bg-transparent border-gray-300 text-gray-500 hover:border-blue-600 hover:text-blue-600'
             }
           `}
         >

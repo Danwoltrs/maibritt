@@ -8,14 +8,14 @@ interface PressClipProps {
 
 export default function PressClip({ quote }: PressClipProps) {
   return (
-    <div className="border border-dashed border-[#e0d8cc] p-3.5 px-4 bg-white">
-      <div className="text-[8px] tracking-[3px] uppercase text-[#b8956a] mb-1.5">
+    <div className="border border-dashed border-gray-300 rounded-lg p-3.5 px-4 bg-white">
+      <div className="text-[8px] tracking-[3px] uppercase text-green-700 mb-1.5 font-display">
         Press {quote.source ? `· ${quote.source}` : ''}
       </div>
-      <blockquote className="font-serif text-sm italic leading-snug mb-1.5">
+      <blockquote className="font-serif text-sm italic leading-snug mb-1.5 text-gray-700">
         &ldquo;{quote.quoteEn || quote.quotePt}&rdquo;
       </blockquote>
-      <small className="text-[9px] text-[#9a9080]">
+      <small className="text-[9px] text-gray-500">
         {quote.author && <span>{quote.author}</span>}
         {quote.sourceDate && (
           <span>

@@ -16,7 +16,7 @@ export default function ArtworkCard({ artwork, compact = false, onClick }: Artwo
   return (
     <div
       onClick={onClick}
-      className="bg-white overflow-hidden cursor-pointer border border-[#ede6db] transition-all duration-220 hover:-translate-y-[3px] hover:shadow-[0_10px_28px_rgba(26,22,18,0.1)] relative group"
+      className="bg-white overflow-hidden cursor-pointer border border-gray-200 rounded-lg shadow-sm transition-all duration-220 hover:-translate-y-[3px] hover:shadow-lg relative group"
     >
       {/* Image */}
       <div className={`w-full overflow-hidden relative ${compact ? 'h-[100px]' : 'h-[120px]'}`}>
@@ -31,17 +31,17 @@ export default function ArtworkCard({ artwork, compact = false, onClick }: Artwo
             <span className="text-gray-400 text-xs">No image</span>
           </div>
         )}
-        {/* Gold line sweep */}
-        <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#b8956a] transition-[width] duration-300 group-hover:w-full" />
+        {/* Accent line sweep */}
+        <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-blue-600 transition-[width] duration-300 group-hover:w-full" />
       </div>
 
       {/* Info */}
       <div className={`flex justify-between items-end ${compact ? 'p-[7px_9px]' : 'p-[9px_11px_11px]'}`}>
         <div>
-          <h4 className={`font-serif font-normal leading-tight mb-0.5 ${compact ? 'text-xs' : 'text-sm'}`}>
+          <h4 className={`font-serif font-normal leading-tight mb-0.5 group-hover:text-blue-600 transition-colors ${compact ? 'text-xs' : 'text-sm'}`}>
             {title}
           </h4>
-          <p className="text-[9px] text-[#9a9080] tracking-[0.5px]">
+          <p className="text-[9px] text-gray-500 tracking-[0.5px]">
             {medium}
             {artwork.dimensions && ` · ${artwork.dimensions}`}
           </p>
