@@ -7,6 +7,10 @@ export interface SiteSettings {
   carouselPauseOnHover: boolean
 }
 
+export interface BrandingSettings {
+  logoUrl: string | null
+}
+
 export interface HomepageSections {
   showJournal: boolean
   showAvailableWorks: boolean
@@ -230,5 +234,47 @@ export class SettingsService {
       carouselTransitionStyle: 'fade',
       carouselPauseOnHover: true
     })
+  }
+
+  /**
+   * Get the custom logo URL (null means use default /logo.svg)
+   */
+  static async getLogoUrl(): Promise<string | null> {
+    const value = await this.getSetting<string>('logo_url')
+    return value || null
+  }
+
+  /**
+   * Upload a new logo and save URL to settings
+   * Accepts SVG, PNG, JPG, WebP
+   */
+  static async uploadLogo(file: File): Promise<string> {
+    const validTypes = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      throw new Error('Invalid file type. Please upload SVG, PNG, JPG, or WebP.')
+    }
+
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'png'
+    const fileName = `logo-${Date.now()}.${extension}`
+    const path = `branding/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('artworks')
+      .upload(path, file, { upsert: true, contentType: file.type })
+
+    if (uploadError) throw uploadError
+
+    const { data } = supabase.storage.from('artworks').getPublicUrl(path)
+    const publicUrl = data.publicUrl
+
+    await this.upsertSetting('logo_url', publicUrl)
+    return publicUrl
+  }
+
+  /**
+   * Remove custom logo (reverts to default /logo.svg)
+   */
+  static async removeLogo(): Promise<void> {
+    await this.upsertSetting('logo_url', null)
   }
 }

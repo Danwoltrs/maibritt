@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Save, RotateCcw, CheckCircle } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Save, RotateCcw, CheckCircle, Upload, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -43,6 +43,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     showJournal: true,
     showAvailableWorks: true,
   })
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -55,12 +58,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         setLoading(true)
         setError(null)
         setSuccess(false)
-        const [carouselSettings, homepageSections] = await Promise.all([
+        const [carouselSettings, homepageSections, currentLogoUrl] = await Promise.all([
           SettingsService.getCarouselSettings(),
           SettingsService.getHomepageSections(),
+          SettingsService.getLogoUrl(),
         ])
         setSettings(carouselSettings)
         setSections(homepageSections)
+        setLogoUrl(currentLogoUrl)
       } catch (err) {
         console.error('Error loading settings:', err)
         setError('Failed to load settings')
@@ -70,6 +75,41 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     }
     loadSettings()
   }, [open])
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setUploadingLogo(true)
+      setError(null)
+      const url = await SettingsService.uploadLogo(file)
+      setLogoUrl(url)
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (err: any) {
+      console.error('Error uploading logo:', err)
+      setError(err.message || 'Failed to upload logo')
+    } finally {
+      setUploadingLogo(false)
+      if (logoInputRef.current) logoInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveLogo = async () => {
+    try {
+      setUploadingLogo(true)
+      setError(null)
+      await SettingsService.removeLogo()
+      setLogoUrl(null)
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (err) {
+      console.error('Error removing logo:', err)
+      setError('Failed to remove logo')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
 
   const handleSave = async () => {
     try {
@@ -132,6 +172,63 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <AlertDescription>Settings saved!</AlertDescription>
               </Alert>
             )}
+
+            {/* Branding / Logo */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Logo</CardTitle>
+                <CardDescription className="text-xs">Upload a custom logo (SVG, PNG, JPG, WebP)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <div className="h-12 min-w-[120px] flex items-center justify-center bg-gray-50 border border-gray-200 rounded px-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={logoUrl || '/logo.svg'}
+                      alt="Current logo"
+                      className="h-8 w-auto max-w-[160px] object-contain"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={uploadingLogo}
+                    >
+                      {uploadingLogo ? (
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-900 border-t-transparent mr-1.5" />
+                      ) : (
+                        <Upload className="h-3.5 w-3.5 mr-1.5" />
+                      )}
+                      Upload
+                    </Button>
+                    {logoUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveLogo}
+                        disabled={uploadingLogo}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {!logoUrl && (
+                  <p className="text-[10px] text-gray-400 mt-2">Using default logo</p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Homepage Sections */}
             <Card>

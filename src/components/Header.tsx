@@ -27,11 +27,13 @@ export default function Header() {
   const { user, loading } = useAuth()
   const [quickAction, setQuickAction] = useState<QuickAction>(null)
   const [showAvailableWorks, setShowAvailableWorks] = useState(true)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     SettingsService.getHomepageSections().then(sections => {
       setShowAvailableWorks(sections.showAvailableWorks)
     })
+    SettingsService.getLogoUrl().then(setLogoUrl)
   }, [])
 
   const allNavigationItems = [
@@ -64,14 +66,23 @@ export default function Header() {
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center">
-              <Image
-                src="/logo.svg"
-                alt="Mai-Britt Wolthers"
-                width={200}
-                height={40}
-                className="h-8 md:h-10 w-auto"
-                priority
-              />
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logoUrl}
+                  alt="Mai-Britt Wolthers"
+                  className="h-8 md:h-10 w-auto max-w-[200px] object-contain"
+                />
+              ) : (
+                <Image
+                  src="/logo.svg"
+                  alt="Mai-Britt Wolthers"
+                  width={200}
+                  height={40}
+                  className="h-8 md:h-10 w-auto"
+                  priority
+                />
+              )}
             </Link>
 
             {/* Desktop Navigation */}
