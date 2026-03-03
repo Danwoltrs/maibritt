@@ -104,7 +104,7 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
   return (
     <section id={id} className="bg-gray-50">
       {/* Page Intro */}
-      <div className="text-center pt-16 pb-13 px-6 border-b border-gray-200">
+      <div className="text-center pt-16 pb-16 px-6 border-b border-gray-200">
         <p className="text-xs tracking-[4px] uppercase text-[rgb(0,46,18)] mb-3 font-medium">Artistic Journey</p>
         <h2 className="text-[clamp(28px,6vw,52px)] font-light leading-[1.1] text-gray-900 tracking-tight">
           Exhibitions & Works
