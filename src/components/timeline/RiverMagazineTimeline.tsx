@@ -104,14 +104,11 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
   return (
     <section id={id} className="bg-gray-50">
       {/* Page Intro */}
-      <div className="text-center py-13 px-6 border-b border-gray-200">
-        <p className="text-xs tracking-[4px] uppercase text-blue-600 mb-3 font-medium">Artistic Journey</p>
-        <h2 className="text-[clamp(28px,6vw,52px)] font-light leading-[1.1] text-gray-900 mb-3 tracking-tight">
+      <div className="text-center pt-16 pb-13 px-6 border-b border-gray-200">
+        <p className="text-xs tracking-[4px] uppercase text-[rgb(0,46,18)] mb-3 font-medium">Artistic Journey</p>
+        <h2 className="text-[clamp(28px,6vw,52px)] font-light leading-[1.1] text-gray-900 tracking-tight">
           Exhibitions & Works
         </h2>
-        <p className="text-xs text-gray-500 max-w-[400px] mx-auto leading-relaxed">
-          A chronological view of exhibitions and selected works.
-        </p>
       </div>
 
       {/* Filter Bar */}
@@ -122,7 +119,7 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
         {/* Desktop spine */}
         <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 pointer-events-none"
           style={{
-            background: 'linear-gradient(to bottom, transparent 0%, rgb(37 99 235) 3%, rgba(37,99,235,0.2) 50%, rgba(37,99,235,0.2) 97%, transparent 100%)',
+            background: 'linear-gradient(to bottom, transparent 0%, rgb(0,46,18) 3%, rgba(0,46,18,0.2) 50%, rgba(0,46,18,0.2) 97%, transparent 100%)',
           }}
         />
 
@@ -189,7 +186,7 @@ function TimelineYearBlock({
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[clamp(60px,11vw,120px)] max-md:text-[clamp(48px,15vw,80px)] font-light text-gray-900/5 max-md:opacity-60 pointer-events-none select-none whitespace-nowrap leading-none tracking-tight">
           {ty.year}
         </div>
-        <div className="inline-block relative bg-gray-50 border border-blue-600 text-blue-600 text-[10px] font-medium tracking-[4px] py-1 px-4.5 z-[2]">
+        <div className="inline-block relative bg-gray-50 border border-[rgb(0,46,18)] text-[rgb(0,46,18)] text-[11px] font-medium tracking-[4px] py-1.5 px-5 z-[2]">
           {ty.year}
         </div>
       </div>
@@ -197,10 +194,10 @@ function TimelineYearBlock({
       {/* Timeline Row */}
       <div className="
         md:grid md:grid-cols-[1fr_64px_1fr] md:items-start md:mb-12
-        max-md:block max-md:pl-7 max-md:border-l max-md:border-blue-600/30 max-md:ml-3 max-md:mb-9 max-md:relative
+        max-md:block max-md:pl-7 max-md:border-l max-md:border-[rgb(0,46,18)]/30 max-md:ml-3 max-md:mb-9 max-md:relative
       ">
         {/* Mobile spine dot */}
-        <div className="md:hidden absolute -left-[5px] top-5 w-[9px] h-[9px] rounded-full bg-blue-600 border-2 border-gray-50 shadow-[0_0_0_1px_rgb(37,99,235)]" />
+        <div className="md:hidden absolute -left-[5px] top-5 w-[9px] h-[9px] rounded-full bg-[rgb(0,46,18)] border-2 border-gray-50 shadow-[0_0_0_1px_rgb(0,46,18)]" />
 
         {/* LEFT: Exhibitions + Press */}
         <div className="md:col-start-1 md:pr-9 max-md:pr-0 max-md:mb-5">
@@ -257,10 +254,10 @@ function TimelineYearBlock({
 
         {/* CENTER: Spine dot (desktop only) */}
         <div className="hidden md:flex md:col-start-2 flex-col items-center pt-6">
-          <div className={`rounded-full border-[3px] border-gray-50 shadow-[0_0_0_1px_rgb(37,99,235)] relative z-[3] ${
+          <div className={`rounded-full border-[3px] border-gray-50 shadow-[0_0_0_1px_rgb(0,46,18)] relative z-[3] ${
             ty.exhibitions.length > 0
-              ? 'w-[11px] h-[11px] bg-blue-600'
-              : 'w-[7px] h-[7px] bg-green-600 shadow-[0_0_0_1px_rgb(22,163,74)] border-2'
+              ? 'w-[11px] h-[11px] bg-[rgb(0,46,18)]'
+              : 'w-[7px] h-[7px] bg-[rgb(0,46,18)]/60 shadow-[0_0_0_1px_rgb(0,46,18)] border-2'
           }`} />
         </div>
 

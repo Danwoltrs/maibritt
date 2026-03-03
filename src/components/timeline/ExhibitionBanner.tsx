@@ -50,7 +50,7 @@ export default function ExhibitionBanner({ exhibition, onClick }: ExhibitionBann
       className="bg-white text-gray-900 cursor-pointer overflow-hidden relative border border-gray-200 rounded-lg shadow-sm transition-all duration-250 hover:-translate-y-[3px] hover:shadow-lg group"
     >
       {/* Image */}
-      <div className="w-full h-[160px] md:h-[160px] relative overflow-hidden">
+      <div className="w-full h-[280px] md:h-[320px] relative overflow-hidden">
         {coverImage ? (
           <img
             src={coverImage}
