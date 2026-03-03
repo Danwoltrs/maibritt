@@ -331,7 +331,7 @@ export function ExhibitionRichForm({
                 />
               </div>
               <div>
-                <Label htmlFor="city">City *</Label>
+                <Label htmlFor="city">City</Label>
                 <Input
                   id="city"
                   value={formData.city}
@@ -349,7 +349,7 @@ export function ExhibitionRichForm({
                 />
               </div>
               <div>
-                <Label htmlFor="country">Country *</Label>
+                <Label htmlFor="country">Country</Label>
                 <Input
                   id="country"
                   value={formData.country}
@@ -781,7 +781,7 @@ export function ExhibitionRichForm({
         </Button>
         <Button
           onClick={onSubmit}
-          disabled={saving || !formData.titleEn || !formData.venue || !formData.city || !formData.country}
+          disabled={saving || !formData.titleEn || !formData.venue}
         >
           {saving ? 'Saving...' : submitLabel}
         </Button>
