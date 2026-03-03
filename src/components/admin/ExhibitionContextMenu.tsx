@@ -83,8 +83,8 @@ export function ExhibitionContextMenu({ exhibition, children, onUpdate }: Exhibi
       type: exhibition.type,
       descriptionEn: exhibition.description?.en || '',
       descriptionPt: exhibition.description?.ptBR || '',
-      contentEn: exhibition.content?.en || '',
-      contentPt: exhibition.content?.ptBR || '',
+      contentEn: exhibition.content?.en || null,
+      contentPt: exhibition.content?.ptBR || null,
       curatorName: exhibition.curatorName || '',
       curatorTextEn: exhibition.curatorText?.en || '',
       curatorTextPt: exhibition.curatorText?.ptBR || '',
@@ -95,6 +95,7 @@ export function ExhibitionContextMenu({ exhibition, children, onUpdate }: Exhibi
       openingDate: formatDateTimeForInput(exhibition.openingDate),
       openingDetails: exhibition.openingDetails || '',
       featured: exhibition.featured,
+      mainImageMode: exhibition.mainImageMode || 'fixed',
       externalUrl: exhibition.externalUrl || '',
       catalogUrl: exhibition.catalogUrl || '',
       imageFile: null

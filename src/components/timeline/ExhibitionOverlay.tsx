@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Exhibition } from '@/types'
 import { Badge } from '@/components/ui/badge'
+import { normalizeContent, extractTextFromPageBuilder } from '@/lib/content-migration'
 
 interface ExhibitionOverlayProps {
   exhibition: Exhibition | null
@@ -63,7 +64,9 @@ export default function ExhibitionOverlay({ exhibition, onClose }: ExhibitionOve
   const allImages = exhibition.images || []
   const hasGallery = allImages.length > 0
   const hasVideos = exhibition.videos && exhibition.videos.length > 0
-  const bodyText = exhibition.content?.en || exhibition.content?.ptBR || ''
+  const rawContent = exhibition.content?.en || exhibition.content?.ptBR || null
+  const bodyDoc = rawContent ? normalizeContent(rawContent) : null
+  const bodyText = bodyDoc ? extractTextFromPageBuilder(bodyDoc) : ''
   const descriptionText = exhibition.description?.en || exhibition.description?.ptBR || ''
   const curatorText = exhibition.curatorText?.en || exhibition.curatorText?.ptBR || ''
 

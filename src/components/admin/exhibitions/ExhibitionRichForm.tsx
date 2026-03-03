@@ -1,20 +1,31 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { X, Plus, Video, Image as ImageIcon, Quote, Calendar, Link as LinkIcon, Upload, MapPin, Loader2 } from 'lucide-react'
+import {
+  X, Plus, Video, Image as ImageIcon, Quote, Calendar,
+  Link as LinkIcon, Upload, MapPin, Loader2, Maximize2, Minimize2
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { DialogFooter } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select'
-import { ExhibitionImage, ExhibitionVideo, ExhibitionAddress } from '@/types'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { ExhibitionImage, ExhibitionVideo } from '@/types'
 import { ExhibitionsService } from '@/services/exhibitions.service'
+import { PageBuilderEditor } from '@/components/admin/journal/page-builder/PageBuilderEditor'
+import { AddContentMenu } from '@/components/admin/journal/page-builder/AddContentMenu'
+import { normalizeContent, createEmptyPageBuilderDoc } from '@/lib/content-migration'
+import type { ContentBlock } from '@/components/admin/journal/page-builder/types'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyDoc = Record<string, any> | null
 
 const COUNTRIES = [
   'Denmark', 'Brazil', 'United States', 'United Kingdom', 'Germany', 'France',
@@ -30,7 +41,6 @@ export interface ExhibitionFormData {
   titleEn: string
   titlePt: string
   venue: string
-  // Address fields
   street: string
   streetNumber: string
   neighborhood: string
@@ -42,8 +52,8 @@ export interface ExhibitionFormData {
   type: 'solo' | 'group' | 'residency' | 'installation'
   descriptionEn: string
   descriptionPt: string
-  contentEn: string
-  contentPt: string
+  contentEn: AnyDoc
+  contentPt: AnyDoc
   curatorName: string
   curatorTextEn: string
   curatorTextPt: string
@@ -54,6 +64,7 @@ export interface ExhibitionFormData {
   openingDate: string
   openingDetails: string
   featured: boolean
+  mainImageMode: 'fixed' | 'random'
   externalUrl: string
   catalogUrl: string
   imageFile: File | null
@@ -84,8 +95,8 @@ export const defaultFormData: ExhibitionFormData = {
   type: 'solo',
   descriptionEn: '',
   descriptionPt: '',
-  contentEn: '',
-  contentPt: '',
+  contentEn: null,
+  contentPt: null,
   curatorName: '',
   curatorTextEn: '',
   curatorTextPt: '',
@@ -96,6 +107,7 @@ export const defaultFormData: ExhibitionFormData = {
   openingDate: '',
   openingDetails: '',
   featured: false,
+  mainImageMode: 'fixed',
   externalUrl: '',
   catalogUrl: '',
   imageFile: null
@@ -118,7 +130,49 @@ export function ExhibitionRichForm({
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null)
   const [editingCaption, setEditingCaption] = useState({ en: '', pt: '' })
   const [lookingUpZip, setLookingUpZip] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [contentLang, setContentLang] = useState<'en' | 'pt'>('en')
   const galleryInputRef = useRef<HTMLInputElement>(null)
+
+  const update = <K extends keyof ExhibitionFormData>(key: K, value: ExhibitionFormData[K]) => {
+    setFormData(prev => ({ ...prev, [key]: value }))
+  }
+
+  // Auto-migrate legacy string content on mount
+  useEffect(() => {
+    let changed = false
+    let newEn = formData.contentEn
+    let newPt = formData.contentPt
+
+    if (formData.contentEn && typeof formData.contentEn === 'object' &&
+        !('version' in formData.contentEn && formData.contentEn.version === 2)) {
+      newEn = normalizeContent(formData.contentEn)
+      changed = true
+    }
+    if (formData.contentPt && typeof formData.contentPt === 'object' &&
+        !('version' in formData.contentPt && formData.contentPt.version === 2)) {
+      newPt = normalizeContent(formData.contentPt)
+      changed = true
+    }
+
+    if (changed) {
+      setFormData(prev => ({ ...prev, contentEn: newEn, contentPt: newPt }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev)
+  }, [])
+
+  useEffect(() => {
+    if (!isFullscreen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isFullscreen])
 
   const lookupZipCode = async () => {
     const zip = formData.zipCode.trim()
@@ -181,7 +235,6 @@ export function ExhibitionRichForm({
       console.error('Error uploading gallery images:', error)
     } finally {
       setUploadingGallery(false)
-      // Reset input
       if (galleryInputRef.current) {
         galleryInputRef.current.value = ''
       }
@@ -240,60 +293,71 @@ export function ExhibitionRichForm({
     }))
   }
 
-  // Build address helper for display
-  const getAddressPreview = (): string => {
-    const parts: string[] = []
-    if (formData.street) {
-      let streetLine = formData.street
-      if (formData.streetNumber) streetLine += `, ${formData.streetNumber}`
-      parts.push(streetLine)
-    }
-    if (formData.neighborhood) parts.push(formData.neighborhood)
-    if (formData.city) parts.push(formData.city)
-    if (formData.state) parts.push(formData.state)
-    if (formData.zipCode) parts.push(formData.zipCode)
-    if (formData.country) parts.push(formData.country)
-    return parts.join(' - ') || 'No address entered'
+  const addBlockToActiveContent = (block: ContentBlock) => {
+    const key = contentLang === 'en' ? 'contentEn' : 'contentPt'
+    const current = normalizeContent(formData[key]) || createEmptyPageBuilderDoc()
+    update(key, { ...current, blocks: [...current.blocks, block] })
   }
 
-  return (
-    <div className="space-y-6">
-      <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="basic">Basic Info</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="media">Media</TabsTrigger>
-          <TabsTrigger value="dates">Dates</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
+  const formContent = (
+    <div className={`space-y-4 ${isFullscreen ? 'flex flex-col h-full' : ''}`}>
+      {isFullscreen && (
+        <div className="flex items-center justify-between border-b pb-3 mb-2 shrink-0">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {formData.titleEn || formData.titlePt || 'Exhibition'}
+          </h2>
+          <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+            <Minimize2 className="h-4 w-4 mr-1.5" />
+            Exit Fullscreen
+          </Button>
+        </div>
+      )}
 
-        {/* Basic Info Tab */}
-        <TabsContent value="basic" className="space-y-4 mt-4">
+      <Tabs defaultValue="details" className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : 'w-full'}>
+        <div className="flex items-center justify-between shrink-0">
+          <TabsList className="grid w-full max-w-[400px] grid-cols-2">
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="content">Content & Media</TabsTrigger>
+          </TabsList>
+          {!isFullscreen && (
+            <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="h-8 w-8 p-0" title="Fullscreen">
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {/* ========== Tab 1: Details ========== */}
+        <TabsContent value="details" className={`space-y-4 mt-4 ${isFullscreen ? 'flex-1 overflow-y-auto min-h-0' : ''}`}>
+          {/* Titles */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="titleEn">Title (English) *</Label>
               <Input
                 id="titleEn"
                 value={formData.titleEn}
-                onChange={(e) => setFormData(prev => ({ ...prev, titleEn: e.target.value }))}
+                onChange={(e) => update('titleEn', e.target.value)}
                 placeholder="e.g., Fragments of Memory"
               />
             </div>
             <div>
-              <Label htmlFor="titlePt">Title (Português)</Label>
+              <Label htmlFor="titlePt">Title (Portugues)</Label>
               <Input
                 id="titlePt"
                 value={formData.titlePt}
-                onChange={(e) => setFormData(prev => ({ ...prev, titlePt: e.target.value }))}
-                placeholder="e.g., Fragmentos da Memória"
+                onChange={(e) => update('titlePt', e.target.value)}
+                placeholder="e.g., Fragmentos da Memoria"
               />
             </div>
+          </div>
+
+          {/* Venue + Year + Type */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="venue">Venue *</Label>
               <Input
                 id="venue"
                 value={formData.venue}
-                onChange={(e) => setFormData(prev => ({ ...prev, venue: e.target.value }))}
+                onChange={(e) => update('venue', e.target.value)}
                 placeholder="e.g., Museum of Modern Art"
               />
             </div>
@@ -303,17 +367,17 @@ export function ExhibitionRichForm({
                 id="year"
                 type="number"
                 value={formData.year}
-                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                onChange={(e) => update('year', parseInt(e.target.value))}
                 min={1950}
                 max={2100}
               />
             </div>
-            <div className="md:col-span-2">
+            <div>
               <Label htmlFor="type">Type *</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value: 'solo' | 'group' | 'residency' | 'installation') =>
-                  setFormData(prev => ({ ...prev, type: value }))
+                  update('type', value)
                 }
               >
                 <SelectTrigger id="type">
@@ -342,7 +406,7 @@ export function ExhibitionRichForm({
                 <Input
                   id="street"
                   value={formData.street}
-                  onChange={(e) => setFormData(prev => ({ ...prev, street: e.target.value }))}
+                  onChange={(e) => update('street', e.target.value)}
                   placeholder="e.g., Rua Augusta"
                 />
               </div>
@@ -351,7 +415,7 @@ export function ExhibitionRichForm({
                 <Input
                   id="streetNumber"
                   value={formData.streetNumber}
-                  onChange={(e) => setFormData(prev => ({ ...prev, streetNumber: e.target.value }))}
+                  onChange={(e) => update('streetNumber', e.target.value)}
                   placeholder="e.g., 1234"
                 />
               </div>
@@ -360,8 +424,8 @@ export function ExhibitionRichForm({
                 <Input
                   id="neighborhood"
                   value={formData.neighborhood}
-                  onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
-                  placeholder="e.g., Consolação"
+                  onChange={(e) => update('neighborhood', e.target.value)}
+                  placeholder="e.g., Consolacao"
                 />
               </div>
               <div>
@@ -370,7 +434,7 @@ export function ExhibitionRichForm({
                   <Input
                     id="zipCode"
                     value={formData.zipCode}
-                    onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value }))}
+                    onChange={(e) => update('zipCode', e.target.value)}
                     onBlur={lookupZipCode}
                     placeholder="e.g., 01310-100"
                   />
@@ -391,8 +455,8 @@ export function ExhibitionRichForm({
                 <Input
                   id="city"
                   value={formData.city}
-                  onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                  placeholder="e.g., São Paulo"
+                  onChange={(e) => update('city', e.target.value)}
+                  placeholder="e.g., Sao Paulo"
                 />
               </div>
               <div>
@@ -400,7 +464,7 @@ export function ExhibitionRichForm({
                 <Input
                   id="state"
                   value={formData.state}
-                  onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                  onChange={(e) => update('state', e.target.value)}
                   placeholder="e.g., SP"
                 />
               </div>
@@ -408,7 +472,7 @@ export function ExhibitionRichForm({
                 <Label htmlFor="country">Country</Label>
                 <Select
                   value={formData.country}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, country: value }))}
+                  onValueChange={(value) => update('country', value)}
                 >
                   <SelectTrigger id="country">
                     <SelectValue placeholder="Select country" />
@@ -421,156 +485,163 @@ export function ExhibitionRichForm({
                 </Select>
               </div>
             </div>
-
-            {/* Address Preview */}
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Address preview:</span> {getAddressPreview()}
-              </p>
-            </div>
           </div>
 
-          {/* Cover Image */}
-          <div className="border-t pt-4 mt-4">
-            <Label htmlFor="image">Cover Image</Label>
-            <div className="mt-2 space-y-4">
-              {(imagePreview || existingImage) && (
-                <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-                  <Image
-                    src={imagePreview || existingImage || ''}
-                    alt="Preview"
-                    fill
-                    className="object-cover"
-                  />
-                  {imagePreview && (
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={() => {
-                        setImagePreview(null)
-                        setFormData(prev => ({ ...prev, imageFile: null }))
-                      }}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              )}
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-            </div>
-          </div>
-
-          {/* Short Description */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="descriptionEn">Short Description (English)</Label>
-              <Textarea
-                id="descriptionEn"
-                value={formData.descriptionEn}
-                onChange={(e) => setFormData(prev => ({ ...prev, descriptionEn: e.target.value }))}
-                placeholder="Brief description for cards/previews..."
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label htmlFor="descriptionPt">Short Description (Português)</Label>
-              <Textarea
-                id="descriptionPt"
-                value={formData.descriptionPt}
-                onChange={(e) => setFormData(prev => ({ ...prev, descriptionPt: e.target.value }))}
-                placeholder="Breve descrição para cartões/previews..."
-                rows={3}
-              />
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Content Tab - Rich text body */}
-        <TabsContent value="content" className="space-y-4 mt-4">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="contentEn">Full Content (English)</Label>
-              <p className="text-sm text-gray-500 mb-2">
-                Write detailed content about the exhibition (like a blog post)
-              </p>
-              <Textarea
-                id="contentEn"
-                value={formData.contentEn}
-                onChange={(e) => setFormData(prev => ({ ...prev, contentEn: e.target.value }))}
-                placeholder="Write about the exhibition, the works shown, the concept behind it..."
-                rows={8}
-              />
-            </div>
-            <div>
-              <Label htmlFor="contentPt">Full Content (Português)</Label>
-              <Textarea
-                id="contentPt"
-                value={formData.contentPt}
-                onChange={(e) => setFormData(prev => ({ ...prev, contentPt: e.target.value }))}
-                placeholder="Escreva sobre a exposição, as obras exibidas, o conceito por trás..."
-                rows={8}
-              />
-            </div>
-          </div>
-
-          {/* Curator Quote Section */}
+          {/* Dates */}
           <div className="border-t pt-4 mt-4">
             <div className="flex items-center gap-2 mb-4">
-              <Quote className="w-5 h-5 text-gray-500" />
-              <h3 className="font-medium">Curator / Press Quote</h3>
+              <Calendar className="w-5 h-5 text-gray-500" />
+              <h3 className="font-medium">Dates</h3>
             </div>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="curatorName">Curator / Reviewer Name</Label>
+                <Label htmlFor="startDate">Start Date</Label>
                 <Input
-                  id="curatorName"
-                  value={formData.curatorName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, curatorName: e.target.value }))}
-                  placeholder="e.g., John Smith, Art Critic"
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => update('startDate', e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="curatorTextEn">Quote (English)</Label>
-                  <Textarea
-                    id="curatorTextEn"
-                    value={formData.curatorTextEn}
-                    onChange={(e) => setFormData(prev => ({ ...prev, curatorTextEn: e.target.value }))}
-                    placeholder="Quote or review text..."
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="curatorTextPt">Quote (Português)</Label>
-                  <Textarea
-                    id="curatorTextPt"
-                    value={formData.curatorTextPt}
-                    onChange={(e) => setFormData(prev => ({ ...prev, curatorTextPt: e.target.value }))}
-                    placeholder="Texto da citação ou resenha..."
-                    rows={3}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="endDate">End Date</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => update('endDate', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="openingDate">Opening Date & Time</Label>
+                <Input
+                  id="openingDate"
+                  type="datetime-local"
+                  value={formData.openingDate}
+                  onChange={(e) => update('openingDate', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="openingDetails">Opening Details</Label>
+                <Input
+                  id="openingDetails"
+                  value={formData.openingDetails}
+                  onChange={(e) => update('openingDetails', e.target.value)}
+                  placeholder="e.g., Free entry, RSVP required"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Featured + Links */}
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg mb-4">
+              <div>
+                <Label>Featured Exhibition</Label>
+                <p className="text-sm text-gray-500">Show prominently on homepage</p>
+              </div>
+              <Switch
+                checked={formData.featured}
+                onCheckedChange={(checked) => update('featured', checked)}
+              />
+            </div>
+            <div className="flex items-center gap-2 mb-4">
+              <LinkIcon className="w-5 h-5 text-gray-500" />
+              <h3 className="font-medium">External Links</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="externalUrl">External URL</Label>
+                <Input
+                  id="externalUrl"
+                  type="url"
+                  value={formData.externalUrl}
+                  onChange={(e) => update('externalUrl', e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="catalogUrl">Catalog URL</Label>
+                <Input
+                  id="catalogUrl"
+                  type="url"
+                  value={formData.catalogUrl}
+                  onChange={(e) => update('catalogUrl', e.target.value)}
+                  placeholder="https://..."
+                />
               </div>
             </div>
           </div>
         </TabsContent>
 
-        {/* Media Tab - Images & Videos */}
-        <TabsContent value="media" className="space-y-6 mt-4">
-          {/* Gallery Images */}
+        {/* ========== Tab 2: Content & Media ========== */}
+        <TabsContent value="content" className={`space-y-6 mt-4 ${isFullscreen ? 'flex-1 overflow-y-auto min-h-0' : ''}`}>
+          {/* Cover Image Mode */}
           <div>
+            <Label className="text-base font-medium mb-3 block">Cover Image</Label>
+            <RadioGroup
+              value={formData.mainImageMode}
+              onValueChange={(v) => update('mainImageMode', v as 'fixed' | 'random')}
+              className="flex gap-6 mb-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="fixed" id="mode-fixed" />
+                <Label htmlFor="mode-fixed" className="cursor-pointer">Fixed image</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="random" id="mode-random" />
+                <Label htmlFor="mode-random" className="cursor-pointer">Random from gallery</Label>
+              </div>
+            </RadioGroup>
+
+            {formData.mainImageMode === 'fixed' && (
+              <div className="space-y-4">
+                {(imagePreview || existingImage) && (
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
+                    <Image
+                      src={imagePreview || existingImage || ''}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                    />
+                    {imagePreview && (
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setImagePreview(null)
+                          update('imageFile', null)
+                        }}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </div>
+            )}
+
+            {formData.mainImageMode === 'random' && (
+              <p className="text-sm text-gray-500 italic">
+                The cover image will be randomly chosen from the gallery images below each time the page loads.
+              </p>
+            )}
+          </div>
+
+          {/* Gallery Images */}
+          <div className="border-t pt-6">
             <div className="flex items-center gap-2 mb-4">
               <ImageIcon className="w-5 h-5 text-gray-500" />
               <h3 className="font-medium">Gallery Images</h3>
             </div>
 
-            {/* Existing Images Grid */}
             {formData.images.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 {formData.images.map((img, index) => (
@@ -609,7 +680,6 @@ export function ExhibitionRichForm({
               </div>
             )}
 
-            {/* Caption Editor Modal */}
             {editingImageIndex !== null && (
               <div className="mb-4 p-4 border rounded-lg bg-gray-50">
                 <h4 className="font-medium mb-3">Edit Caption for Image {editingImageIndex + 1}</h4>
@@ -624,7 +694,7 @@ export function ExhibitionRichForm({
                     />
                   </div>
                   <div>
-                    <Label>Legenda (Português)</Label>
+                    <Label>Legenda (Portugues)</Label>
                     <Textarea
                       value={editingCaption.pt}
                       onChange={(e) => setEditingCaption(prev => ({ ...prev, pt: e.target.value }))}
@@ -640,7 +710,6 @@ export function ExhibitionRichForm({
               </div>
             )}
 
-            {/* Upload New Images */}
             <div className="border-2 border-dashed rounded-lg p-6 text-center">
               <input
                 ref={galleryInputRef}
@@ -679,7 +748,6 @@ export function ExhibitionRichForm({
               <h3 className="font-medium">Videos</h3>
             </div>
 
-            {/* Existing Videos */}
             {formData.videos.length > 0 && (
               <div className="space-y-2 mb-4">
                 {formData.videos.map((video, index) => (
@@ -701,7 +769,6 @@ export function ExhibitionRichForm({
               </div>
             )}
 
-            {/* Add New Video */}
             <div className="border rounded-lg p-4 space-y-3">
               <Label>Add Video (YouTube/Vimeo)</Label>
               <Input
@@ -718,7 +785,7 @@ export function ExhibitionRichForm({
                 <Input
                   value={newVideoTitlePt}
                   onChange={(e) => setNewVideoTitlePt(e.target.value)}
-                  placeholder="Título (Português)"
+                  placeholder="Titulo (Portugues)"
                 />
               </div>
               <Button
@@ -733,114 +800,111 @@ export function ExhibitionRichForm({
               </Button>
             </div>
           </div>
-        </TabsContent>
 
-        {/* Dates Tab */}
-        <TabsContent value="dates" className="space-y-4 mt-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-5 h-5 text-gray-500" />
-            <h3 className="font-medium">Exhibition Dates</h3>
-          </div>
-
-          <p className="text-sm text-gray-500 mb-4">
-            The popup will automatically show for exhibitions that are upcoming or currently running (based on start/end dates).
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="startDate">Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="endDate">End Date</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="border-t pt-4 mt-4">
-            <h4 className="font-medium mb-3">Opening Event</h4>
+          {/* Short Description */}
+          <div className="border-t pt-6">
+            <h3 className="font-medium mb-4">Short Description</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="openingDate">Opening Date & Time</Label>
-                <Input
-                  id="openingDate"
-                  type="datetime-local"
-                  value={formData.openingDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, openingDate: e.target.value }))}
+                <Label htmlFor="descriptionEn">English</Label>
+                <Textarea
+                  id="descriptionEn"
+                  value={formData.descriptionEn}
+                  onChange={(e) => update('descriptionEn', e.target.value)}
+                  placeholder="Brief description for cards/previews..."
+                  rows={3}
                 />
               </div>
               <div>
-                <Label htmlFor="openingDetails">Opening Details</Label>
-                <Input
-                  id="openingDetails"
-                  value={formData.openingDetails}
-                  onChange={(e) => setFormData(prev => ({ ...prev, openingDetails: e.target.value }))}
-                  placeholder="e.g., Free entry, RSVP required"
+                <Label htmlFor="descriptionPt">Portugues</Label>
+                <Textarea
+                  id="descriptionPt"
+                  value={formData.descriptionPt}
+                  onChange={(e) => update('descriptionPt', e.target.value)}
+                  placeholder="Breve descricao para cartoes/previews..."
+                  rows={3}
                 />
               </div>
             </div>
           </div>
-        </TabsContent>
 
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-4 mt-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <Label>Featured Exhibition</Label>
-                <p className="text-sm text-gray-500">Show prominently on homepage</p>
+          {/* Block Editor Content */}
+          <div className="border-t pt-6">
+            <h3 className="font-medium mb-4">Full Content</h3>
+            <Tabs defaultValue="en" value={contentLang} onValueChange={(v) => setContentLang(v as 'en' | 'pt')}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <TabsList>
+                    <TabsTrigger value="en">English</TabsTrigger>
+                    <TabsTrigger value="pt">Portugues</TabsTrigger>
+                  </TabsList>
+                  <AddContentMenu onAddBlock={addBlockToActiveContent} />
+                </div>
               </div>
-              <Switch
-                checked={formData.featured}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
-              />
-            </div>
+              <TabsContent value="en" className="mt-2">
+                <PageBuilderEditor
+                  value={normalizeContent(formData.contentEn) || createEmptyPageBuilderDoc()}
+                  onChange={(doc) => update('contentEn', doc)}
+                  hideAddMenu
+                />
+              </TabsContent>
+              <TabsContent value="pt" className="mt-2">
+                <PageBuilderEditor
+                  value={normalizeContent(formData.contentPt) || createEmptyPageBuilderDoc()}
+                  onChange={(doc) => update('contentPt', doc)}
+                  hideAddMenu
+                />
+              </TabsContent>
+            </Tabs>
           </div>
 
-          <div className="border-t pt-4 mt-4">
+          {/* Curator Quote */}
+          <div className="border-t pt-6">
             <div className="flex items-center gap-2 mb-4">
-              <LinkIcon className="w-5 h-5 text-gray-500" />
-              <h3 className="font-medium">External Links</h3>
+              <Quote className="w-5 h-5 text-gray-500" />
+              <h3 className="font-medium">Curator / Press Quote</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <Label htmlFor="externalUrl">External URL</Label>
+                <Label htmlFor="curatorName">Curator / Reviewer Name</Label>
                 <Input
-                  id="externalUrl"
-                  type="url"
-                  value={formData.externalUrl}
-                  onChange={(e) => setFormData(prev => ({ ...prev, externalUrl: e.target.value }))}
-                  placeholder="https://..."
+                  id="curatorName"
+                  value={formData.curatorName}
+                  onChange={(e) => update('curatorName', e.target.value)}
+                  placeholder="e.g., John Smith, Art Critic"
                 />
               </div>
-              <div>
-                <Label htmlFor="catalogUrl">Catalog URL</Label>
-                <Input
-                  id="catalogUrl"
-                  type="url"
-                  value={formData.catalogUrl}
-                  onChange={(e) => setFormData(prev => ({ ...prev, catalogUrl: e.target.value }))}
-                  placeholder="https://..."
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="curatorTextEn">Quote (English)</Label>
+                  <Textarea
+                    id="curatorTextEn"
+                    value={formData.curatorTextEn}
+                    onChange={(e) => update('curatorTextEn', e.target.value)}
+                    placeholder="Quote or review text..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="curatorTextPt">Quote (Portugues)</Label>
+                  <Textarea
+                    id="curatorTextPt"
+                    value={formData.curatorTextPt}
+                    onChange={(e) => update('curatorTextPt', e.target.value)}
+                    placeholder="Texto da citacao ou resenha..."
+                    rows={3}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </TabsContent>
       </Tabs>
 
-      <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
+      {/* Sticky footer */}
+      <div className={`flex justify-end gap-2 border-t pt-3 bg-white ${isFullscreen ? 'shrink-0' : 'sticky bottom-0 z-10 pb-1'}`}>
+        <Button variant="outline" onClick={isFullscreen ? toggleFullscreen : onCancel} disabled={saving}>
+          {isFullscreen ? 'Back to Form' : 'Cancel'}
         </Button>
         <Button
           onClick={onSubmit}
@@ -848,7 +912,20 @@ export function ExhibitionRichForm({
         >
           {saving ? 'Saving...' : submitLabel}
         </Button>
-      </DialogFooter>
+      </div>
     </div>
   )
+
+  if (isFullscreen) {
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] bg-white flex flex-col">
+        <div className="flex-1 max-w-5xl w-full mx-auto p-6 flex flex-col min-h-0">
+          {formContent}
+        </div>
+      </div>,
+      document.body
+    )
+  }
+
+  return formContent
 }

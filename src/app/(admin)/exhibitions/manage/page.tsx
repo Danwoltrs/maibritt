@@ -123,8 +123,8 @@ export default function ExhibitionsAdminPage() {
       type: exhibition.type,
       descriptionEn: exhibition.description?.en || '',
       descriptionPt: exhibition.description?.ptBR || '',
-      contentEn: exhibition.content?.en || '',
-      contentPt: exhibition.content?.ptBR || '',
+      contentEn: exhibition.content?.en || null,
+      contentPt: exhibition.content?.ptBR || null,
       curatorName: exhibition.curatorName || '',
       curatorTextEn: exhibition.curatorText?.en || '',
       curatorTextPt: exhibition.curatorText?.ptBR || '',
@@ -135,6 +135,7 @@ export default function ExhibitionsAdminPage() {
       openingDate: formatDateTimeForInput(exhibition.openingDate),
       openingDetails: exhibition.openingDetails || '',
       featured: exhibition.featured,
+      mainImageMode: exhibition.mainImageMode || 'fixed',
       externalUrl: exhibition.externalUrl || '',
       catalogUrl: exhibition.catalogUrl || '',
       imageFile: null
@@ -181,6 +182,7 @@ export default function ExhibitionsAdminPage() {
         openingDate: formData.openingDate ? new Date(formData.openingDate) : undefined,
         openingDetails: formData.openingDetails || undefined,
         featured: formData.featured,
+        mainImageMode: formData.mainImageMode,
         externalUrl: formData.externalUrl || undefined,
         catalogUrl: formData.catalogUrl || undefined,
         imageFile: formData.imageFile || undefined
@@ -233,6 +235,7 @@ export default function ExhibitionsAdminPage() {
         openingDate: formData.openingDate ? new Date(formData.openingDate) : null,
         openingDetails: formData.openingDetails || undefined,
         featured: formData.featured,
+        mainImageMode: formData.mainImageMode,
         externalUrl: formData.externalUrl || undefined,
         catalogUrl: formData.catalogUrl || undefined,
         newImageFile: formData.imageFile || undefined
@@ -557,42 +560,46 @@ export default function ExhibitionsAdminPage() {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Add New Exhibition</DialogTitle>
             <DialogDescription>
               Add a new exhibition with rich content support
             </DialogDescription>
           </DialogHeader>
-          <ExhibitionRichForm
-            formData={formData}
-            setFormData={setFormData}
-            onSubmit={handleCreate}
-            onCancel={() => setShowCreateDialog(false)}
-            saving={saving}
-            submitLabel="Create Exhibition"
-          />
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <ExhibitionRichForm
+              formData={formData}
+              setFormData={setFormData}
+              onSubmit={handleCreate}
+              onCancel={() => setShowCreateDialog(false)}
+              saving={saving}
+              submitLabel="Create Exhibition"
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Edit Exhibition</DialogTitle>
             <DialogDescription>
               Update exhibition details and rich content
             </DialogDescription>
           </DialogHeader>
-          <ExhibitionRichForm
-            formData={formData}
-            setFormData={setFormData}
-            onSubmit={handleUpdate}
-            onCancel={() => setShowEditDialog(false)}
-            saving={saving}
-            submitLabel="Save Changes"
-            existingImage={selectedExhibition?.image}
-          />
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <ExhibitionRichForm
+              formData={formData}
+              setFormData={setFormData}
+              onSubmit={handleUpdate}
+              onCancel={() => setShowEditDialog(false)}
+              saving={saving}
+              submitLabel="Save Changes"
+              existingImage={selectedExhibition?.image}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -174,8 +174,9 @@ export interface Exhibition {
   // Short description (for cards/previews)
   description?: Content
 
-  // Rich content (blog-like body)
-  content?: Content
+  // Rich content (block editor JSONB)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  content?: { ptBR: Record<string, any> | null; en: Record<string, any> | null }
 
   // Curator/press quote
   curatorName?: string
@@ -197,6 +198,9 @@ export interface Exhibition {
   showPopup: boolean
   isVisible: boolean
   displayOrder: number
+
+  // Cover image mode
+  mainImageMode?: 'fixed' | 'random'
 
   // Links
   externalUrl?: string

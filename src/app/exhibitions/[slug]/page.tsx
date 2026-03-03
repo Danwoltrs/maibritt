@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { normalizeContent, extractTextFromPageBuilder } from '@/lib/content-migration'
 import { ExhibitionsService } from '@/services/exhibitions.service'
 import { Exhibition, ExhibitionImage } from '@/types'
 
@@ -94,7 +95,12 @@ export default function ExhibitionDetailPage({ params }: PageProps) {
   // Helpers for bilingual content
   const getDisplayTitle = (ex: Exhibition) => ex.title.en || ex.title.ptBR
   const getDisplayDescription = (ex: Exhibition) => ex.description?.en || ex.description?.ptBR || ''
-  const getDisplayContent = (ex: Exhibition) => ex.content?.en || ex.content?.ptBR || ''
+  const getDisplayContent = (ex: Exhibition): string => {
+    const raw = ex.content?.en || ex.content?.ptBR || null
+    if (!raw) return ''
+    const doc = normalizeContent(raw)
+    return doc ? extractTextFromPageBuilder(doc) : ''
+  }
   const getDisplayCuratorText = (ex: Exhibition) => ex.curatorText?.en || ex.curatorText?.ptBR || ''
 
   const generateSlug = (ex: Exhibition) => {

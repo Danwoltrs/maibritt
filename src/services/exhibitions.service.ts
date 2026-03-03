@@ -2,6 +2,9 @@ import { supabase } from '@/lib/supabase'
 import { Exhibition, ExhibitionImage, ExhibitionVideo, Content, ExhibitionAddress } from '@/types'
 import { StorageService } from './storage.service'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyDoc = Record<string, any> | null
+
 export interface ExhibitionCreateData {
   title: Content
   venue: string
@@ -10,7 +13,7 @@ export interface ExhibitionCreateData {
   year: number
   type: 'solo' | 'group' | 'residency' | 'installation'
   description?: Content
-  content?: Content
+  content?: { en: AnyDoc; ptBR: AnyDoc }
   curatorName?: string
   curatorText?: Content
   imageFile?: File
@@ -22,6 +25,7 @@ export interface ExhibitionCreateData {
   openingDetails?: string
   featured?: boolean
   showPopup?: boolean
+  mainImageMode?: 'fixed' | 'random'
   externalUrl?: string
   catalogUrl?: string
 }
@@ -34,7 +38,7 @@ export interface ExhibitionUpdateData {
   year?: number
   type?: 'solo' | 'group' | 'residency' | 'installation'
   description?: Content
-  content?: Content
+  content?: { en: AnyDoc; ptBR: AnyDoc }
   curatorName?: string
   curatorText?: Content
   newImageFile?: File
@@ -46,6 +50,7 @@ export interface ExhibitionUpdateData {
   openingDetails?: string
   featured?: boolean
   showPopup?: boolean
+  mainImageMode?: 'fixed' | 'random'
   isVisible?: boolean
   displayOrder?: number
   externalUrl?: string
@@ -356,8 +361,8 @@ export class ExhibitionsService {
           title_en: exhibitionData.title.en,
           description_pt: exhibitionData.description?.ptBR || '',
           description_en: exhibitionData.description?.en || '',
-          content_pt: exhibitionData.content?.ptBR || '',
-          content_en: exhibitionData.content?.en || '',
+          content_pt: exhibitionData.content?.ptBR || null,
+          content_en: exhibitionData.content?.en || null,
           curator_name: exhibitionData.curatorName || null,
           curator_text_pt: exhibitionData.curatorText?.ptBR || null,
           curator_text_en: exhibitionData.curatorText?.en || null,
@@ -384,6 +389,7 @@ export class ExhibitionsService {
           show_popup: exhibitionData.showPopup || false,
           external_url: exhibitionData.externalUrl || null,
           catalog_url: exhibitionData.catalogUrl || null,
+          main_image_mode: exhibitionData.mainImageMode || 'fixed',
           slug,
           display_order: nextDisplayOrder
         })
@@ -423,8 +429,8 @@ export class ExhibitionsService {
       }
 
       if (updateData.content) {
-        updateObject.content_pt = updateData.content.ptBR
-        updateObject.content_en = updateData.content.en
+        updateObject.content_pt = updateData.content.ptBR || null
+        updateObject.content_en = updateData.content.en || null
       }
 
       if (updateData.curatorName !== undefined) updateObject.curator_name = updateData.curatorName
@@ -470,6 +476,7 @@ export class ExhibitionsService {
       if (updateData.isVisible !== undefined) updateObject.is_visible = updateData.isVisible
       if (updateData.displayOrder !== undefined) updateObject.display_order = updateData.displayOrder
 
+      if (updateData.mainImageMode !== undefined) updateObject.main_image_mode = updateData.mainImageMode
       if (updateData.externalUrl !== undefined) updateObject.external_url = updateData.externalUrl
       if (updateData.catalogUrl !== undefined) updateObject.catalog_url = updateData.catalogUrl
 
@@ -813,10 +820,10 @@ export class ExhibitionsService {
         ptBR: data.description_pt || data.description || '',
         en: data.description_en || data.description || ''
       },
-      // Rich content
+      // Rich content (JSONB)
       content: {
-        ptBR: data.content_pt || '',
-        en: data.content_en || ''
+        ptBR: data.content_pt || null,
+        en: data.content_en || null
       },
       // Curator info
       curatorName: data.curator_name || undefined,
@@ -838,6 +845,8 @@ export class ExhibitionsService {
       showPopup: data.show_popup || false,
       isVisible: data.is_visible !== false, // default to true
       displayOrder: data.display_order || 0,
+      // Cover image mode
+      mainImageMode: data.main_image_mode || 'fixed',
       // Links
       externalUrl: data.external_url || undefined,
       catalogUrl: data.catalog_url || undefined,
