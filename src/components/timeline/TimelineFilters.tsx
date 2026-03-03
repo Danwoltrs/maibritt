@@ -1,24 +1,32 @@
 'use client'
 
-const FILTER_OPTIONS = [
-  { id: 'all', label: 'All' },
-  { id: 'exhibitions', label: 'Exhibitions' },
-  { id: 'painting', label: 'Painting' },
-  { id: 'sculpture', label: 'Sculpture' },
-  { id: 'engraving', label: 'Engraving' },
-  { id: 'video', label: 'Video' },
-  { id: 'installations', label: 'Installations' },
-  { id: 'mixed-media', label: 'Mixed Media' },
-] as const
+const CATEGORY_LABELS: Record<string, string> = {
+  painting: 'Painting',
+  sculpture: 'Sculpture',
+  engraving: 'Engraving',
+  video: 'Video',
+  installations: 'Installations',
+  'mixed-media': 'Mixed Media',
+}
 
-export type FilterId = (typeof FILTER_OPTIONS)[number]['id']
+export type FilterId = 'all' | 'exhibitions' | string
 
 interface TimelineFiltersProps {
   activeFilters: FilterId[]
   onFiltersChange: (filters: FilterId[]) => void
+  availableCategories?: string[]
+  hasExhibitions?: boolean
 }
 
-export default function TimelineFilters({ activeFilters, onFiltersChange }: TimelineFiltersProps) {
+export default function TimelineFilters({ activeFilters, onFiltersChange, availableCategories = [], hasExhibitions = true }: TimelineFiltersProps) {
+  const filterOptions: { id: string; label: string }[] = [
+    { id: 'all', label: 'All' },
+    ...(hasExhibitions ? [{ id: 'exhibitions', label: 'Exhibitions' }] : []),
+    ...availableCategories.map(cat => ({
+      id: cat,
+      label: CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1),
+    })),
+  ]
   const toggle = (id: FilterId) => {
     if (id === 'all') {
       onFiltersChange(['all'])
@@ -39,7 +47,7 @@ export default function TimelineFilters({ activeFilters, onFiltersChange }: Time
 
   return (
     <div className="flex gap-1 justify-center flex-wrap py-2.5 px-5 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-16 md:top-20 z-40">
-      {FILTER_OPTIONS.map(opt => (
+      {filterOptions.map(opt => (
         <button
           key={opt.id}
           onClick={() => toggle(opt.id)}

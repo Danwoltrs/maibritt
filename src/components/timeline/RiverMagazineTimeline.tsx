@@ -112,7 +112,12 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
       </div>
 
       {/* Filter Bar */}
-      <TimelineFilters activeFilters={activeFilters} onFiltersChange={setActiveFilters} />
+      <TimelineFilters
+        activeFilters={activeFilters}
+        onFiltersChange={setActiveFilters}
+        availableCategories={[...new Set(years.flatMap(ty => ty.artworks.map(a => a.category)))]}
+        hasExhibitions={years.some(ty => ty.exhibitions.length > 0)}
+      />
 
       {/* Timeline */}
       <div className="max-w-[1100px] mx-auto px-10 max-md:px-5 py-[72px] pb-[120px] relative">

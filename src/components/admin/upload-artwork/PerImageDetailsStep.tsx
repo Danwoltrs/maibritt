@@ -40,15 +40,12 @@ export interface ArtworkDetails {
   featured: boolean
   // Per-image overrides (when not "apply to all")
   category?: string
-  seriesId?: string
   year?: number
 }
 
 interface CommonApplied {
   category?: string
-  seriesName?: string
   year?: number
-  seriesId?: string
 }
 
 interface PerImageDetailsStepProps {
@@ -226,9 +223,6 @@ export function PerImageDetailsStep({
         <div className="flex items-center gap-3">
           {commonApplied.category && (
             <Badge variant="secondary">{commonApplied.category}</Badge>
-          )}
-          {commonApplied.seriesName && (
-            <Badge variant="secondary">{commonApplied.seriesName}</Badge>
           )}
           {commonApplied.year && (
             <Badge variant="secondary">{commonApplied.year}</Badge>

@@ -18,13 +18,13 @@ import { GalleryService, Gallery } from '@/services/gallery.service'
 import { ExhibitionsService } from '@/services/exhibitions.service'
 import { Artwork, Exhibition } from '@/types'
 
-const categories = [
+const DEFAULT_CATEGORIES = [
   { value: 'painting', label: 'Painting / Pintura' },
   { value: 'sculpture', label: 'Sculpture / Escultura' },
   { value: 'engraving', label: 'Engravings / Gravuras' },
   { value: 'video', label: 'Video / Vídeo' },
   { value: 'installations', label: 'Installations / Instalações' },
-  { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' }
+  { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' },
 ]
 
 const currencies = [
@@ -96,6 +96,12 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
   const [buyerCountry, setBuyerCountry] = useState('')
   const [buyerZipCode, setBuyerZipCode] = useState('')
 
+  // Category dropdown
+  const [categoryOptions, setCategoryOptions] = useState(DEFAULT_CATEGORIES)
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newCategoryValue, setNewCategoryValue] = useState('')
+  const [newCategoryLabel, setNewCategoryLabel] = useState('')
+
   // Medium/dimensions dropdowns
   const [knownMediums, setKnownMediums] = useState<{ ptBR: string; en: string }[]>([])
   const [knownDimensions, setKnownDimensions] = useState<string[]>([])
@@ -118,15 +124,24 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
       setLoading(true)
       setError(null)
       try {
-        const [data, galleriesRes, exhibitionsData, mediums, dims] = await Promise.all([
+        const [data, galleriesRes, exhibitionsData, mediums, dims, dbCats] = await Promise.all([
           ArtworkService.getArtworkById(artwork.id),
           GalleryService.getAll({ includeInactive: false }),
           ExhibitionsService.getExhibitions(),
           ArtworkService.getDistinctMediums(),
           ArtworkService.getDistinctDimensions(),
+          ArtworkService.getCategories(),
         ])
         setKnownMediums(mediums)
         setKnownDimensions(dims)
+        // Merge DB categories with defaults
+        const merged = [...DEFAULT_CATEGORIES]
+        dbCats.forEach(cat => {
+          if (!merged.find(c => c.value === cat)) {
+            merged.push({ value: cat, label: cat.charAt(0).toUpperCase() + cat.slice(1) })
+          }
+        })
+        setCategoryOptions(merged)
 
         if (!data) {
           setError('Artwork not found')
@@ -310,18 +325,69 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
               </div>
             </div>
 
-            {/* Category and Year/}
+            {/* Category and Year */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="flex-1"><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>
+                      {categoryOptions.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" size="icon" onClick={() => setShowNewCategory(true)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {showNewCategory && (
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-xs">Name</Label>
+                      <Input
+                        value={newCategoryValue}
+                        onChange={(e) => setNewCategoryValue(e.target.value)}
+                        placeholder="e.g. Ceramics"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = newCategoryValue.trim().toLowerCase().replace(/\s+/g, '-')
+                            const label = newCategoryLabel.trim() || newCategoryValue.trim()
+                            if (!val) return
+                            if (!categoryOptions.find(c => c.value === val)) {
+                              setCategoryOptions(prev => [...prev, { value: val, label }])
+                            }
+                            setCategory(val)
+                            setNewCategoryValue(''); setNewCategoryLabel(''); setShowNewCategory(false)
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-xs">Label (optional)</Label>
+                      <Input
+                        value={newCategoryLabel}
+                        onChange={(e) => setNewCategoryLabel(e.target.value)}
+                        placeholder="e.g. Ceramics / Cerâmica"
+                      />
+                    </div>
+                    <Button size="sm" onClick={() => {
+                      const val = newCategoryValue.trim().toLowerCase().replace(/\s+/g, '-')
+                      const label = newCategoryLabel.trim() || newCategoryValue.trim()
+                      if (!val) return
+                      if (!categoryOptions.find(c => c.value === val)) {
+                        setCategoryOptions(prev => [...prev, { value: val, label }])
+                      }
+                      setCategory(val)
+                      setNewCategoryValue(''); setNewCategoryLabel(''); setShowNewCategory(false)
+                    }}>Add</Button>
+                    <Button size="sm" variant="ghost" onClick={() => { setShowNewCategory(false); setNewCategoryValue(''); setNewCategoryLabel('') }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Year</Label>

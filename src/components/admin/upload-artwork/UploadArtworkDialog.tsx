@@ -20,10 +20,8 @@ import {
   Upload,
   X,
   Plus,
-  FolderOpen,
   ChevronRight,
   AlertCircle,
-  CheckCircle,
   PartyPopper,
   Loader2,
 } from 'lucide-react'
@@ -31,8 +29,6 @@ import confetti from 'canvas-confetti'
 import { useDropzone } from 'react-dropzone'
 
 import { ArtworkService } from '@/services/artwork.service'
-import { SeriesService } from '@/services/series.service'
-import type { ArtSeries } from '@/types'
 import { PerImageDetailsStep, type ArtworkDetails } from './PerImageDetailsStep'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -42,19 +38,7 @@ interface UploadedImage {
   preview: string
 }
 
-interface CommonMetadata {
-  seriesId?: string
-  category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
-  year?: number
-}
-
-interface ApplyToAll {
-  category: boolean
-  series: boolean
-  year: boolean
-}
-
-const WORKS = [
+const DEFAULT_CATEGORIES = [
   { value: 'painting', label: 'Painting / Pintura' },
   { value: 'sculpture', label: 'Sculpture / Escultura' },
   { value: 'engraving', label: 'Engravings / Gravuras' },
@@ -62,6 +46,16 @@ const WORKS = [
   { value: 'installations', label: 'Installations / Instalações' },
   { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' },
 ]
+
+interface CommonMetadata {
+  category?: string
+  year?: number
+}
+
+interface ApplyToAll {
+  category: boolean
+  year: boolean
+}
 
 const generateYearOptions = () => {
   const currentYear = new Date().getFullYear()
@@ -85,10 +79,11 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   // Step 1 state
   const [images, setImages] = useState<UploadedImage[]>([])
   const [commonMeta, setCommonMeta] = useState<CommonMetadata>({ year: new Date().getFullYear() })
-  const [applyToAll, setApplyToAll] = useState<ApplyToAll>({ category: false, series: false, year: false })
-  const [seriesList, setSeriesList] = useState<ArtSeries[]>([])
-  const [showNewSeries, setShowNewSeries] = useState(false)
-  const [worksName, setWorksName] = useState('')
+  const [applyToAll, setApplyToAll] = useState<ApplyToAll>({ category: false, year: false })
+  const [categoryOptions, setCategoryOptions] = useState(DEFAULT_CATEGORIES)
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newCategoryValue, setNewCategoryValue] = useState('')
+  const [newCategoryLabel, setNewCategoryLabel] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   // Step 2 state
@@ -98,10 +93,18 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
-  // Load series when dialog opens
+  // Load categories when dialog opens
   useEffect(() => {
     if (open) {
-      SeriesService.getSeries(true).then(setSeriesList).catch(console.error)
+      ArtworkService.getCategories().then(dbCats => {
+        const merged = [...DEFAULT_CATEGORIES]
+        dbCats.forEach(cat => {
+          if (!merged.find(c => c.value === cat)) {
+            merged.push({ value: cat, label: cat.charAt(0).toUpperCase() + cat.slice(1) })
+          }
+        })
+        setCategoryOptions(merged)
+      }).catch(console.error)
     }
   }, [open])
 
@@ -110,8 +113,10 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     setStep('upload')
     setImages([])
     setCommonMeta({ year: new Date().getFullYear() })
-    setApplyToAll({ category: false, series: false, year: false })
-    setWorksName('')
+    setApplyToAll({ category: false, year: false })
+    setShowNewCategory(false)
+    setNewCategoryValue('')
+    setNewCategoryLabel('')
     setArtworkDetails({})
     setError(null)
     setIsSubmitting(false)
@@ -146,24 +151,6 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
       return
     }
 
-    // Auto-create series from Works Name if provided and no series selected
-    if (worksName.trim() && !commonMeta.seriesId) {
-      try {
-        const created = await SeriesService.createSeries({
-          name: { en: worksName.trim(), ptBR: worksName.trim() },
-          description: { en: '', ptBR: '' },
-          year: commonMeta.year || new Date().getFullYear(),
-        })
-        if (created) {
-          setSeriesList(prev => [created, ...prev])
-          setCommonMeta(prev => ({ ...prev, seriesId: created.id }))
-          setApplyToAll(prev => ({ ...prev, series: true }))
-        }
-      } catch (err) {
-        console.error('Failed to auto-create series:', err)
-      }
-    }
-
     // Initialize per-image details
     const details: Record<number, ArtworkDetails> = {}
     images.forEach((_, i) => {
@@ -189,7 +176,6 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   const handleSubmit = async () => {
     const category = applyToAll.category ? commonMeta.category : undefined
     const year = applyToAll.year ? commonMeta.year : new Date().getFullYear()
-    const seriesId = applyToAll.series ? commonMeta.seriesId : undefined
 
     setIsSubmitting(true)
     setError(null)
@@ -205,7 +191,6 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
           dimensions: d.dimensions,
           description: { ptBR: d.descriptionPt, en: d.descriptionEn },
           category: category as any,
-          seriesId: seriesId,
           images: [images[i].file],
           featured: d.featured,
         }, (progress) => {
@@ -225,21 +210,24 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     }
   }
 
-  // Series created callback
-  const handleSeriesCreated = (newSeries: ArtSeries) => {
-    setSeriesList(prev => [newSeries, ...prev])
-    setCommonMeta(prev => ({ ...prev, seriesId: newSeries.id }))
-    setShowNewSeries(false)
+  // Add new category handler
+  const handleAddCategory = () => {
+    const val = newCategoryValue.trim().toLowerCase().replace(/\s+/g, '-')
+    const label = newCategoryLabel.trim() || newCategoryValue.trim()
+    if (!val) return
+    if (!categoryOptions.find(c => c.value === val)) {
+      setCategoryOptions(prev => [...prev, { value: val, label }])
+    }
+    setCommonMeta(prev => ({ ...prev, category: val }))
+    setNewCategoryValue('')
+    setNewCategoryLabel('')
+    setShowNewCategory(false)
   }
 
   // Computed values for step 2
   const commonApplied = {
     category: applyToAll.category ? commonMeta.category : undefined,
-    seriesName: applyToAll.series && commonMeta.seriesId
-      ? (seriesList.find(s => s.id === commonMeta.seriesId)?.name.en || 'Works')
-      : undefined,
     year: applyToAll.year ? commonMeta.year : undefined,
-    seriesId: applyToAll.series ? commonMeta.seriesId : undefined,
   }
 
   // ─── Step 2: Per-Image Details (fullscreen, rendered outside dialog) ────
@@ -373,124 +361,112 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
             <div className="space-y-4 pt-2 border-t">
               <h3 className="text-sm font-semibold text-gray-700">Common Properties</h3>
 
-              {/* Works Name */}
-              <div className="space-y-2">
-                <Label>Works Name</Label>
-                <Input
-                  value={worksName}
-                  onChange={(e) => setWorksName(e.target.value)}
-                  placeholder="Type a name to auto-create a series"
-                />
-                {worksName.trim() && !commonMeta.seriesId && (
-                  <p className="text-xs text-muted-foreground">A new series will be created on continue</p>
-                )}
-              </div>
-
-              {/* Series */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Series (Optional)</Label>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="applySeriesAll"
-                      checked={applyToAll.series}
-                      onCheckedChange={(checked) =>
-                        setApplyToAll(prev => ({ ...prev, series: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="applySeriesAll" className="text-xs text-gray-600 cursor-pointer font-normal">
-                      Same for all
-                    </Label>
+              {/* Work (category) + Year on same row */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Work (category) */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label>Work</Label>
+                    {images.length > 1 && (
+                      <div className="flex items-center space-x-1">
+                        <Checkbox
+                          id="applyCatAll"
+                          checked={applyToAll.category}
+                          onCheckedChange={(checked) =>
+                            setApplyToAll(prev => ({ ...prev, category: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="applyCatAll" className="text-xs text-gray-500 cursor-pointer font-normal">
+                          Same for all
+                        </Label>
+                      </div>
+                    )}
                   </div>
+                  <div className="flex gap-2">
+                    <Select
+                      value={commonMeta.category || ''}
+                      onValueChange={(v) => setCommonMeta(prev => ({ ...prev, category: v }))}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select work" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categoryOptions.map(c => (
+                          <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowNewCategory(true)}
+                      title="Add new category"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {showNewCategory && (
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Name</Label>
+                        <Input
+                          value={newCategoryValue}
+                          onChange={(e) => setNewCategoryValue(e.target.value)}
+                          placeholder="e.g. Ceramics"
+                          autoFocus
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Label (optional)</Label>
+                        <Input
+                          value={newCategoryLabel}
+                          onChange={(e) => setNewCategoryLabel(e.target.value)}
+                          placeholder="e.g. Ceramics / Cerâmica"
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                        />
+                      </div>
+                      <Button size="sm" onClick={handleAddCategory}>Add</Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setShowNewCategory(false); setNewCategoryValue(''); setNewCategoryLabel('') }}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-2">
+
+                {/* Year */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label>Year</Label>
+                    {images.length > 1 && (
+                      <div className="flex items-center space-x-1">
+                        <Checkbox
+                          id="applyYearAll"
+                          checked={applyToAll.year}
+                          onCheckedChange={(checked) =>
+                            setApplyToAll(prev => ({ ...prev, year: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="applyYearAll" className="text-xs text-gray-500 cursor-pointer font-normal">
+                          Same for all
+                        </Label>
+                      </div>
+                    )}
+                  </div>
                   <Select
-                    value={commonMeta.seriesId || ''}
-                    onValueChange={(v) => setCommonMeta(prev => ({ ...prev, seriesId: v }))}
+                    value={commonMeta.year?.toString()}
+                    onValueChange={(v) => setCommonMeta(prev => ({ ...prev, year: parseInt(v) }))}
                   >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select series" />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select year" />
                     </SelectTrigger>
                     <SelectContent>
-                      {seriesList.map(s => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name.en || s.name.ptBR || 'Untitled'} ({s.year})
-                        </SelectItem>
+                      {generateYearOptions().map(y => (
+                        <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setShowNewSeries(true)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
                 </div>
-              </div>
-
-              {/* Work (category) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Work</Label>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="applyCatAll"
-                      checked={applyToAll.category}
-                      onCheckedChange={(checked) =>
-                        setApplyToAll(prev => ({ ...prev, category: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="applyCatAll" className="text-xs text-gray-600 cursor-pointer font-normal">
-                      Same for all
-                    </Label>
-                  </div>
-                </div>
-                <Select
-                  value={commonMeta.category || ''}
-                  onValueChange={(v) => setCommonMeta(prev => ({ ...prev, category: v as any }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select work" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORKS.map(c => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Year */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Year</Label>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="applyYearAll"
-                      checked={applyToAll.year}
-                      onCheckedChange={(checked) =>
-                        setApplyToAll(prev => ({ ...prev, year: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="applyYearAll" className="text-xs text-gray-600 cursor-pointer font-normal">
-                      Same for all
-                    </Label>
-                  </div>
-                </div>
-                <Select
-                  value={commonMeta.year?.toString()}
-                  onValueChange={(v) => setCommonMeta(prev => ({ ...prev, year: parseInt(v) }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {generateYearOptions().map(y => (
-                      <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </div>
@@ -505,142 +481,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
         </DialogContent>
       </Dialog>
 
-      {/* Inline New Series Dialog */}
-      <InlineAddSeriesDialog
-        open={showNewSeries}
-        onClose={() => setShowNewSeries(false)}
-        onCreated={handleSeriesCreated}
-      />
     </>
-  )
-}
-
-// ─── Inline Add Series Dialog ───────────────────────────────────────────────
-
-function InlineAddSeriesDialog({
-  open,
-  onClose,
-  onCreated,
-}: {
-  open: boolean
-  onClose: () => void
-  onCreated: (series: ArtSeries) => void
-}) {
-  const [name, setName] = useState('')
-  const [nameEn, setNameEn] = useState('')
-  const [description, setDescription] = useState('')
-  const [yearVal, setYearVal] = useState(new Date().getFullYear().toString())
-  const [category, setCategory] = useState('')
-  const [categories, setCategories] = useState<string[]>([])
-  const [newCategory, setNewCategory] = useState('')
-  const [showNewCategory, setShowNewCategory] = useState(false)
-
-  useEffect(() => {
-    if (open) {
-      SeriesService.getCategories().then(setCategories).catch(console.error)
-    }
-  }, [open])
-
-  const handleAddCategory = () => {
-    if (!newCategory.trim()) return
-    const cat = newCategory.trim()
-    if (!categories.includes(cat)) setCategories(prev => [...prev, cat].sort())
-    setCategory(cat)
-    setNewCategory('')
-    setShowNewCategory(false)
-  }
-
-  const handleCreate = async () => {
-    if (!name.trim() && !nameEn.trim()) return
-    try {
-      const created = await SeriesService.createSeries({
-        name: { en: nameEn || name, ptBR: name || nameEn },
-        description: { en: description, ptBR: '' },
-        year: parseInt(yearVal) || new Date().getFullYear(),
-        category: category || undefined,
-      })
-      if (created) {
-        onCreated(created)
-        setName('')
-        setNameEn('')
-        setDescription('')
-        setYearVal(new Date().getFullYear().toString())
-        setCategory('')
-      }
-    } catch (err) {
-      console.error('Failed to create series:', err)
-    }
-  }
-
-  const inputClass = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-[450px] z-[60]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5" />
-            New Series
-          </DialogTitle>
-          <DialogDescription>Create a new series and assign artworks to it.</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label>Series Name (PT)</Label>
-            <input className={inputClass} placeholder="Nome da série" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="grid gap-2">
-            <Label>Series Name (EN)</Label>
-            <input className={inputClass} placeholder="Series name" value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
-          </div>
-          <div className="grid gap-2">
-            <Label>Work</Label>
-            <div className="flex gap-2">
-              <select className={inputClass + ' flex-1'} value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option value="">No work</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <Button variant="outline" size="sm" className="shrink-0" onClick={() => setShowNewCategory(true)}>
-                <Plus className="h-4 w-4 mr-1" /> New
-              </Button>
-            </div>
-            {showNewCategory && (
-              <div className="flex gap-2 mt-1">
-                <input
-                  className={inputClass + ' flex-1'}
-                  placeholder="e.g. Paintings, Sculptures..."
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-                  autoFocus
-                />
-                <Button size="sm" onClick={handleAddCategory}>Add</Button>
-                <Button size="sm" variant="ghost" onClick={() => { setShowNewCategory(false); setNewCategory('') }}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <Label>Year</Label>
-            <input className={inputClass} placeholder="e.g. 2024" value={yearVal} onChange={(e) => setYearVal(e.target.value)} />
-          </div>
-          <div className="grid gap-2">
-            <Label>Description</Label>
-            <textarea
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Describe this series..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleCreate}>Create Series</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }
 
