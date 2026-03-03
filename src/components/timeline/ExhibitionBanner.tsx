@@ -69,7 +69,7 @@ export default function ExhibitionBanner({ exhibition, onClick }: ExhibitionBann
 
       {/* Body */}
       <div className="p-4 pb-5">
-        <h3 className="font-serif text-lg font-normal leading-tight mb-1 group-hover:text-blue-600 transition-colors">
+        <h3 className="text-lg font-medium leading-tight mb-1 group-hover:text-blue-600 transition-colors">
           {title}
         </h3>
         <div className="text-[10px] text-gray-500 tracking-[0.5px] leading-relaxed">
@@ -78,7 +78,7 @@ export default function ExhibitionBanner({ exhibition, onClick }: ExhibitionBann
         </div>
       </div>
 
-      <div className="absolute bottom-3 right-3.5 text-[8px] tracking-[2px] uppercase text-gray-400 font-display">
+      <div className="absolute bottom-3 right-3.5 text-[8px] tracking-[2px] uppercase text-gray-400 font-medium">
         View &rarr;
       </div>
     </div>

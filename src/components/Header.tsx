@@ -72,6 +72,7 @@ export default function Header() {
                   src={logoUrl}
                   alt="Mai-Britt Wolthers"
                   className="h-8 md:h-10 w-auto max-w-[200px] object-contain"
+                  onError={() => setLogoUrl(null)}
                 />
               ) : (
                 <Image

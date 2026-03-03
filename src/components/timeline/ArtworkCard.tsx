@@ -38,7 +38,7 @@ export default function ArtworkCard({ artwork, compact = false, onClick }: Artwo
       {/* Info */}
       <div className={`flex justify-between items-end ${compact ? 'p-[7px_9px]' : 'p-[9px_11px_11px]'}`}>
         <div>
-          <h4 className={`font-serif font-normal leading-tight mb-0.5 group-hover:text-blue-600 transition-colors ${compact ? 'text-xs' : 'text-sm'}`}>
+          <h4 className={`font-medium leading-tight mb-0.5 group-hover:text-blue-600 transition-colors ${compact ? 'text-xs' : 'text-sm'}`}>
             {title}
           </h4>
           <p className="text-[9px] text-gray-500 tracking-[0.5px]">

@@ -105,9 +105,9 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
     <section id={id} className="bg-gray-50">
       {/* Page Intro */}
       <div className="text-center py-13 px-6 border-b border-gray-200">
-        <p className="text-xs tracking-[4px] uppercase text-blue-600 mb-3 font-display">Artistic Journey</p>
-        <h2 className="font-serif text-[clamp(28px,6vw,52px)] font-light leading-[1.1] text-gray-900 mb-3">
-          Exhibitions & <em className="italic">Works</em>
+        <p className="text-xs tracking-[4px] uppercase text-blue-600 mb-3 font-medium">Artistic Journey</p>
+        <h2 className="text-[clamp(28px,6vw,52px)] font-light leading-[1.1] text-gray-900 mb-3 tracking-tight">
+          Exhibitions & Works
         </h2>
         <p className="text-xs text-gray-500 max-w-[400px] mx-auto leading-relaxed">
           A chronological view of exhibitions and selected works.
@@ -186,10 +186,10 @@ function TimelineYearBlock({
     >
       {/* Year Marker */}
       <div className="relative text-center mt-14 mb-10 max-md:mt-10 max-md:mb-7 z-[2]">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-[clamp(60px,11vw,120px)] max-md:text-[clamp(48px,15vw,80px)] font-light text-gray-900/5 max-md:opacity-60 pointer-events-none select-none whitespace-nowrap leading-none">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[clamp(60px,11vw,120px)] max-md:text-[clamp(48px,15vw,80px)] font-light text-gray-900/5 max-md:opacity-60 pointer-events-none select-none whitespace-nowrap leading-none tracking-tight">
           {ty.year}
         </div>
-        <div className="inline-block relative bg-gray-50 border border-blue-600 text-blue-600 text-[10px] tracking-[4px] py-1 px-4.5 z-[2] font-display">
+        <div className="inline-block relative bg-gray-50 border border-blue-600 text-blue-600 text-[10px] font-medium tracking-[4px] py-1 px-4.5 z-[2]">
           {ty.year}
         </div>
       </div>
@@ -232,8 +232,8 @@ function TimelineYearBlock({
             </div>
           ) : (
             <div className="border border-dashed border-gray-300 p-4.5 text-center mt-5">
-              <div className="text-[8px] tracking-[3px] uppercase text-gray-400 mb-1.5 font-display">No Exhibition</div>
-              <div className="font-serif text-[13px] text-gray-500 italic">Studio year</div>
+              <div className="text-[8px] tracking-[3px] uppercase text-gray-400 mb-1.5 font-medium">No Exhibition</div>
+              <div className="text-[13px] text-gray-500 italic">Studio year</div>
             </div>
           )}
 

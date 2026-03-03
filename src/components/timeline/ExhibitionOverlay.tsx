@@ -139,7 +139,7 @@ export default function ExhibitionOverlay({ exhibition, onClose }: ExhibitionOve
                 {exhibition.videos.map((video, i) => (
                   <div key={i}>
                     {video.titleEn && (
-                      <div className="text-xs text-gray-400 mb-1.5 font-display">
+                      <div className="text-xs text-gray-400 mb-1.5 font-medium">
                         {video.titleEn || video.titlePt}
                       </div>
                     )}
@@ -173,22 +173,22 @@ export default function ExhibitionOverlay({ exhibition, onClose }: ExhibitionOve
             <Badge variant="outline" className={`${typeColor} capitalize text-[10px] border-0 mb-2`}>
               {typeLabel}
             </Badge>
-            <h2 className="font-serif text-[22px] font-normal leading-tight mb-1 text-gray-900">{title}</h2>
+            <h2 className="text-[22px] font-medium leading-tight mb-1 text-gray-900">{title}</h2>
             <div className="text-[11px] text-gray-500 mb-5">{formatDates()}</div>
 
             <hr className="border-t border-gray-200 my-4" />
 
             {details.map((d, i) => (
               <div key={i} className="flex justify-between items-baseline py-1.5 border-b border-gray-100 last:border-b-0 text-[11px]">
-                <span className="text-[9px] tracking-[2px] uppercase text-gray-500 font-display">{d.label}</span>
-                <span className="font-serif text-[13px] text-gray-800">{d.value}</span>
+                <span className="text-[9px] tracking-[2px] uppercase text-gray-500 font-medium">{d.label}</span>
+                <span className="text-[13px] text-gray-800">{d.value}</span>
               </div>
             ))}
 
             {descriptionText && (
               <>
                 <hr className="border-t border-gray-200 my-4" />
-                <div className="text-[9px] tracking-[2px] uppercase text-gray-500 mb-2 font-display">About</div>
+                <div className="text-[9px] tracking-[2px] uppercase text-gray-500 mb-2 font-medium">About</div>
                 <p className="text-[12px] text-gray-700 leading-relaxed whitespace-pre-line">{descriptionText}</p>
               </>
             )}
@@ -203,7 +203,7 @@ export default function ExhibitionOverlay({ exhibition, onClose }: ExhibitionOve
             {curatorText && (
               <>
                 <hr className="border-t border-gray-200 my-4" />
-                <div className="text-[9px] tracking-[2px] uppercase text-gray-500 mb-2 font-display">Curator Statement</div>
+                <div className="text-[9px] tracking-[2px] uppercase text-gray-500 mb-2 font-medium">Curator Statement</div>
                 <blockquote className="border-l-2 border-blue-600 pl-3 text-[12px] text-gray-600 italic leading-relaxed whitespace-pre-line">
                   {curatorText}
                 </blockquote>
@@ -219,7 +219,7 @@ export default function ExhibitionOverlay({ exhibition, onClose }: ExhibitionOve
                   href={exhibition.externalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-display"
+                  className="block text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-medium"
                 >
                   External Link &rarr;
                 </a>
@@ -229,7 +229,7 @@ export default function ExhibitionOverlay({ exhibition, onClose }: ExhibitionOve
                   href={exhibition.catalogUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-display"
+                  className="block text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-medium"
                 >
                   View Catalog &rarr;
                 </a>
@@ -237,7 +237,7 @@ export default function ExhibitionOverlay({ exhibition, onClose }: ExhibitionOve
               {exhibition.slug && (
                 <a
                   href={`/exhibitions/${exhibition.slug}`}
-                  className="block text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-display"
+                  className="block text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-medium"
                 >
                   View Full Exhibition &rarr;
                 </a>

@@ -83,15 +83,15 @@ export default function ArtworkOverlay({ artwork, onClose }: ArtworkOverlayProps
             <Badge variant="outline" className="bg-gray-100 text-gray-800 capitalize text-[10px] border-0 mb-2">
               {artwork.category ? artwork.category.charAt(0).toUpperCase() + artwork.category.slice(1) : 'Artwork'}
             </Badge>
-            <h2 className="font-serif text-[22px] font-normal leading-tight mb-1 text-gray-900">{title}</h2>
+            <h2 className="text-[22px] font-medium leading-tight mb-1 text-gray-900">{title}</h2>
             <div className="text-[11px] text-gray-500 mb-5">{artwork.year}</div>
 
             <hr className="border-t border-gray-200 my-4" />
 
             {details.map((d, i) => (
               <div key={i} className="flex justify-between items-baseline py-1.5 border-b border-gray-100 last:border-b-0 text-[11px]">
-                <span className="text-[9px] tracking-[2px] uppercase text-gray-500 font-display">{d.label}</span>
-                <span className="font-serif text-[13px] text-gray-800">{d.value}</span>
+                <span className="text-[9px] tracking-[2px] uppercase text-gray-500 font-medium">{d.label}</span>
+                <span className="text-[13px] text-gray-800">{d.value}</span>
               </div>
             ))}
 
@@ -112,7 +112,7 @@ export default function ArtworkOverlay({ artwork, onClose }: ArtworkOverlayProps
             {artwork.slug && (
               <a
                 href={`/artwork/${artwork.slug}`}
-                className="block mt-5 text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-display"
+                className="block mt-5 text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-medium"
               >
                 View Full Details &rarr;
               </a>
