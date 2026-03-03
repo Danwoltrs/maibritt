@@ -16,6 +16,16 @@ import {
 import { ExhibitionImage, ExhibitionVideo, ExhibitionAddress } from '@/types'
 import { ExhibitionsService } from '@/services/exhibitions.service'
 
+const COUNTRIES = [
+  'Denmark', 'Brazil', 'United States', 'United Kingdom', 'Germany', 'France',
+  'Spain', 'Italy', 'Portugal', 'Netherlands', 'Sweden', 'Norway', 'Finland',
+  'Switzerland', 'Austria', 'Belgium', 'Japan', 'China', 'South Korea',
+  'Australia', 'Canada', 'Mexico', 'Argentina', 'Colombia', 'Chile',
+  'India', 'UAE', 'Israel', 'South Africa', 'Nigeria', 'Singapore',
+  'Thailand', 'Indonesia', 'Turkey', 'Greece', 'Poland', 'Czech Republic',
+  'Ireland', 'New Zealand', 'Iceland', 'Luxembourg', 'Monaco',
+]
+
 export interface ExhibitionFormData {
   titleEn: string
   titlePt: string
@@ -107,7 +117,40 @@ export function ExhibitionRichForm({
   const [uploadingGallery, setUploadingGallery] = useState(false)
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null)
   const [editingCaption, setEditingCaption] = useState({ en: '', pt: '' })
+  const [lookingUpZip, setLookingUpZip] = useState(false)
   const galleryInputRef = useRef<HTMLInputElement>(null)
+
+  const lookupZipCode = async () => {
+    const zip = formData.zipCode.trim()
+    if (!zip) return
+    setLookingUpZip(true)
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&postalcode=${encodeURIComponent(zip)}&addressdetails=1&limit=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      )
+      const data = await res.json()
+      if (data.length > 0) {
+        const addr = data[0].address
+        const city = addr.city || addr.town || addr.village || ''
+        const state = addr.state || ''
+        const country = addr.country || ''
+        const matchedCountry = COUNTRIES.find(
+          (c) => c.toLowerCase() === country.toLowerCase()
+        )
+        setFormData(prev => ({
+          ...prev,
+          city: city || prev.city,
+          state: state || prev.state,
+          country: matchedCountry || prev.country,
+        }))
+      }
+    } catch (error) {
+      console.error('ZIP lookup failed:', error)
+    } finally {
+      setLookingUpZip(false)
+    }
+  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -323,12 +366,25 @@ export function ExhibitionRichForm({
               </div>
               <div>
                 <Label htmlFor="zipCode">ZIP Code</Label>
-                <Input
-                  id="zipCode"
-                  value={formData.zipCode}
-                  onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value }))}
-                  placeholder="e.g., 01310-100"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="zipCode"
+                    value={formData.zipCode}
+                    onChange={(e) => setFormData(prev => ({ ...prev, zipCode: e.target.value }))}
+                    onBlur={lookupZipCode}
+                    placeholder="e.g., 01310-100"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={lookupZipCode}
+                    disabled={lookingUpZip || !formData.zipCode.trim()}
+                    title="Lookup address from ZIP code"
+                  >
+                    {lookingUpZip ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="city">City</Label>
@@ -350,12 +406,19 @@ export function ExhibitionRichForm({
               </div>
               <div>
                 <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
+                <Select
                   value={formData.country}
-                  onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                  placeholder="e.g., Brazil"
-                />
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, country: value }))}
+                >
+                  <SelectTrigger id="country">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRIES.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
