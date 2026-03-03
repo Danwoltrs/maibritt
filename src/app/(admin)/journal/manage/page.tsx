@@ -231,16 +231,20 @@ export default function JournalAdminPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
+      {/* Fixed Add New button */}
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm pb-4 -mx-8 px-8 pt-2">
+        <Button onClick={() => { resetForm(); setShowCreateDialog(true) }} size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Add New
+        </Button>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Journal</h1>
           <p className="text-gray-500">Manage journal entries and blog posts</p>
         </div>
-        <Button onClick={() => { resetForm(); setShowCreateDialog(true) }}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Entry
-        </Button>
       </div>
 
       {error && (

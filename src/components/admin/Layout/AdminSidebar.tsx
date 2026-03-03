@@ -102,19 +102,6 @@ const navigationItems = [
     href: '/journal/manage',
     icon: PenTool,
     description: 'Entries & blog',
-    expandable: true,
-    subItems: [
-      {
-        name: 'All Entries',
-        href: '/journal/manage',
-        description: 'Manage entries'
-      },
-      {
-        name: 'New Entry',
-        href: '/journal/manage/new',
-        description: 'Write new entry'
-      }
-    ]
   },
 ]
 
