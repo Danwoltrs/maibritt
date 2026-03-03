@@ -38,7 +38,7 @@ export default function TimelineFilters({ activeFilters, onFiltersChange }: Time
   }
 
   return (
-    <div className="flex gap-1 justify-center flex-wrap py-2.5 px-5 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-16 md:top-20 z-[90]">
+    <div className="flex gap-1 justify-center flex-wrap py-2.5 px-5 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-16 md:top-20 z-40">
       {FILTER_OPTIONS.map(opt => (
         <button
           key={opt.id}
