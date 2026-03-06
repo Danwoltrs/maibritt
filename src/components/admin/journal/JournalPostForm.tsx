@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DialogFooter } from '@/components/ui/dialog'
-import { X, Upload, Languages, Loader2, Minimize2, Maximize2 } from 'lucide-react'
+import { X, Upload, Languages, Loader2, Minimize2, Maximize2, Calendar } from 'lucide-react'
 import Image from 'next/image'
 import { PageBuilderEditor } from './page-builder/PageBuilderEditor'
 import { AddContentMenu } from './page-builder/AddContentMenu'
@@ -192,6 +192,19 @@ export function JournalPostForm({
     }
   }
 
+  const translateAll = async (direction: 'en-to-pt' | 'pt-to-en') => {
+    setTranslating(`all-${direction}`)
+    try {
+      await translateField('title', direction)
+      await translateField('excerpt', direction)
+      await translateField('content', direction)
+    } catch (err) {
+      console.error('Translation error:', err)
+    } finally {
+      setTranslating(null)
+    }
+  }
+
   const update = <K extends keyof JournalFormData>(key: K, value: JournalFormData[K]) => {
     setFormData(prev => ({ ...prev, [key]: value }))
   }
@@ -223,294 +236,265 @@ export function JournalPostForm({
   }
 
   const isValid = formData.titleEn.trim() || formData.titlePt.trim()
+  const isTranslatingAll = translating?.startsWith('all-')
 
   const formContent = (
-    <div className={`space-y-4 ${isFullscreen ? 'flex flex-col h-full' : ''}`}>
+    <div className={`space-y-4 ${isFullscreen ? 'flex flex-col h-full' : 'relative'}`}>
+      {!isFullscreen && (
+        <button
+          onClick={toggleFullscreen}
+          className="absolute -right-1 -top-8 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          title="Fullscreen"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </button>
+      )}
       {isFullscreen && (
         <div className="flex items-center justify-between border-b pb-3 mb-2 shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">
             {formData.titleEn || formData.titlePt || 'Journal Entry'}
           </h2>
-          <Button variant="outline" size="sm" onClick={toggleFullscreen}>
-            <Minimize2 className="h-4 w-4 mr-1.5" />
-            Exit Fullscreen
+          <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="h-8 w-8 p-0" title="Exit Fullscreen">
+            <Minimize2 className="h-4 w-4" />
           </Button>
         </div>
       )}
-      <Tabs defaultValue="content" className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
-        <div className="flex items-center justify-between shrink-0">
-          <TabsList>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="meta">Meta & Cover</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-          {!isFullscreen && (
-            <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="h-8 w-8 p-0" title="Fullscreen">
-              <Maximize2 className="h-4 w-4" />
-            </Button>
-          )}
+
+      {/* Settings bar - compact single line */}
+      <div className="flex items-center gap-4 text-sm shrink-0">
+        <div className="flex items-center gap-2">
+          <Switch
+            id="published"
+            checked={formData.published}
+            onCheckedChange={(checked) => {
+              update('published', checked)
+              if (checked && !formData.publishedAt) {
+                update('publishedAt', new Date().toISOString().slice(0, 16))
+              }
+            }}
+          />
+          <Label htmlFor="published" className="text-sm font-normal cursor-pointer">Published</Label>
         </div>
-
-        {/* Content Tab */}
-        <TabsContent value="content" className={`space-y-4 mt-4 ${isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}`}>
-          {/* Titles */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Title (English)</Label>
-              <div className="flex gap-1.5">
-                <Input
-                  value={formData.titleEn}
-                  onChange={(e) => update('titleEn', e.target.value)}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="Enter title in English"
-                  className="flex-1"
-                />
-                {formData.titlePt && (
-                  <Button
-                    type="button" variant="ghost" size="sm"
-                    className="h-9 w-9 p-0 shrink-0"
-                    disabled={translating === 'title-pt-to-en'}
-                    onClick={() => translateField('title', 'pt-to-en')}
-                    title="Translate PT to EN"
-                  >
-                    {translating === 'title-pt-to-en' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Title (Portuguese)</Label>
-              <div className="flex gap-1.5">
-                <Input
-                  value={formData.titlePt}
-                  onChange={(e) => update('titlePt', e.target.value)}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="Digite o titulo em Portugues"
-                  className="flex-1"
-                />
-                {formData.titleEn && (
-                  <Button
-                    type="button" variant="ghost" size="sm"
-                    className="h-9 w-9 p-0 shrink-0"
-                    disabled={translating === 'title-en-to-pt'}
-                    onClick={() => translateField('title', 'en-to-pt')}
-                    title="Translate EN to PT"
-                  >
-                    {translating === 'title-en-to-pt' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
-                  </Button>
-                )}
-              </div>
-            </div>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="featured"
+            checked={formData.featured}
+            onCheckedChange={(checked) => update('featured', checked)}
+          />
+          <Label htmlFor="featured" className="text-sm font-normal cursor-pointer">Featured</Label>
+        </div>
+        {formData.published && (
+          <div className="flex items-center gap-1.5 ml-auto">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              type="datetime-local"
+              value={formData.publishedAt}
+              onChange={(e) => update('publishedAt', e.target.value)}
+              className="h-7 text-xs w-auto"
+            />
           </div>
+        )}
+      </div>
 
-          {/* Page builder editors in language tabs */}
-          <Tabs defaultValue="en" value={contentLang} onValueChange={(v) => setContentLang(v as 'en' | 'pt')} className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
-            <div className="flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <TabsList>
-                  <TabsTrigger value="en">English Content</TabsTrigger>
-                  <TabsTrigger value="pt">Portuguese Content</TabsTrigger>
-                </TabsList>
-                <AddContentMenu onAddBlock={addBlockToActiveContent} />
-              </div>
-              <div className="flex gap-1">
-                <Button
-                  type="button" variant="outline" size="sm"
-                  className="h-7 text-xs gap-1"
-                  disabled={!formData.contentEn || translating === 'content-en-to-pt'}
-                  onClick={() => translateField('content', 'en-to-pt')}
-                >
-                  {translating === 'content-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                  EN &rarr; PT
-                </Button>
-                <Button
-                  type="button" variant="outline" size="sm"
-                  className="h-7 text-xs gap-1"
-                  disabled={!formData.contentPt || translating === 'content-pt-to-en'}
-                  onClick={() => translateField('content', 'pt-to-en')}
-                >
-                  {translating === 'content-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                  PT &rarr; EN
-                </Button>
-              </div>
-            </div>
-            <TabsContent value="en" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
-              <PageBuilderEditor
-                value={normalizeContent(formData.contentEn) || createEmptyPageBuilderDoc()}
-                onChange={(doc) => update('contentEn', doc)}
-                hideAddMenu
-              />
-            </TabsContent>
-            <TabsContent value="pt" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
-              <PageBuilderEditor
-                value={normalizeContent(formData.contentPt) || createEmptyPageBuilderDoc()}
-                onChange={(doc) => update('contentPt', doc)}
-                hideAddMenu
-              />
-            </TabsContent>
-          </Tabs>
+      {/* Titles */}
+      <div className="grid grid-cols-2 gap-4 shrink-0">
+        <div className="space-y-1.5">
+          <Label>Title (English)</Label>
+          <Input
+            value={formData.titleEn}
+            onChange={(e) => update('titleEn', e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+            placeholder="Enter title in English"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Title (Portuguese)</Label>
+          <Input
+            value={formData.titlePt}
+            onChange={(e) => update('titlePt', e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+            placeholder="Digite o titulo em Portugues"
+          />
+        </div>
+      </div>
+
+      {/* Page builder editors in language tabs */}
+      <Tabs defaultValue="en" value={contentLang} onValueChange={(v) => setContentLang(v as 'en' | 'pt')} className={isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}>
+        <div className="flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <TabsList>
+              <TabsTrigger value="en">English Content</TabsTrigger>
+              <TabsTrigger value="pt">Portuguese Content</TabsTrigger>
+            </TabsList>
+            <AddContentMenu onAddBlock={addBlockToActiveContent} />
+          </div>
+          <div className="flex gap-1">
+            <Button
+              type="button" variant="outline" size="sm"
+              className="h-7 text-xs gap-1"
+              disabled={!formData.contentEn || translating === 'content-en-to-pt'}
+              onClick={() => translateField('content', 'en-to-pt')}
+            >
+              {translating === 'content-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+              EN &rarr; PT
+            </Button>
+            <Button
+              type="button" variant="outline" size="sm"
+              className="h-7 text-xs gap-1"
+              disabled={!formData.contentPt || translating === 'content-pt-to-en'}
+              onClick={() => translateField('content', 'pt-to-en')}
+            >
+              {translating === 'content-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+              PT &rarr; EN
+            </Button>
+          </div>
+        </div>
+        <TabsContent value="en" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
+          <PageBuilderEditor
+            value={normalizeContent(formData.contentEn) || createEmptyPageBuilderDoc()}
+            onChange={(doc) => update('contentEn', doc)}
+            hideAddMenu
+          />
         </TabsContent>
-
-        {/* Meta Tab */}
-        <TabsContent value="meta" className="space-y-4 mt-4">
-          {/* Cover Image */}
-          <div className="space-y-2">
-            <Label>Cover Image</Label>
-            {coverPreview ? (
-              <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-                <Image src={coverPreview} alt="Cover preview" fill className="object-cover object-center" />
-                <button
-                  onClick={() => { setCoverPreview(null); update('coverImageFile', null) }}
-                  className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
-                <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-500">Click to upload cover image</span>
-                <input type="file" accept="image/*" className="hidden" onChange={handleCoverImageChange} />
-              </label>
-            )}
-          </div>
-
-          {/* Excerpts */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Excerpt (English)</Label>
-                {formData.excerptPt && (
-                  <Button
-                    type="button" variant="ghost" size="sm"
-                    className="h-6 text-xs gap-1"
-                    disabled={translating === 'excerpt-pt-to-en'}
-                    onClick={() => translateField('excerpt', 'pt-to-en')}
-                  >
-                    {translating === 'excerpt-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                    PT &rarr; EN
-                  </Button>
-                )}
-              </div>
-              <textarea
-                value={formData.excerptEn}
-                onChange={(e) => update('excerptEn', e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
-                placeholder="Short summary in English..."
-                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Excerpt (Portuguese)</Label>
-                {formData.excerptEn && (
-                  <Button
-                    type="button" variant="ghost" size="sm"
-                    className="h-6 text-xs gap-1"
-                    disabled={translating === 'excerpt-en-to-pt'}
-                    onClick={() => translateField('excerpt', 'en-to-pt')}
-                  >
-                    {translating === 'excerpt-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
-                    EN &rarr; PT
-                  </Button>
-                )}
-              </div>
-              <textarea
-                value={formData.excerptPt}
-                onChange={(e) => update('excerptPt', e.target.value)}
-                placeholder="Resumo curto em Portugues..."
-                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
-              />
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-2">
-            <Label>Tags</Label>
-            <div className="flex gap-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
-                placeholder="Add a tag and press Enter"
-                className="flex-1"
-              />
-              <Button type="button" variant="outline" size="sm" onClick={addTag}>Add</Button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {formData.tags.map(tag => (
-                  <Badge key={tag} variant="secondary" className="gap-1">
-                    {tag}
-                    <button onClick={() => removeTag(tag)} className="ml-1 hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-4 mt-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div>
-                <Label className="text-base">Published</Label>
-                <p className="text-sm text-gray-500">Make this entry visible to the public</p>
-              </div>
-              <Switch
-                checked={formData.published}
-                onCheckedChange={(checked) => {
-                  update('published', checked)
-                  if (checked && !formData.publishedAt) {
-                    update('publishedAt', new Date().toISOString().slice(0, 16))
-                  }
-                }}
-              />
-            </div>
-
-            {formData.published && (
-              <div className="space-y-2">
-                <Label>Publish Date</Label>
-                <Input
-                  type="datetime-local"
-                  value={formData.publishedAt}
-                  onChange={(e) => update('publishedAt', e.target.value)}
-                />
-                <p className="text-xs text-gray-500">Leave empty to use current date/time when saving</p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div>
-                <Label className="text-base">Featured</Label>
-                <p className="text-sm text-gray-500">Highlight this entry on the homepage</p>
-              </div>
-              <Switch
-                checked={formData.featured}
-                onCheckedChange={(checked) => update('featured', checked)}
-              />
-            </div>
-          </div>
+        <TabsContent value="pt" className={`mt-2 ${isFullscreen ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
+          <PageBuilderEditor
+            value={normalizeContent(formData.contentPt) || createEmptyPageBuilderDoc()}
+            onChange={(doc) => update('contentPt', doc)}
+            hideAddMenu
+          />
         </TabsContent>
       </Tabs>
 
+      {/* Cover Image + Excerpts side by side */}
+      <div className="grid grid-cols-[200px_1fr] gap-4 shrink-0">
+        {/* Cover Image - compact */}
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Cover Image</Label>
+          {coverPreview ? (
+            <div className="relative w-full h-28 rounded-md overflow-hidden bg-gray-100">
+              <Image src={coverPreview} alt="Cover preview" fill className="object-cover object-center" />
+              <button
+                onClick={() => { setCoverPreview(null); update('coverImageFile', null) }}
+                className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full hover:bg-black/70"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-gray-400 transition-colors">
+              <Upload className="h-5 w-5 text-gray-400 mb-1" />
+              <span className="text-xs text-gray-500">Upload cover</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleCoverImageChange} />
+            </label>
+          )}
+        </div>
+
+        {/* Excerpts */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Excerpt (English)</Label>
+            <textarea
+              value={formData.excerptEn}
+              onChange={(e) => update('excerptEn', e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="Short summary in English..."
+              className="w-full h-28 rounded-md border border-input bg-background px-3 py-2 text-sm resize-none"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Excerpt (Portuguese)</Label>
+            <textarea
+              value={formData.excerptPt}
+              onChange={(e) => update('excerptPt', e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="Resumo curto em Portugues..."
+              className="w-full h-28 rounded-md border border-input bg-background px-3 py-2 text-sm resize-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Tags - compact inline */}
+      <div className="flex items-center gap-2 shrink-0">
+        <Label className="text-xs text-muted-foreground whitespace-nowrap">Tags</Label>
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          {formData.tags.map(tag => (
+            <Badge key={tag} variant="secondary" className="gap-0.5 text-xs h-6">
+              {tag}
+              <button onClick={() => removeTag(tag)} className="ml-0.5 hover:text-red-500">
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </Badge>
+          ))}
+          <Input
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
+            placeholder="Add tag..."
+            className="h-7 text-xs w-32 min-w-[80px]"
+          />
+        </div>
+      </div>
+
+      {/* Footer */}
       {!isFullscreen && (
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={saving}>Cancel</Button>
-          <Button onClick={onSubmit} disabled={saving || !isValid}>
-            {saving ? 'Saving...' : submitLabel}
-          </Button>
+        <DialogFooter className="flex items-center !justify-between sm:!justify-between">
+          <div className="flex gap-1">
+            <Button
+              type="button" variant="outline" size="sm"
+              className="h-8 text-xs gap-1"
+              disabled={!!translating}
+              onClick={() => translateAll('en-to-pt')}
+            >
+              {isTranslatingAll && translating === 'all-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+              Translate EN &rarr; PT
+            </Button>
+            <Button
+              type="button" variant="outline" size="sm"
+              className="h-8 text-xs gap-1"
+              disabled={!!translating}
+              onClick={() => translateAll('pt-to-en')}
+            >
+              {isTranslatingAll && translating === 'all-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+              Translate PT &rarr; EN
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onCancel} disabled={saving}>Cancel</Button>
+            <Button onClick={onSubmit} disabled={saving || !isValid}>
+              {saving ? 'Saving...' : submitLabel}
+            </Button>
+          </div>
         </DialogFooter>
       )}
       {isFullscreen && (
-        <div className="flex justify-end gap-2 pt-3 border-t shrink-0">
-          <Button variant="outline" onClick={toggleFullscreen} size="sm">Back to Form</Button>
-          <Button onClick={onSubmit} disabled={saving || !isValid} size="sm">
-            {saving ? 'Saving...' : submitLabel}
-          </Button>
+        <div className="flex items-center justify-between pt-3 border-t shrink-0">
+          <div className="flex gap-1">
+            <Button
+              type="button" variant="outline" size="sm"
+              className="h-8 text-xs gap-1"
+              disabled={!!translating}
+              onClick={() => translateAll('en-to-pt')}
+            >
+              {isTranslatingAll && translating === 'all-en-to-pt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+              Translate EN &rarr; PT
+            </Button>
+            <Button
+              type="button" variant="outline" size="sm"
+              className="h-8 text-xs gap-1"
+              disabled={!!translating}
+              onClick={() => translateAll('pt-to-en')}
+            >
+              {isTranslatingAll && translating === 'all-pt-to-en' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+              Translate PT &rarr; EN
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={toggleFullscreen} size="sm">Back to Form</Button>
+            <Button onClick={onSubmit} disabled={saving || !isValid} size="sm">
+              {saving ? 'Saving...' : submitLabel}
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -182,7 +182,7 @@ export function JournalContextMenu({ post, children, onUpdate }: JournalContextM
 
       {/* Edit Dialog */}
       <Dialog open={activeModal === 'edit'} onOpenChange={(v) => !v && setActiveModal(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Journal Entry</DialogTitle>
           </DialogHeader>
@@ -200,7 +200,7 @@ export function JournalContextMenu({ post, children, onUpdate }: JournalContextM
 
       {/* Create Dialog */}
       <Dialog open={activeModal === 'create'} onOpenChange={(v) => !v && setActiveModal(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Journal Entry</DialogTitle>
           </DialogHeader>
