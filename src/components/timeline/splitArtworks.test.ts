@@ -69,4 +69,19 @@ describe('splitArtworks', () => {
     expect(left).toEqual([])
     expect(right.map(a => a.id)).toEqual(['a', 'b', 'c', 'd'])
   })
+
+  it('redistributes for 2 exhibitions + 6 artworks (positive path at the trigger boundary)', () => {
+    const artworks = ['a', 'b', 'c', 'd', 'e', 'f'].map(mk)
+    const { left, right } = splitArtworks(artworks, 2, 0)
+    expect(left.length + right.length).toBe(6)
+    expect(left.length).toBeGreaterThanOrEqual(1)
+    expect(right.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('pins exact left/right contents for 3 artworks with 0 exhibitions', () => {
+    const artworks = ['a', 'b', 'c'].map(mk)
+    const { left, right } = splitArtworks(artworks, 0, 0)
+    expect(right.map(a => a.id)).toEqual(['a', 'b'])
+    expect(left.map(a => a.id)).toEqual(['c'])
+  })
 })
