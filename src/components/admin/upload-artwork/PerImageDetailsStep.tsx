@@ -23,30 +23,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ArtworkService } from '@/services/artwork.service'
+import type { UploadedImage, ArtworkDetails, CommonApplied } from './types'
 
-interface UploadedImage {
-  file: File
-  preview: string
-}
-
-export interface ArtworkDetails {
-  titlePt: string
-  titleEn: string
-  mediumPt: string
-  mediumEn: string
-  dimensions: string
-  descriptionPt: string
-  descriptionEn: string
-  featured: boolean
-  // Per-image overrides (when not "apply to all")
-  category?: string
-  year?: number
-}
-
-interface CommonApplied {
-  category?: string
-  year?: number
-}
+export type { ArtworkDetails } from './types'
 
 interface PerImageDetailsStepProps {
   images: UploadedImage[]

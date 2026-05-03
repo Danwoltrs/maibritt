@@ -29,14 +29,10 @@ import confetti from 'canvas-confetti'
 import { useDropzone } from 'react-dropzone'
 
 import { ArtworkService } from '@/services/artwork.service'
-import { PerImageDetailsStep, type ArtworkDetails } from './PerImageDetailsStep'
+import { PerImageDetailsStep } from './PerImageDetailsStep'
+import type { UploadedImage, ArtworkDetails, CommonMetadata, ApplyToAll } from './types'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-
-interface UploadedImage {
-  file: File
-  preview: string
-}
 
 const DEFAULT_CATEGORIES = [
   { value: 'painting', label: 'Painting / Pintura' },
@@ -46,16 +42,6 @@ const DEFAULT_CATEGORIES = [
   { value: 'installations', label: 'Installations / Instalações' },
   { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' },
 ]
-
-interface CommonMetadata {
-  category?: string
-  year?: number
-}
-
-interface ApplyToAll {
-  category: boolean
-  year: boolean
-}
 
 const generateYearOptions = () => {
   const currentYear = new Date().getFullYear()
