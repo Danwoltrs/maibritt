@@ -131,6 +131,25 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     })
   }, [open])
 
+  // Warn before unload when there is unsaved upload work
+  useEffect(() => {
+    if (step === 'success' || step === 'upload') return
+    const hasUnsaved =
+      uploads.pendingCount > 0 ||
+      uploads.failedCount > 0 ||
+      Object.values(artworkDetails).some(
+        (d) =>
+          (d.titleEn || d.titlePt || d.descriptionEn || d.descriptionPt || '').trim()
+      )
+    if (!hasUnsaved) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [step, uploads.pendingCount, uploads.failedCount, artworkDetails])
+
   // Debounced save effect
   useEffect(() => {
     if (step === 'success') return
