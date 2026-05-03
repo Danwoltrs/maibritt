@@ -170,3 +170,60 @@ describe('useBackgroundUploads — retries', () => {
     vi.useRealTimers()
   })
 })
+
+describe('useBackgroundUploads — manual retry', () => {
+  it('retry() re-queues a failed upload using the original payload', async () => {
+    mockCreate
+      .mockRejectedValueOnce(
+        Object.assign(new Error('bad'), { status: 400 })
+      )
+      .mockResolvedValueOnce({ id: 'art-retry' })
+
+    const { result } = renderHook(() => useBackgroundUploads())
+    act(() => {
+      result.current.startUpload(0, samplePayload)
+    })
+    await waitFor(() =>
+      expect(result.current.getState(0).status).toBe('failed')
+    )
+
+    act(() => {
+      result.current.retry(0)
+    })
+    await waitFor(() =>
+      expect(result.current.getState(0).status).toBe('uploaded')
+    )
+  })
+})
+
+describe('useBackgroundUploads — updateUploaded', () => {
+  it('calls ArtworkService.updateArtwork with the artwork id', async () => {
+    mockCreate.mockResolvedValueOnce({ id: 'art-7' })
+    mockUpdate.mockResolvedValueOnce({ id: 'art-7' })
+    const { result } = renderHook(() => useBackgroundUploads())
+
+    act(() => {
+      result.current.startUpload(0, samplePayload)
+    })
+    await waitFor(() =>
+      expect(result.current.getState(0).status).toBe('uploaded')
+    )
+
+    act(() => {
+      result.current.updateUploaded(0, { title: { ptBR: 'novo', en: 'new' } })
+    })
+
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1))
+    expect(mockUpdate).toHaveBeenCalledWith('art-7', {
+      title: { ptBR: 'novo', en: 'new' },
+    })
+  })
+
+  it('updateUploaded is a no-op when state is not uploaded', () => {
+    const { result } = renderHook(() => useBackgroundUploads())
+    act(() => {
+      result.current.updateUploaded(0, { title: { ptBR: 'x', en: 'x' } })
+    })
+    expect(mockUpdate).not.toHaveBeenCalled()
+  })
+})
