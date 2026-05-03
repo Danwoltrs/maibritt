@@ -13,6 +13,7 @@ import ArtworkCard from './ArtworkCard'
 import PressClip from './PressClip'
 import ExhibitionOverlay from './ExhibitionOverlay'
 import ArtworkOverlay from './ArtworkOverlay'
+import { splitArtworks } from './splitArtworks'
 import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 import { ExhibitionContextMenu } from '@/components/admin/ExhibitionContextMenu'
 
@@ -179,6 +180,12 @@ function TimelineYearBlock({
 }: TimelineYearBlockProps) {
   const [ref, isVisible] = useScrollAnimation(0.1)
 
+  const { left: leftArtworks, right: rightArtworks } = splitArtworks(
+    ty.artworks,
+    ty.exhibitions.length,
+    ty.pressQuotes.length,
+  )
+
   return (
     <div
       ref={ref}
@@ -204,7 +211,7 @@ function TimelineYearBlock({
         {/* Mobile spine dot */}
         <div className="md:hidden absolute -left-[5px] top-5 w-[9px] h-[9px] rounded-full bg-[rgb(0,46,18)] border-2 border-gray-50 shadow-[0_0_0_1px_rgb(0,46,18)]" />
 
-        {/* LEFT: Exhibitions + Press */}
+        {/* LEFT: Exhibitions + Press + (optional) overflow artworks */}
         <div className="md:col-start-1 md:pr-9 max-md:pr-0 max-md:mb-5">
           {ty.exhibitions.length > 0 ? (
             <div className="space-y-3">
@@ -232,12 +239,12 @@ function TimelineYearBlock({
                 )
               })}
             </div>
-          ) : (
+          ) : leftArtworks.length === 0 ? (
             <div className="border border-dashed border-gray-300 p-4.5 text-center mt-5">
               <div className="text-[8px] tracking-[3px] uppercase text-gray-400 mb-1.5 font-medium">No Exhibition</div>
               <div className="text-[13px] text-gray-500 italic">Studio year</div>
             </div>
-          )}
+          ) : null}
 
           {/* Press clips */}
           {ty.pressQuotes.length > 0 && (
@@ -255,6 +262,13 @@ function TimelineYearBlock({
               ))}
             </div>
           )}
+
+          {/* Overflow artworks (only when left column had room) */}
+          {leftArtworks.length > 0 && (
+            <div className={`flex flex-col gap-3 ${ty.exhibitions.length > 0 || ty.pressQuotes.length > 0 ? 'mt-3' : ''}`}>
+              {renderArtworkColumn(leftArtworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible)}
+            </div>
+          )}
         </div>
 
         {/* CENTER: Spine dot (desktop only) */}
@@ -269,7 +283,7 @@ function TimelineYearBlock({
         {/* RIGHT: Artworks */}
         <div className="md:col-start-3 md:pl-9 max-md:pl-0">
           <div className="flex flex-col gap-3">
-            {renderArtworkColumn(ty.artworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible)}
+            {renderArtworkColumn(rightArtworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible)}
           </div>
         </div>
       </div>
