@@ -32,6 +32,8 @@ import { ArtworkService } from '@/services/artwork.service'
 import { PerImageDetailsStep } from './PerImageDetailsStep'
 import type { UploadedImage, ArtworkDetails, CommonMetadata, ApplyToAll } from './types'
 import { useBackgroundUploads } from './useBackgroundUploads'
+import { saveDraft, loadDraft, clearDraft, draftHasContent } from './draftStorage'
+import { SessionRecoveryDialog } from './SessionRecoveryDialog'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -76,10 +78,21 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   // Step 2 state
   const [artworkDetails, setArtworkDetails] = useState<Record<number, ArtworkDetails>>({})
 
+  // Session recovery state
+  const [recovery, setRecovery] = useState<{
+    artworkCount: number
+    savedAt: string
+    fileNames: string[]
+    draftDetails: Record<number, ArtworkDetails>
+    draftCommon: CommonMetadata
+    draftApplyToAll: ApplyToAll
+  } | null>(null)
+
   const uploads = useBackgroundUploads()
 
   useEffect(() => {
     if (step === 'finalizing' && uploads.allDone) {
+      clearDraft()
       setStep('success')
       fireConfetti()
     }
@@ -100,8 +113,44 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     }
   }, [open])
 
+  // Check for saved draft when dialog opens
+  useEffect(() => {
+    if (!open) return
+    const draft = loadDraft()
+    if (!draft || !draftHasContent(draft)) return
+    const artworkCount = Object.values(draft.artworkDetails).filter(
+      (d) => (d.titleEn || d.titlePt || d.descriptionEn || d.descriptionPt || '').trim()
+    ).length
+    setRecovery({
+      artworkCount,
+      savedAt: draft.savedAt,
+      fileNames: draft.fileHints.map((f) => f.name),
+      draftDetails: draft.artworkDetails,
+      draftCommon: draft.commonMeta,
+      draftApplyToAll: draft.applyToAll,
+    })
+  }, [open])
+
+  // Debounced save effect
+  useEffect(() => {
+    if (step === 'success') return
+    const handle = setTimeout(() => {
+      saveDraft({
+        commonMeta,
+        applyToAll,
+        artworkDetails,
+        fileHints: images.map((img) => ({
+          name: img.file.name,
+          size: img.file.size,
+        })),
+      })
+    }, 500)
+    return () => clearTimeout(handle)
+  }, [step, commonMeta, applyToAll, artworkDetails, images])
+
   // Reset state when dialog closes
   const handleClose = useCallback(() => {
+    clearDraft()
     setStep('upload')
     setImages([])
     setCommonMeta({ year: new Date().getFullYear() })
@@ -314,6 +363,28 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
           </div>
         </DialogContent>
       </Dialog>
+    )
+  }
+
+  // ─── Session Recovery ─────────────────────────────────────────────────────
+  if (recovery) {
+    return (
+      <SessionRecoveryDialog
+        open={true}
+        artworkCount={recovery.artworkCount}
+        savedAt={recovery.savedAt}
+        fileNames={recovery.fileNames}
+        onResume={() => {
+          setCommonMeta(recovery.draftCommon)
+          setApplyToAll(recovery.draftApplyToAll)
+          setArtworkDetails(recovery.draftDetails)
+          setRecovery(null)
+        }}
+        onStartFresh={() => {
+          clearDraft()
+          setRecovery(null)
+        }}
+      />
     )
   }
 
