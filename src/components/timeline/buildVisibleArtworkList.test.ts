@@ -41,4 +41,18 @@ describe('buildVisibleArtworkList', () => {
     const list = buildVisibleArtworkList(years, ['video'])
     expect(list).toEqual([])
   })
+
+  it('returns empty list when years is empty', () => {
+    const list = buildVisibleArtworkList([], ['all'])
+    expect(list).toEqual([])
+  })
+
+  it('preserves caller-supplied year order (does not sort)', () => {
+    const reversedYears: TimelineYear[] = [
+      { year: 2012, exhibitions: [], pressQuotes: [], artworks: [mk('c', 2012, 'painting'), mk('d', 2012, 'sculpture')] },
+      { year: 2014, exhibitions: [], pressQuotes: [], artworks: [mk('a', 2014), mk('b', 2014)] },
+    ]
+    const list = buildVisibleArtworkList(reversedYears, ['all'])
+    expect(list.map(a => a.id)).toEqual(['c', 'd', 'a', 'b'])
+  })
 })
