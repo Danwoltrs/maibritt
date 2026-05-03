@@ -147,11 +147,10 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 )}
                 onClick={() => {
-                  if (hasSubItems) {
+                  if (hasSubItems && !expandedItems.includes(item.name)) {
                     toggleExpanded(item.name)
-                  } else {
-                    router.push(item.href)
                   }
+                  router.push(item.href)
                 }}
               >
                 <item.icon className={cn(
@@ -168,15 +167,23 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                   </div>
                 </div>
                 {hasSubItems && (
-                  <div className={cn(
-                    'transition-transform duration-200',
-                    isExpanded ? 'rotate-90' : ''
-                  )}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleExpanded(item.name)
+                    }}
+                    className={cn(
+                      'transition-transform duration-200 p-0.5 rounded hover:bg-black/10',
+                      isExpanded ? 'rotate-90' : ''
+                    )}
+                    aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                  >
                     <ChevronRight className={cn(
                       'h-4 w-4',
                       isActive ? 'text-white' : 'text-gray-400'
                     )} />
-                  </div>
+                  </button>
                 )}
               </div>
           )

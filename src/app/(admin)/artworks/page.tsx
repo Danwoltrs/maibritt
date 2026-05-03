@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Image as ImageIcon, AlertCircle } from 'lucide-react'
+import { Plus, Image as ImageIcon, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -51,6 +51,10 @@ export default function ArtworksPage() {
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // Year-group expansion (most recent year defaults open)
+  const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set())
+  const [yearsInitialized, setYearsInitialized] = useState(false)
 
   // Galleries
   const [galleries, setGalleries] = useState<Gallery[]>([])
@@ -131,6 +135,45 @@ export default function ArtworksPage() {
     if (sortDir === 'desc') return bVal > aVal ? 1 : bVal < aVal ? -1 : 0
     return aVal > bVal ? 1 : aVal < bVal ? -1 : 0
   })
+
+  // Group by year, preserving sortedArtworks order within each group
+  const yearGroups = React.useMemo(() => {
+    const map = new Map<number, Artwork[]>()
+    for (const a of sortedArtworks) {
+      const arr = map.get(a.year) || []
+      arr.push(a)
+      map.set(a.year, arr)
+    }
+    const years = Array.from(map.keys()).sort((a, b) =>
+      sortField === 'year' && sortDir === 'asc' ? a - b : b - a
+    )
+    return years.map(y => ({ year: y, items: map.get(y)! }))
+  }, [sortedArtworks, sortField, sortDir])
+
+  // Open most-recent year by default once data arrives
+  useEffect(() => {
+    if (!yearsInitialized && yearGroups.length > 0) {
+      setExpandedYears(new Set([yearGroups[0].year]))
+      setYearsInitialized(true)
+    }
+  }, [yearGroups, yearsInitialized])
+
+  const toggleYear = (year: number) => {
+    setExpandedYears(prev => {
+      const next = new Set(prev)
+      if (next.has(year)) next.delete(year)
+      else next.add(year)
+      return next
+    })
+  }
+
+  const expandAllYears = () => {
+    setExpandedYears(new Set(yearGroups.map(g => g.year)))
+  }
+
+  const collapseAllYears = () => {
+    setExpandedYears(new Set())
+  }
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -236,27 +279,75 @@ export default function ArtworksPage() {
             <Button onClick={() => router.push('/artworks/new')}>Upload Artwork</Button>
           </CardContent>
         </Card>
-      ) : viewMode === 'table' ? (
-        <ArtworksTable
-          artworks={sortedArtworks}
-          selectedIds={selectedIds}
-          onSelectionChange={setSelectedIds}
-          galleryMap={galleryMap}
-          sortField={sortField}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onUpdate={loadArtworks}
-          onOpenModal={handleOpenModal}
-        />
       ) : (
-        <ArtworksGrid
-          artworks={sortedArtworks}
-          selectedIds={selectedIds}
-          onSelectionChange={setSelectedIds}
-          galleryMap={galleryMap}
-          onUpdate={loadArtworks}
-          onOpenModal={handleOpenModal}
-        />
+        <div className="space-y-3">
+          <div className="flex items-center justify-end gap-2 text-xs">
+            <button
+              onClick={expandAllYears}
+              className="text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline"
+            >
+              Expand all
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              onClick={collapseAllYears}
+              className="text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline"
+            >
+              Collapse all
+            </button>
+          </div>
+
+          {yearGroups.map(group => {
+            const isOpen = expandedYears.has(group.year)
+            return (
+              <div key={group.year} className="border border-gray-200 rounded-md overflow-hidden bg-white">
+                <button
+                  type="button"
+                  onClick={() => toggleYear(group.year)}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors"
+                >
+                  {isOpen ? (
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                  )}
+                  <span className="font-semibold text-gray-900">{group.year}</span>
+                  <span className="text-sm text-gray-500">
+                    {group.items.length} {group.items.length === 1 ? 'artwork' : 'artworks'}
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="border-t border-gray-200">
+                    {viewMode === 'table' ? (
+                      <ArtworksTable
+                        artworks={group.items}
+                        selectedIds={selectedIds}
+                        onSelectionChange={setSelectedIds}
+                        galleryMap={galleryMap}
+                        sortField={sortField}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                        onUpdate={loadArtworks}
+                        onOpenModal={handleOpenModal}
+                      />
+                    ) : (
+                      <div className="p-4">
+                        <ArtworksGrid
+                          artworks={group.items}
+                          selectedIds={selectedIds}
+                          onSelectionChange={setSelectedIds}
+                          galleryMap={galleryMap}
+                          onUpdate={loadArtworks}
+                          onOpenModal={handleOpenModal}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       )}
 
       {/* Bulk Action Bar */}

@@ -63,6 +63,14 @@ export function ArtworksGrid({
     if (!error) onUpdate()
   }
 
+  const handleFeaturedToggle = async (artwork: Artwork) => {
+    const { error } = await (await import('@/lib/supabase')).supabase
+      .from('artworks')
+      .update({ featured: !artwork.featured })
+      .eq('id', artwork.id)
+    if (!error) onUpdate()
+  }
+
   const getLocationDisplay = (artwork: Artwork) => {
     if (artwork.locationType === 'gallery' && artwork.locationId) {
       return galleryMap.get(artwork.locationId) || 'Gallery'
@@ -85,8 +93,24 @@ export function ArtworksGrid({
               />
             </div>
 
-            {/* 3-dot menu overlay */}
-            <div className="absolute top-2 right-2 z-10">
+            {/* Star toggle + 3-dot menu overlay */}
+            <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 bg-white/80 backdrop-blur-sm hover:bg-white"
+                onClick={() => handleFeaturedToggle(artwork)}
+                aria-label={artwork.featured ? 'Remove from featured' : 'Mark as featured'}
+                title={artwork.featured ? 'Remove from featured' : 'Mark as featured'}
+              >
+                <Star
+                  className={`h-4 w-4 transition-colors ${
+                    artwork.featured
+                      ? 'fill-yellow-400 text-yellow-500'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                />
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0 bg-white/80 backdrop-blur-sm hover:bg-white">

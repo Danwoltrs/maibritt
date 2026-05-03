@@ -102,6 +102,14 @@ export function ArtworksTable({
     if (!error) onUpdate()
   }
 
+  const handleFeaturedToggle = async (artwork: Artwork) => {
+    const { error } = await (await import('@/lib/supabase')).supabase
+      .from('artworks')
+      .update({ featured: !artwork.featured })
+      .eq('id', artwork.id)
+    if (!error) onUpdate()
+  }
+
   const SortableHead = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <TableHead
       className="cursor-pointer select-none hover:bg-muted/50"
@@ -142,6 +150,7 @@ export function ArtworksTable({
           <TableHead>Sold For</TableHead>
           <SortableHead field="soldDate">Sold Date</SortableHead>
           <TableHead>Freight</TableHead>
+          <TableHead className="w-[70px]">Featured</TableHead>
           <TableHead className="w-[80px]">Timeline</TableHead>
           <TableHead className="w-[50px]"></TableHead>
         </TableRow>
@@ -209,6 +218,24 @@ export function ArtworksTable({
                 {artwork.freightCost
                   ? formatCurrency(artwork.freightCost, artwork.freightCurrency)
                   : '—'}
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => handleFeaturedToggle(artwork)}
+                  aria-label={artwork.featured ? 'Remove from featured' : 'Mark as featured'}
+                  title={artwork.featured ? 'Remove from featured' : 'Mark as featured'}
+                >
+                  <Star
+                    className={`h-4 w-4 transition-colors ${
+                      artwork.featured
+                        ? 'fill-yellow-400 text-yellow-500'
+                        : 'text-gray-300 hover:text-gray-500'
+                    }`}
+                  />
+                </Button>
               </TableCell>
               <TableCell>
                 <Switch
