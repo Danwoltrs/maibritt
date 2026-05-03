@@ -23,8 +23,14 @@ export default function ArtworkOverlay({
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft' && hasPrev && onPrev) onPrev()
-      if (e.key === 'ArrowRight' && hasNext && onNext) onNext()
+      if (e.key === 'ArrowLeft' && hasPrev && onPrev) {
+        e.preventDefault()
+        onPrev()
+      }
+      if (e.key === 'ArrowRight' && hasNext && onNext) {
+        e.preventDefault()
+        onNext()
+      }
     }
     if (artwork) {
       document.addEventListener('keydown', handleKey)
@@ -110,7 +116,7 @@ export default function ArtworkOverlay({
           <div className="bg-white border-t border-gray-200 px-6 py-4 max-md:px-4 max-md:py-3">
             <div className="flex items-start gap-6 max-md:flex-col max-md:gap-3">
               {/* Title block */}
-              <div className="min-w-0 flex-shrink-0">
+              <div className="min-w-0">
                 <Badge variant="outline" className="bg-gray-100 text-gray-800 capitalize text-[10px] border-0 mb-1.5">
                   {artwork.category ? artwork.category.charAt(0).toUpperCase() + artwork.category.slice(1) : 'Artwork'}
                 </Badge>
