@@ -266,7 +266,7 @@ function TimelineYearBlock({
           {/* Overflow artworks (only when left column had room) */}
           {leftArtworks.length > 0 && (
             <div className={`flex flex-col gap-3 ${ty.exhibitions.length > 0 || ty.pressQuotes.length > 0 ? 'mt-3' : ''}`}>
-              {renderArtworkColumn(leftArtworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible)}
+              {renderArtworkColumn(leftArtworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible, ty.exhibitions.length + ty.pressQuotes.length)}
             </div>
           )}
         </div>
@@ -283,7 +283,7 @@ function TimelineYearBlock({
         {/* RIGHT: Artworks */}
         <div className="md:col-start-3 md:pl-9 max-md:pl-0">
           <div className="flex flex-col gap-3">
-            {renderArtworkColumn(rightArtworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible)}
+            {renderArtworkColumn(rightArtworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible, 0)}
           </div>
         </div>
       </div>
@@ -300,6 +300,7 @@ function renderArtworkColumn(
   isAdmin: boolean,
   onUpdate: () => void,
   isRevealed: boolean,
+  indexOffset: number = 0,
 ) {
   const items: React.ReactNode[] = []
   let i = 0
@@ -316,7 +317,7 @@ function renderArtworkColumn(
           className={`grid grid-cols-2 max-[420px]:grid-cols-1 gap-2.5 transition-all duration-700 ease-out ${
             isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
-          style={{ transitionDelay: isRevealed ? `${itemIndex * 50}ms` : '0ms' }}
+          style={{ transitionDelay: isRevealed ? `${(itemIndex + indexOffset) * 50}ms` : '0ms' }}
         >
           {[a, next].map((artwork) => {
             const inner = (
@@ -346,7 +347,7 @@ function renderArtworkColumn(
         className={`transition-all duration-700 ease-out ${
           isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         } ${!isVisible(a) ? '!opacity-[0.15] pointer-events-none' : ''}`}
-        style={{ transitionDelay: isRevealed ? `${itemIndex * 50}ms` : '0ms' }}
+        style={{ transitionDelay: isRevealed ? `${(itemIndex + indexOffset) * 50}ms` : '0ms' }}
       >
         {isAdmin ? (
           <ArtworkContextMenu artwork={a} onUpdate={onUpdate}>
