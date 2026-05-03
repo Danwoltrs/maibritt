@@ -17,7 +17,7 @@ import { splitArtworks } from './splitArtworks'
 import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 import { ExhibitionContextMenu } from '@/components/admin/ExhibitionContextMenu'
 
-interface TimelineYear {
+export interface TimelineYear {
   year: number
   exhibitions: Exhibition[]
   artworks: Artwork[]
