@@ -89,14 +89,11 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
   )
 
   useEffect(() => {
-    if (
-      selectedArtwork &&
-      visibleArtworkList.length > 0 &&
-      !visibleArtworkList.some(a => a.id === selectedArtwork.id)
-    ) {
+    if (!selectedArtwork || loading || years.length === 0) return
+    if (!visibleArtworkList.some(a => a.id === selectedArtwork.id)) {
       setSelectedArtwork(null)
     }
-  }, [visibleArtworkList, selectedArtwork])
+  }, [visibleArtworkList, selectedArtwork, loading, years.length])
 
   if (loading) {
     return (
@@ -169,9 +166,9 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
       )}
       {selectedArtwork && (() => {
         const idx = visibleArtworkList.findIndex(a => a.id === selectedArtwork.id)
-        const safeIdx = idx === -1 ? 0 : idx
-        const prevArtwork = safeIdx > 0 ? visibleArtworkList[safeIdx - 1] : null
-        const nextArtwork = safeIdx < visibleArtworkList.length - 1 ? visibleArtworkList[safeIdx + 1] : null
+        if (idx === -1) return null
+        const prevArtwork = idx > 0 ? visibleArtworkList[idx - 1] : null
+        const nextArtwork = idx < visibleArtworkList.length - 1 ? visibleArtworkList[idx + 1] : null
 
         const sameYearList = visibleArtworkList.filter(a => a.year === selectedArtwork.year)
         const inYearIdx = sameYearList.findIndex(a => a.id === selectedArtwork.id)
