@@ -242,15 +242,15 @@ export function PerImageDetailsStep({
         </div>
       )}
 
-      {/* Main content: image top, form bottom */}
+      {/* Main content: two-column on md+, stacked below */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
-          {/* Image preview */}
-          <div className="relative mx-auto w-fit">
+        <div className="mx-auto px-6 py-6 grid gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-start max-w-7xl">
+          {/* LEFT column: large image preview */}
+          <div className="relative md:sticky md:top-6">
             <img
               src={images[currentIndex]?.preview}
               alt={`Artwork ${currentIndex + 1}`}
-              className="max-h-[20vh] w-auto mx-auto object-contain rounded-lg border"
+              className="w-full max-h-[20vh] md:max-h-[calc(100vh-220px)] object-contain rounded-lg border bg-gray-50"
             />
             <Button
               variant="secondary"
@@ -262,8 +262,8 @@ export function PerImageDetailsStep({
             </Button>
           </div>
 
-          {/* Form */}
-          <div className="space-y-5">
+          {/* RIGHT column: form */}
+          <div className="space-y-5 min-w-0">
             {/* AI message */}
             {aiMessage && (
               <div className={`text-sm px-3 py-2 rounded-md ${
