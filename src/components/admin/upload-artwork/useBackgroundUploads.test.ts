@@ -50,3 +50,52 @@ describe('useBackgroundUploads — happy path', () => {
     }
   })
 })
+
+describe('useBackgroundUploads — concurrency cap', () => {
+  it('runs at most 2 uploads in parallel', async () => {
+    let inFlight = 0
+    let maxInFlight = 0
+    const resolvers: Array<() => void> = []
+
+    mockCreate.mockImplementation(() => {
+      inFlight += 1
+      maxInFlight = Math.max(maxInFlight, inFlight)
+      return new Promise<{ id: string }>((resolve) => {
+        resolvers.push(() => {
+          inFlight -= 1
+          resolve({ id: `id-${resolvers.length}` })
+        })
+      })
+    })
+
+    const { result } = renderHook(() => useBackgroundUploads())
+
+    act(() => {
+      result.current.startUpload(0, samplePayload)
+      result.current.startUpload(1, samplePayload)
+      result.current.startUpload(2, samplePayload)
+      result.current.startUpload(3, samplePayload)
+    })
+
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(2))
+    expect(maxInFlight).toBe(2)
+
+    // Resolve first two; next two should now run.
+    act(() => {
+      resolvers[0]()
+      resolvers[1]()
+    })
+
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(4))
+    expect(maxInFlight).toBe(2)
+
+    act(() => {
+      resolvers[2]()
+      resolvers[3]()
+    })
+
+    await waitFor(() =>
+      expect(result.current.allDone).toBe(true)
+    )
+  })
+})
