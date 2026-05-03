@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { Artwork, Exhibition } from '@/types'
 import { ArtworkService } from '@/services/artwork.service'
 import { ExhibitionsService } from '@/services/exhibitions.service'
@@ -14,6 +14,7 @@ import PressClip from './PressClip'
 import ExhibitionOverlay from './ExhibitionOverlay'
 import ArtworkOverlay from './ArtworkOverlay'
 import { splitArtworks } from './splitArtworks'
+import { buildVisibleArtworkList } from './buildVisibleArtworkList'
 import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 import { ExhibitionContextMenu } from '@/components/admin/ExhibitionContextMenu'
 
@@ -81,6 +82,11 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
     const hasVisibleArt = ty.artworks.some(a => activeFilters.includes(a.category))
     return hasVisibleExh || hasVisibleArt
   }, [activeFilters])
+
+  const visibleArtworkList = useMemo(
+    () => buildVisibleArtworkList(years, activeFilters),
+    [years, activeFilters],
+  )
 
   if (loading) {
     return (
@@ -151,12 +157,30 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
           onClose={() => setSelectedExhibition(null)}
         />
       )}
-      {selectedArtwork && (
-        <ArtworkOverlay
-          artwork={selectedArtwork}
-          onClose={() => setSelectedArtwork(null)}
-        />
-      )}
+      {selectedArtwork && (() => {
+        const idx = visibleArtworkList.findIndex(a => a.id === selectedArtwork.id)
+        const safeIdx = idx === -1 ? 0 : idx
+        const prevArtwork = safeIdx > 0 ? visibleArtworkList[safeIdx - 1] : null
+        const nextArtwork = safeIdx < visibleArtworkList.length - 1 ? visibleArtworkList[safeIdx + 1] : null
+
+        const sameYearList = visibleArtworkList.filter(a => a.year === selectedArtwork.year)
+        const inYearIdx = sameYearList.findIndex(a => a.id === selectedArtwork.id)
+        const positionLabel = sameYearList.length > 0
+          ? `${inYearIdx + 1} / ${sameYearList.length} in ${selectedArtwork.year}`
+          : undefined
+
+        return (
+          <ArtworkOverlay
+            artwork={selectedArtwork}
+            onClose={() => setSelectedArtwork(null)}
+            onPrev={prevArtwork ? () => setSelectedArtwork(prevArtwork) : undefined}
+            onNext={nextArtwork ? () => setSelectedArtwork(nextArtwork) : undefined}
+            hasPrev={prevArtwork !== null}
+            hasNext={nextArtwork !== null}
+            positionLabel={positionLabel}
+          />
+        )
+      })()}
     </section>
   )
 }
