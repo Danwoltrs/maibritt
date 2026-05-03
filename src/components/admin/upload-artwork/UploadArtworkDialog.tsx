@@ -31,6 +31,7 @@ import { useDropzone } from 'react-dropzone'
 import { ArtworkService } from '@/services/artwork.service'
 import { PerImageDetailsStep } from './PerImageDetailsStep'
 import type { UploadedImage, ArtworkDetails, CommonMetadata, ApplyToAll } from './types'
+import { useBackgroundUploads } from './useBackgroundUploads'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ interface UploadArtworkDialogProps {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps) {
-  const [step, setStep] = useState<'upload' | 'details' | 'submitting' | 'success'>('upload')
+  const [step, setStep] = useState<'upload' | 'details' | 'finalizing' | 'success'>('upload')
 
   // Step 1 state
   const [images, setImages] = useState<UploadedImage[]>([])
@@ -75,9 +76,14 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   // Step 2 state
   const [artworkDetails, setArtworkDetails] = useState<Record<number, ArtworkDetails>>({})
 
-  // Submission state
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const uploads = useBackgroundUploads()
+
+  useEffect(() => {
+    if (step === 'finalizing' && uploads.allDone) {
+      setStep('success')
+      fireConfetti()
+    }
+  }, [step, uploads.allDone])
 
   // Load categories when dialog opens
   useEffect(() => {
@@ -105,8 +111,6 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     setNewCategoryLabel('')
     setArtworkDetails({})
     setError(null)
-    setIsSubmitting(false)
-    setUploadProgress(0)
     onClose()
   }, [onClose])
 
@@ -158,42 +162,31 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     }))
   }
 
+  // Build payload for a single artwork
+  const buildPayload = useCallback(
+    (i: number) => {
+      const d = artworkDetails[i]
+      const category = applyToAll.category ? commonMeta.category : d?.category
+      const year = applyToAll.year ? commonMeta.year : d?.year ?? new Date().getFullYear()
+      return {
+        title: { ptBR: d.titlePt, en: d.titleEn },
+        year,
+        medium: { ptBR: d.mediumPt, en: d.mediumEn },
+        dimensions: d.dimensions,
+        description: { ptBR: d.descriptionPt, en: d.descriptionEn },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        category: category as any,
+        images: [images[i].file],
+        featured: d.featured,
+      }
+    },
+    [artworkDetails, applyToAll, commonMeta, images]
+  )
+
   // Submit all artworks
   const handleSubmit = async () => {
-    const category = applyToAll.category ? commonMeta.category : undefined
-    const year = applyToAll.year ? commonMeta.year : new Date().getFullYear()
-
-    setIsSubmitting(true)
     setError(null)
-    setStep('submitting')
-
-    try {
-      for (let i = 0; i < images.length; i++) {
-        const d = artworkDetails[i]
-        await ArtworkService.createArtwork({
-          title: { ptBR: d.titlePt, en: d.titleEn },
-          year: year,
-          medium: { ptBR: d.mediumPt, en: d.mediumEn },
-          dimensions: d.dimensions,
-          description: { ptBR: d.descriptionPt, en: d.descriptionEn },
-          category: category as any,
-          images: [images[i].file],
-          featured: d.featured,
-        }, (progress) => {
-          const overall = ((i / images.length) * 100) + (progress.percentage / images.length)
-          setUploadProgress(Math.round(overall))
-        })
-      }
-
-      setStep('success')
-      fireConfetti()
-    } catch (err) {
-      console.error('Failed to create artworks:', err)
-      setError(err instanceof Error ? err.message : 'Failed to create artworks')
-      setStep('details')
-    } finally {
-      setIsSubmitting(false)
-    }
+    setStep('finalizing')
   }
 
   // Add new category handler
@@ -226,29 +219,77 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
         commonApplied={commonApplied}
         onBack={() => setStep('upload')}
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        uploadProgress={uploadProgress}
+        onUploadIndex={(i) => {
+          const state = uploads.getState(i)
+          if (state.status === 'uploaded') {
+            uploads.updateUploaded(i, buildPayload(i))
+          } else {
+            uploads.startUpload(i, buildPayload(i))
+          }
+        }}
+        onRetryIndex={(i) => uploads.retry(i)}
+        getUploadState={uploads.getState}
         error={error}
       />
     )
   }
 
-  // ─── Step 3: Submitting progress ───────────────────────────────────────────
-  if (step === 'submitting') {
+  // ─── Step 3: Finalizing ────────────────────────────────────────────────────
+  if (step === 'finalizing') {
+    const failedIndices = images
+      .map((_, i) => i)
+      .filter((i) => uploads.getState(i).status === 'failed')
+
     return (
       <Dialog open={true} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-[400px]" onPointerDownOutside={e => e.preventDefault()}>
-          <div className="py-12 text-center space-y-4">
-            <Loader2 className="h-12 w-12 mx-auto text-blue-500 animate-spin" />
-            <h2 className="text-xl font-semibold">Uploading Artworks...</h2>
-            <div className="w-full bg-gray-200 rounded-full h-2 mx-auto max-w-xs">
-              <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
+        <DialogContent
+          className="sm:max-w-[500px]"
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {failedIndices.length > 0 ? 'Some uploads need attention' : 'Finalizing…'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {failedIndices.length === 0 ? (
+            <div className="py-8 text-center space-y-3">
+              <Loader2 className="h-10 w-10 mx-auto text-blue-500 animate-spin" />
+              <p className="text-sm text-gray-600">
+                Finalizing {uploads.pendingCount} of {images.length} still uploading…
+              </p>
             </div>
-            <p className="text-sm text-gray-500">{uploadProgress}% complete</p>
-          </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              <p className="text-sm text-gray-600">
+                {failedIndices.length} artwork{failedIndices.length === 1 ? '' : 's'} failed to upload.
+              </p>
+              <ul className="space-y-2">
+                {failedIndices.map((i) => {
+                  const state = uploads.getState(i)
+                  const errorMsg = state.status === 'failed' ? state.error : 'Unknown error'
+                  const title = artworkDetails[i]?.titleEn || artworkDetails[i]?.titlePt || `Artwork ${i + 1}`
+                  return (
+                    <li key={i} className="flex items-center gap-3 border rounded-md p-2">
+                      <img src={images[i].preview} alt="" className="w-12 h-12 object-cover rounded" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{title}</p>
+                        <p className="text-xs text-red-600 truncate">{errorMsg}</p>
+                      </div>
+                      <Button size="sm" onClick={() => uploads.retry(i)}>Retry</Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setStep('details')}
+                      >
+                        Edit
+                      </Button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     )
@@ -262,7 +303,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
           <div className="py-12 text-center space-y-4">
             <PartyPopper className="h-16 w-16 mx-auto text-yellow-500 animate-bounce" />
             <h2 className="text-2xl font-bold text-gray-900">
-              {images.length} Artwork{images.length > 1 ? 's' : ''} Created!
+              {uploads.uploadedCount} Artwork{uploads.uploadedCount > 1 ? 's' : ''} Created!
             </h2>
             <p className="text-gray-600">
               Your artworks have been uploaded successfully.

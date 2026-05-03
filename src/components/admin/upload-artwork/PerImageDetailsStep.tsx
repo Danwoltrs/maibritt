@@ -24,6 +24,7 @@ import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ArtworkService } from '@/services/artwork.service'
 import type { UploadedImage, ArtworkDetails, CommonApplied } from './types'
+import type { UploadState } from './useBackgroundUploads'
 
 export type { ArtworkDetails } from './types'
 
@@ -34,8 +35,9 @@ interface PerImageDetailsStepProps {
   commonApplied: CommonApplied
   onBack: () => void
   onSubmit: () => void
-  isSubmitting: boolean
-  uploadProgress: number
+  onUploadIndex: (index: number) => void
+  onRetryIndex: (index: number) => void
+  getUploadState: (index: number) => UploadState
   error: string | null
 }
 
@@ -46,8 +48,9 @@ export function PerImageDetailsStep({
   commonApplied,
   onBack,
   onSubmit,
-  isSubmitting,
-  uploadProgress,
+  onUploadIndex,
+  onRetryIndex,
+  getUploadState,
   error,
 }: PerImageDetailsStepProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -76,7 +79,12 @@ export function PerImageDetailsStep({
   }
 
   const handlePrev = () => { if (currentIndex > 0) setCurrentIndex(currentIndex - 1) }
-  const handleNext = () => { if (currentIndex < images.length - 1) setCurrentIndex(currentIndex + 1) }
+  const handleNext = () => {
+    onUploadIndex(currentIndex)
+    if (currentIndex < images.length - 1) {
+      setCurrentIndex(currentIndex + 1)
+    }
+  }
 
   const handleAiSuggest = async () => {
     if (!images[currentIndex]) return
@@ -265,6 +273,23 @@ export function PerImageDetailsStep({
               </div>
             )}
 
+            {/* Inline upload error/retry for current artwork */}
+            {(() => {
+              const cur = getUploadState(currentIndex)
+              if (cur.status !== 'failed') return null
+              return (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="flex items-center justify-between gap-3">
+                    <span>Upload failed: {cur.error}</span>
+                    <Button size="sm" onClick={() => onRetryIndex(currentIndex)}>
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )
+            })()}
+
             {/* Titles + AI button */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -445,6 +470,17 @@ export function PerImageDetailsStep({
             {images.map((img, i) => {
               const details = artworkDetails[i]
               const hasTitle = details?.titleEn || details?.titlePt
+              const state = getUploadState(i)
+              let badge: React.ReactNode = null
+              if (state.status === 'uploading' || state.status === 'queued') {
+                badge = <span className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-blue-500 ring-1 ring-white animate-pulse" />
+              } else if (state.status === 'uploaded') {
+                badge = <span className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-green-500 ring-1 ring-white" />
+              } else if (state.status === 'failed') {
+                badge = <span className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-red-500 ring-1 ring-white" />
+              } else if (hasTitle) {
+                badge = <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-green-400 rounded-full" />
+              }
               return (
                 <button
                   key={i}
@@ -452,18 +488,20 @@ export function PerImageDetailsStep({
                   className={`relative shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
                     i === currentIndex
                       ? 'border-blue-500 ring-2 ring-blue-200'
-                      : hasTitle
+                      : state.status === 'uploaded'
                         ? 'border-green-400'
-                        : 'border-gray-200 hover:border-gray-400'
+                        : state.status === 'failed'
+                          ? 'border-red-400'
+                          : hasTitle
+                            ? 'border-green-300'
+                            : 'border-gray-200 hover:border-gray-400'
                   }`}
                 >
                   <img src={img.preview} alt="" className="w-full h-full object-cover" />
                   <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center">
                     {i + 1}
                   </span>
-                  {hasTitle && (
-                    <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-green-400 rounded-full" />
-                  )}
+                  {badge}
                 </button>
               )
             })}
@@ -493,18 +531,14 @@ export function PerImageDetailsStep({
               </Button>
             ) : (
               <Button
-                onClick={onSubmit}
-                disabled={isSubmitting}
+                onClick={() => {
+                  onUploadIndex(currentIndex)
+                  onSubmit()
+                }}
                 className="min-w-[160px]"
               >
-                {isSubmitting ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Uploading {uploadProgress}%
-                  </div>
-                ) : (
-                  `Upload All ${images.length} Artworks`
-                )}
+                Finish
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             )}
           </div>
