@@ -88,6 +88,16 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
     [years, activeFilters],
   )
 
+  useEffect(() => {
+    if (
+      selectedArtwork &&
+      visibleArtworkList.length > 0 &&
+      !visibleArtworkList.some(a => a.id === selectedArtwork.id)
+    ) {
+      setSelectedArtwork(null)
+    }
+  }, [visibleArtworkList, selectedArtwork])
+
   if (loading) {
     return (
       <section id={id} className="bg-gray-50 py-20">
@@ -165,7 +175,7 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
 
         const sameYearList = visibleArtworkList.filter(a => a.year === selectedArtwork.year)
         const inYearIdx = sameYearList.findIndex(a => a.id === selectedArtwork.id)
-        const positionLabel = sameYearList.length > 0
+        const positionLabel = inYearIdx !== -1 && sameYearList.length > 0
           ? `${inYearIdx + 1} / ${sameYearList.length} in ${selectedArtwork.year}`
           : undefined
 
