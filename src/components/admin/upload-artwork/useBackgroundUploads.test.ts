@@ -99,3 +99,74 @@ describe('useBackgroundUploads — concurrency cap', () => {
     )
   })
 })
+
+describe('useBackgroundUploads — retries', () => {
+  it('retries up to 2 times on network/5xx errors and succeeds', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    mockCreate
+      .mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 503 }))
+      .mockRejectedValueOnce(Object.assign(new Error('boom'), { status: 503 }))
+      .mockResolvedValueOnce({ id: 'art-after-retry' })
+
+    const { result } = renderHook(() => useBackgroundUploads())
+    act(() => {
+      result.current.startUpload(0, samplePayload)
+    })
+
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(2))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000)
+    })
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(3))
+
+    await waitFor(() =>
+      expect(result.current.getState(0).status).toBe('uploaded')
+    )
+    vi.useRealTimers()
+  })
+
+  it('fails fast on 4xx without retry', async () => {
+    mockCreate.mockRejectedValueOnce(
+      Object.assign(new Error('bad request'), { status: 400 })
+    )
+    const { result } = renderHook(() => useBackgroundUploads())
+    act(() => {
+      result.current.startUpload(0, samplePayload)
+    })
+
+    await waitFor(() =>
+      expect(result.current.getState(0).status).toBe('failed')
+    )
+    expect(mockCreate).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks as failed after retries exhausted', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    mockCreate.mockRejectedValue(
+      Object.assign(new Error('boom'), { status: 503 })
+    )
+    const { result } = renderHook(() => useBackgroundUploads())
+    act(() => {
+      result.current.startUpload(0, samplePayload)
+    })
+
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(2))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000)
+    })
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(3))
+
+    await waitFor(() =>
+      expect(result.current.getState(0).status).toBe('failed')
+    )
+    vi.useRealTimers()
+  })
+})
