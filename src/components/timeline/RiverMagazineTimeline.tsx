@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { Artwork, Exhibition } from '@/types'
 import { ArtworkService } from '@/services/artwork.service'
 import { ExhibitionsService } from '@/services/exhibitions.service'
@@ -13,10 +13,12 @@ import ArtworkCard from './ArtworkCard'
 import PressClip from './PressClip'
 import ExhibitionOverlay from './ExhibitionOverlay'
 import ArtworkOverlay from './ArtworkOverlay'
+import { splitArtworks } from './splitArtworks'
+import { buildVisibleArtworkList } from './buildVisibleArtworkList'
 import { ArtworkContextMenu } from '@/components/admin/ArtworkContextMenu'
 import { ExhibitionContextMenu } from '@/components/admin/ExhibitionContextMenu'
 
-interface TimelineYear {
+export interface TimelineYear {
   year: number
   exhibitions: Exhibition[]
   artworks: Artwork[]
@@ -80,6 +82,18 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
     const hasVisibleArt = ty.artworks.some(a => activeFilters.includes(a.category))
     return hasVisibleExh || hasVisibleArt
   }, [activeFilters])
+
+  const visibleArtworkList = useMemo(
+    () => buildVisibleArtworkList(years, activeFilters),
+    [years, activeFilters],
+  )
+
+  useEffect(() => {
+    if (!selectedArtwork || loading || years.length === 0) return
+    if (!visibleArtworkList.some(a => a.id === selectedArtwork.id)) {
+      setSelectedArtwork(null)
+    }
+  }, [visibleArtworkList, selectedArtwork, loading, years.length])
 
   if (loading) {
     return (
@@ -150,12 +164,30 @@ export default function RiverMagazineTimeline({ id }: RiverMagazineTimelineProps
           onClose={() => setSelectedExhibition(null)}
         />
       )}
-      {selectedArtwork && (
-        <ArtworkOverlay
-          artwork={selectedArtwork}
-          onClose={() => setSelectedArtwork(null)}
-        />
-      )}
+      {selectedArtwork && (() => {
+        const idx = visibleArtworkList.findIndex(a => a.id === selectedArtwork.id)
+        if (idx === -1) return null
+        const prevArtwork = idx > 0 ? visibleArtworkList[idx - 1] : null
+        const nextArtwork = idx < visibleArtworkList.length - 1 ? visibleArtworkList[idx + 1] : null
+
+        const sameYearList = visibleArtworkList.filter(a => a.year === selectedArtwork.year)
+        const inYearIdx = sameYearList.findIndex(a => a.id === selectedArtwork.id)
+        const positionLabel = inYearIdx !== -1 && sameYearList.length > 0
+          ? `${inYearIdx + 1} / ${sameYearList.length} in ${selectedArtwork.year}`
+          : undefined
+
+        return (
+          <ArtworkOverlay
+            artwork={selectedArtwork}
+            onClose={() => setSelectedArtwork(null)}
+            onPrev={prevArtwork ? () => setSelectedArtwork(prevArtwork) : undefined}
+            onNext={nextArtwork ? () => setSelectedArtwork(nextArtwork) : undefined}
+            hasPrev={prevArtwork !== null}
+            hasNext={nextArtwork !== null}
+            positionLabel={positionLabel}
+          />
+        )
+      })()}
     </section>
   )
 }
@@ -178,6 +210,12 @@ function TimelineYearBlock({
   onSelectExhibition, onSelectArtwork, isAdmin, onUpdate,
 }: TimelineYearBlockProps) {
   const [ref, isVisible] = useScrollAnimation(0.1)
+
+  const { left: leftArtworks, right: rightArtworks } = splitArtworks(
+    ty.artworks,
+    ty.exhibitions.length,
+    ty.pressQuotes.length,
+  )
 
   return (
     <div
@@ -204,7 +242,7 @@ function TimelineYearBlock({
         {/* Mobile spine dot */}
         <div className="md:hidden absolute -left-[5px] top-5 w-[9px] h-[9px] rounded-full bg-[rgb(0,46,18)] border-2 border-gray-50 shadow-[0_0_0_1px_rgb(0,46,18)]" />
 
-        {/* LEFT: Exhibitions + Press */}
+        {/* LEFT: Exhibitions + Press + (optional) overflow artworks */}
         <div className="md:col-start-1 md:pr-9 max-md:pr-0 max-md:mb-5">
           {ty.exhibitions.length > 0 ? (
             <div className="space-y-3">
@@ -232,12 +270,12 @@ function TimelineYearBlock({
                 )
               })}
             </div>
-          ) : (
+          ) : leftArtworks.length === 0 ? (
             <div className="border border-dashed border-gray-300 p-4.5 text-center mt-5">
               <div className="text-[8px] tracking-[3px] uppercase text-gray-400 mb-1.5 font-medium">No Exhibition</div>
               <div className="text-[13px] text-gray-500 italic">Studio year</div>
             </div>
-          )}
+          ) : null}
 
           {/* Press clips */}
           {ty.pressQuotes.length > 0 && (
@@ -255,6 +293,13 @@ function TimelineYearBlock({
               ))}
             </div>
           )}
+
+          {/* Overflow artworks (only when left column had room) */}
+          {leftArtworks.length > 0 && (
+            <div className={`flex flex-col gap-3 ${ty.exhibitions.length > 0 || ty.pressQuotes.length > 0 ? 'mt-3' : ''}`}>
+              {renderArtworkColumn(leftArtworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible, ty.exhibitions.length + ty.pressQuotes.length)}
+            </div>
+          )}
         </div>
 
         {/* CENTER: Spine dot (desktop only) */}
@@ -269,7 +314,7 @@ function TimelineYearBlock({
         {/* RIGHT: Artworks */}
         <div className="md:col-start-3 md:pl-9 max-md:pl-0">
           <div className="flex flex-col gap-3">
-            {renderArtworkColumn(ty.artworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible)}
+            {renderArtworkColumn(rightArtworks, isArtworkVisible, onSelectArtwork, isAdmin, onUpdate, isVisible, 0)}
           </div>
         </div>
       </div>
@@ -286,6 +331,7 @@ function renderArtworkColumn(
   isAdmin: boolean,
   onUpdate: () => void,
   isRevealed: boolean,
+  indexOffset: number = 0,
 ) {
   const items: React.ReactNode[] = []
   let i = 0
@@ -302,7 +348,7 @@ function renderArtworkColumn(
           className={`grid grid-cols-2 max-[420px]:grid-cols-1 gap-2.5 transition-all duration-700 ease-out ${
             isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
-          style={{ transitionDelay: isRevealed ? `${itemIndex * 50}ms` : '0ms' }}
+          style={{ transitionDelay: isRevealed ? `${(itemIndex + indexOffset) * 50}ms` : '0ms' }}
         >
           {[a, next].map((artwork) => {
             const inner = (
@@ -332,7 +378,7 @@ function renderArtworkColumn(
         className={`transition-all duration-700 ease-out ${
           isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         } ${!isVisible(a) ? '!opacity-[0.15] pointer-events-none' : ''}`}
-        style={{ transitionDelay: isRevealed ? `${itemIndex * 50}ms` : '0ms' }}
+        style={{ transitionDelay: isRevealed ? `${(itemIndex + indexOffset) * 50}ms` : '0ms' }}
       >
         {isAdmin ? (
           <ArtworkContextMenu artwork={a} onUpdate={onUpdate}>

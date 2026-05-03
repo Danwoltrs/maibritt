@@ -2,18 +2,35 @@
 
 import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Artwork } from '@/types'
 import { Badge } from '@/components/ui/badge'
 
 interface ArtworkOverlayProps {
   artwork: Artwork | null
   onClose: () => void
+  onPrev?: () => void
+  onNext?: () => void
+  hasPrev?: boolean
+  hasNext?: boolean
+  positionLabel?: string  // e.g. "3 / 12 in 2012"
 }
 
-export default function ArtworkOverlay({ artwork, onClose }: ArtworkOverlayProps) {
+export default function ArtworkOverlay({
+  artwork, onClose,
+  onPrev, onNext, hasPrev = false, hasNext = false, positionLabel,
+}: ArtworkOverlayProps) {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft' && hasPrev && onPrev) {
+        e.preventDefault()
+        onPrev()
+      }
+      if (e.key === 'ArrowRight' && hasNext && onNext) {
+        e.preventDefault()
+        onNext()
+      }
     }
     if (artwork) {
       document.addEventListener('keydown', handleKey)
@@ -23,20 +40,13 @@ export default function ArtworkOverlay({ artwork, onClose }: ArtworkOverlayProps
       document.removeEventListener('keydown', handleKey)
       document.body.style.overflow = ''
     }
-  }, [artwork, onClose])
+  }, [artwork, onClose, onPrev, onNext, hasPrev, hasNext])
 
   if (!artwork) return null
 
   const title = artwork.title.en || artwork.title.ptBR
   const medium = artwork.medium.en || artwork.medium.ptBR
   const mainImage = artwork.images?.[0]?.display || artwork.images?.[0]?.original
-
-  const details = [
-    { label: 'Year', value: String(artwork.year) },
-    { label: 'Medium', value: medium },
-    ...(artwork.dimensions ? [{ label: 'Dimensions', value: artwork.dimensions }] : []),
-    ...(artwork.artSeries ? [{ label: 'Series', value: artwork.artSeries.nameEn || artwork.artSeries.namePt }] : []),
-  ]
 
   return (
     <AnimatePresence>
@@ -56,66 +66,125 @@ export default function ArtworkOverlay({ artwork, onClose }: ArtworkOverlayProps
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
           transition={{ duration: 0.28, ease: 'easeOut' }}
-          className="relative z-10 bg-white max-w-[820px] w-[calc(100%-32px)] max-h-[92vh] overflow-y-auto rounded-lg shadow-2xl
-            grid grid-cols-2
-            max-md:grid-cols-1 max-md:w-full max-md:max-w-full max-md:fixed max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:rounded-none"
+          className="
+            relative z-10 bg-white rounded-lg shadow-2xl overflow-hidden
+            w-[95vw] h-[95vh] flex flex-col
+            max-md:w-screen max-md:h-screen max-md:rounded-none
+          "
         >
-          {/* Image column */}
-          <div className="bg-gray-900 min-h-[280px] relative overflow-hidden rounded-l-lg max-md:rounded-none">
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center bg-white/80 hover:bg-white rounded-full text-gray-700 hover:text-gray-900 transition-colors shadow"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Image area (top ~75%) */}
+          <div className="relative bg-neutral-900 flex-1 min-h-0 flex items-center justify-center">
             {mainImage ? (
-              <img src={mainImage} alt={title} className="w-full h-full min-h-[280px] object-cover" />
+              <img
+                src={mainImage}
+                alt={title}
+                className="max-w-full max-h-full object-contain"
+              />
             ) : (
-              <div className="w-full h-full min-h-[280px] bg-gray-800 flex items-center justify-center">
-                <span className="text-gray-500 text-sm">No image</span>
-              </div>
+              <span className="text-gray-500 text-sm">No image</span>
             )}
+
+            {/* Desktop: edge-overlay arrows */}
+            <button
+              onClick={onPrev}
+              disabled={!hasPrev}
+              aria-label="Previous artwork"
+              className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center bg-black/40 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed rounded-full text-white transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={onNext}
+              disabled={!hasNext}
+              aria-label="Next artwork"
+              className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 items-center justify-center bg-black/40 hover:bg-black/70 disabled:opacity-30 disabled:cursor-not-allowed rounded-full text-white transition-colors"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
           </div>
 
-          {/* Info column */}
-          <div className="p-7 px-6 relative">
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3.5 bg-transparent border-none text-xl cursor-pointer text-gray-400 hover:text-gray-900 w-7 h-7 flex items-center justify-center"
-            >
-              &times;
-            </button>
-
-            <Badge variant="outline" className="bg-gray-100 text-gray-800 capitalize text-[10px] border-0 mb-2">
-              {artwork.category ? artwork.category.charAt(0).toUpperCase() + artwork.category.slice(1) : 'Artwork'}
-            </Badge>
-            <h2 className="text-[22px] font-medium leading-tight mb-1 text-gray-900">{title}</h2>
-            <div className="text-[11px] text-gray-500 mb-5">{artwork.year}</div>
-
-            <hr className="border-t border-gray-200 my-4" />
-
-            {details.map((d, i) => (
-              <div key={i} className="flex justify-between items-baseline py-1.5 border-b border-gray-100 last:border-b-0 text-[11px]">
-                <span className="text-[9px] tracking-[2px] uppercase text-gray-500 font-medium">{d.label}</span>
-                <span className="text-[13px] text-gray-800">{d.value}</span>
+          {/* Description strip (bottom ~25%) */}
+          <div className="bg-white border-t border-gray-200 px-6 py-4 max-md:px-4 max-md:py-3">
+            <div className="flex items-start gap-6 max-md:flex-col max-md:gap-3">
+              {/* Title block */}
+              <div className="min-w-0">
+                <Badge variant="outline" className="bg-gray-100 text-gray-800 capitalize text-[10px] border-0 mb-1.5">
+                  {artwork.category ? artwork.category.charAt(0).toUpperCase() + artwork.category.slice(1) : 'Artwork'}
+                </Badge>
+                <h2 className="text-[20px] font-medium leading-tight text-gray-900 truncate">{title}</h2>
+                <div className="text-[11px] text-gray-500 mt-0.5">{artwork.year}</div>
               </div>
-            ))}
 
-            {/* Thumbnails */}
-            {artwork.images && artwork.images.length > 1 && (
+              {/* Metadata row */}
+              <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1 text-[12px] text-gray-700 max-md:text-[11px]">
+                {medium && (
+                  <div>
+                    <span className="text-[9px] tracking-[2px] uppercase text-gray-500 font-medium block">Medium</span>
+                    <span>{medium}</span>
+                  </div>
+                )}
+                {artwork.dimensions && (
+                  <div>
+                    <span className="text-[9px] tracking-[2px] uppercase text-gray-500 font-medium block">Dimensions</span>
+                    <span>{artwork.dimensions}</span>
+                  </div>
+                )}
+                {artwork.artSeries && (
+                  <div>
+                    <span className="text-[9px] tracking-[2px] uppercase text-gray-500 font-medium block">Series</span>
+                    <span>{artwork.artSeries.nameEn || artwork.artSeries.namePt}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* View full link */}
+              {artwork.slug && (
+                <a
+                  href={`/artwork/${artwork.slug}`}
+                  className="text-[10px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-medium whitespace-nowrap self-end max-md:self-start"
+                >
+                  View Full Details &rarr;
+                </a>
+              )}
+            </div>
+
+            {/* Pagination indicator (desktop: centered below row; mobile: bottom bar) */}
+            {positionLabel && (
               <>
-                <hr className="border-t border-gray-200 my-4" />
-                <div className="grid grid-cols-3 gap-1.5">
-                  {artwork.images.map((img, i) => (
-                    <div key={i} className="aspect-square overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors cursor-pointer rounded">
-                      <img src={img.thumbnail || img.display} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  ))}
+                <div className="hidden md:block text-center text-[11px] text-gray-500 mt-3">
+                  {positionLabel}
+                </div>
+                <div className="md:hidden flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={onPrev}
+                    disabled={!hasPrev}
+                    aria-label="Previous artwork"
+                    className="min-h-[44px] px-4 flex items-center gap-1 text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                    <span className="text-[12px]">Prev</span>
+                  </button>
+                  <span className="text-[11px] text-gray-500">{positionLabel}</span>
+                  <button
+                    onClick={onNext}
+                    disabled={!hasNext}
+                    aria-label="Next artwork"
+                    className="min-h-[44px] px-4 flex items-center gap-1 text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <span className="text-[12px]">Next</span>
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
                 </div>
               </>
-            )}
-
-            {artwork.slug && (
-              <a
-                href={`/artwork/${artwork.slug}`}
-                className="block mt-5 text-[9px] tracking-[2px] uppercase text-blue-600 hover:text-gray-900 transition-colors font-medium"
-              >
-                View Full Details &rarr;
-              </a>
             )}
           </div>
         </motion.div>
