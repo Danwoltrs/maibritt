@@ -27,6 +27,10 @@ export interface Artwork {
     original: string
     display: string
     thumbnail: string
+    enhanced?: string
+    framed?: string
+    framePreset?: string
+    enhancedAt?: string
   }[]
   forSale: boolean
   price?: number
