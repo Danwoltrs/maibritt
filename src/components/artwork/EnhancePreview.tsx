@@ -20,8 +20,8 @@ export default function EnhancePreview({ beforeUrl, framedUrl, onApprove, onDisc
           <figure><img src={framedUrl} className="w-full rounded" alt="After" /><figcaption className="text-xs text-gray-500 mt-1">Enhanced & framed</figcaption></figure>
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onDiscard}>Discard</Button>
-          <Button onClick={onApprove}>Use this image</Button>
+          <Button type="button" variant="outline" onClick={onDiscard}>Discard</Button>
+          <Button type="button" onClick={onApprove}>Use this image</Button>
         </div>
       </DialogContent>
     </Dialog>
