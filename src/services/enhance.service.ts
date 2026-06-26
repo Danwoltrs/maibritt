@@ -3,7 +3,7 @@ import type { RotatedRect } from '@/lib/enhance/types'
 
 /** Upload the original straight to Storage via a signed URL (bypasses serverless body cap). */
 export async function uploadOriginalSigned(file: File): Promise<{ imageUrl: string; baseFileName: string }> {
-  const baseFileName = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  const baseFileName = `${Date.now()}-${Math.random().toString(36).slice(2, 10).padEnd(8, '0')}`
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `original/${baseFileName}.${ext}`
 
