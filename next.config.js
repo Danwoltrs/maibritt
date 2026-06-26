@@ -38,6 +38,10 @@ const nextConfig = {
       allowedOrigins: ['localhost:3000', '*.vercel.app'],
     },
   },
+  serverExternalPackages: ['sharp'],
+  outputFileTracingIncludes: {
+    '/api/enhance/**': ['./node_modules/@img/**'],
+  },
 }
 
 module.exports = nextConfig
