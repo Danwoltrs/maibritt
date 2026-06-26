@@ -23,6 +23,7 @@ export interface ArtworkCreateData {
   category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   seriesId?: string
   images: File[]
+  enhancements?: Record<number, { enhanced: string; framed: string; framePreset: string }>
   forSale?: boolean
   price?: number
   currency?: 'BRL' | 'USD' | 'EUR'
@@ -360,7 +361,20 @@ export class ArtworkService {
           'artworks',
           onProgress
         )
-        imageUrls = uploadResults.map(result => result.urls)
+        imageUrls = uploadResults.map((result, i) => {
+          const enh = artworkData.enhancements?.[i]
+          if (enh) {
+            return {
+              ...result.urls,
+              display: enh.framed,
+              enhanced: enh.enhanced,
+              framed: enh.framed,
+              framePreset: enh.framePreset,
+              enhancedAt: new Date().toISOString(),
+            }
+          }
+          return result.urls
+        }) as typeof imageUrls
       }
 
       // Get the next display order
