@@ -50,7 +50,9 @@ export function isAllowedImageUrl(imageUrl: string): boolean {
     return (
       parsed.protocol === 'https:' &&
       parsed.host === base.host &&
-      parsed.pathname.startsWith('/storage/v1/object/public/artworks/')
+      parsed.pathname.startsWith('/storage/v1/object/public/artworks/') &&
+      parsed.username === '' &&
+      parsed.password === ''
     )
   } catch {
     return false
