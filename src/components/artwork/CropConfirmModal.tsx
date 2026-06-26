@@ -68,8 +68,8 @@ export default function CropConfirmModal({ imageUrl, rect, presetKey, presetOpti
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button onClick={() => onConfirm(r, preset)}>Enhance</Button>
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button type="button" onClick={() => onConfirm(r, preset)}>Enhance</Button>
         </div>
       </DialogContent>
     </Dialog>
