@@ -205,6 +205,21 @@ export class StorageService {
     }
   }
 
+  /** Upload a derived enhancement variant (PNG) and return its public URL. */
+  static async uploadDerived(
+    bucket: 'artworks' | 'exhibitions' | 'series',
+    baseFileName: string,
+    kind: 'enhanced' | 'framed',
+    buf: Buffer | Blob,
+  ): Promise<string> {
+    const path = `${kind}/${baseFileName}.png`
+    const { error } = await supabase.storage.from(bucket).upload(path, buf, {
+      cacheControl: '3600', upsert: true, contentType: 'image/png',
+    })
+    if (error) throw error
+    return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+  }
+
   /**
    * Get public URL for a file
    */
