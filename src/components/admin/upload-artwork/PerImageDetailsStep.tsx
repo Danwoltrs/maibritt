@@ -23,8 +23,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ArtworkService } from '@/services/artwork.service'
+import EnhanceButton from '@/components/artwork/EnhanceButton'
+import { isEnhanceable } from '@/lib/framing/presets'
 import type { UploadedImage, ArtworkDetails, CommonApplied } from './types'
 import type { UploadState } from './useBackgroundUploads'
+
+export interface EnhancedResult {
+  enhanced: string
+  framed: string
+  framePreset: string
+}
 
 export type { ArtworkDetails } from './types'
 
@@ -39,6 +47,8 @@ interface PerImageDetailsStepProps {
   onRetryIndex: (index: number) => void
   getUploadState: (index: number) => UploadState
   error: string | null
+  enhancedByIndex: Record<number, EnhancedResult>
+  onFramed: (index: number, urls: EnhancedResult) => void
 }
 
 export function PerImageDetailsStep({
@@ -52,6 +62,8 @@ export function PerImageDetailsStep({
   onRetryIndex,
   getUploadState,
   error,
+  enhancedByIndex,
+  onFramed,
 }: PerImageDetailsStepProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -260,6 +272,25 @@ export function PerImageDetailsStep({
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </Button>
+            {/* Enhance with AI: taut-canvas correction + framed catalogue image */}
+            {(() => {
+              const enhanceCategory = commonApplied.category ?? current.category ?? ''
+              if (!isEnhanceable(enhanceCategory) || !images[currentIndex]) return null
+              return (
+                <div className="absolute bottom-2 left-2 flex items-center gap-2">
+                  <EnhanceButton
+                    file={images[currentIndex].file}
+                    category={enhanceCategory}
+                    onFramed={(urls) => onFramed(currentIndex, urls)}
+                  />
+                  {enhancedByIndex[currentIndex] && (
+                    <span className="text-[11px] text-emerald-600 bg-white/80 px-1.5 py-0.5 rounded">
+                      Enhanced ✓
+                    </span>
+                  )}
+                </div>
+              )
+            })()}
           </div>
 
           {/* RIGHT column: form */}
