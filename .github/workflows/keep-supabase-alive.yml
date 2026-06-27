@@ -1,0 +1,36 @@
+name: Keep Supabase alive
+
+# Supabase free-tier projects pause after 7 days with no requests.
+# This sends one lightweight request per day to keep the project active.
+
+on:
+  schedule:
+    # 06:17 UTC daily (odd minute avoids GitHub's top-of-hour cron congestion)
+    - cron: "17 6 * * *"
+  workflow_dispatch: {} # allow manual "Run workflow" from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Missing SUPABASE_URL or SUPABASE_ANON_KEY repo secrets."
+            exit 1
+          fi
+          # A real (tiny) DB read so it counts as project activity.
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/artworks?select=id&limit=1")
+          echo "Supabase responded with HTTP $status"
+          # Any response (200/401/403/404) means the project received a request
+          # and the inactivity timer is reset. Only fail on a total no-response.
+          if [ "$status" = "000" ]; then
+            echo "::error::No response from Supabase (network failure)."
+            exit 1
+          fi
