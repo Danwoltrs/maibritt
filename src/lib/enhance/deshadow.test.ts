@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import sharp from 'sharp'
+import sharp, { type Stats } from 'sharp'
 import { flattenToTaut } from './deshadow'
 import { makeVerticalGradient } from '../../test/images'
 
-function lumStd(stats: sharp.Stats): number {
+function lumStd(stats: Stats): number {
   // Average per-channel stdev as a proxy for shading variation.
   return (stats.channels[0].stdev + stats.channels[1].stdev + stats.channels[2].stdev) / 3
 }
