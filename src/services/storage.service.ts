@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 
 export interface ImageVariant {
   original: string
@@ -205,19 +205,26 @@ export class StorageService {
     }
   }
 
-  /** Upload a derived enhancement variant (PNG) and return its public URL. */
+  /** Upload a derived enhancement variant (PNG) and return its public URL.
+   * Uses the service-role client because this method is called server-side
+   * (run route) and the artworks bucket INSERT/UPDATE RLS policy is
+   * authenticated-only — the anon JWT would be denied. The caller
+   * (run/route.ts) already gates access via getRequestUser; service-role
+   * is only used as the write mechanism, not as an access gate.
+   */
   static async uploadDerived(
     bucket: 'artworks' | 'exhibitions' | 'series',
     baseFileName: string,
     kind: 'enhanced' | 'framed',
     buf: Buffer | Blob,
   ): Promise<string> {
+    const client = supabaseAdmin ?? supabase
     const path = `${kind}/${baseFileName}.png`
-    const { error } = await supabase.storage.from(bucket).upload(path, buf, {
+    const { error } = await client.storage.from(bucket).upload(path, buf, {
       cacheControl: '3600', upsert: true, contentType: 'image/png',
     })
     if (error) throw error
-    return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+    return client.storage.from(bucket).getPublicUrl(path).data.publicUrl
   }
 
   /**
