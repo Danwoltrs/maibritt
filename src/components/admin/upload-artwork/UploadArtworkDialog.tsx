@@ -29,7 +29,7 @@ import confetti from 'canvas-confetti'
 import { useDropzone } from 'react-dropzone'
 
 import { ArtworkService } from '@/services/artwork.service'
-import { PerImageDetailsStep } from './PerImageDetailsStep'
+import { PerImageDetailsStep, type EnhancedResult } from './PerImageDetailsStep'
 import type { UploadedImage, ArtworkDetails, CommonMetadata, ApplyToAll } from './types'
 import { useBackgroundUploads } from './useBackgroundUploads'
 import { saveDraft, loadDraft, clearDraft, draftHasContent } from './draftStorage'
@@ -77,6 +77,8 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
 
   // Step 2 state
   const [artworkDetails, setArtworkDetails] = useState<Record<number, ArtworkDetails>>({})
+  // Approved AI-enhanced (taut + framed) result per image index
+  const [enhancedByIndex, setEnhancedByIndex] = useState<Record<number, EnhancedResult>>({})
 
   // Session recovery state
   const [recovery, setRecovery] = useState<{
@@ -178,6 +180,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     setNewCategoryValue('')
     setNewCategoryLabel('')
     setArtworkDetails({})
+    setEnhancedByIndex({})
     setError(null)
     onClose()
   }, [onClose])
@@ -246,9 +249,11 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
         category: category as any,
         images: [images[i].file],
         featured: d.featured,
+        // Single-image payload → the enhanced result maps to image index 0
+        enhancements: enhancedByIndex[i] ? { 0: enhancedByIndex[i] } : undefined,
       }
     },
-    [artworkDetails, applyToAll, commonMeta, images]
+    [artworkDetails, applyToAll, commonMeta, images, enhancedByIndex]
   )
 
   // Submit all artworks
@@ -298,6 +303,8 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
         onRetryIndex={(i) => uploads.retry(i)}
         getUploadState={uploads.getState}
         error={error}
+        enhancedByIndex={enhancedByIndex}
+        onFramed={(i, urls) => setEnhancedByIndex(prev => ({ ...prev, [i]: urls }))}
       />
     )
   }
