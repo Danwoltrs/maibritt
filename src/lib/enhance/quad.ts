@@ -37,7 +37,7 @@ export function moveQuad(q: Quad, dx: number, dy: number): Quad {
   }
 }
 
-/** Signed area (shoelace) of the quad in normalized units; >0 means CW in image space. */
+/** Unsigned area (shoelace magnitude) of the quad in normalized units. */
 export function quadArea(q: Quad): number {
   const p = quadPoints(q)
   let a = 0
@@ -49,13 +49,27 @@ export function quadArea(q: Quad): number {
 }
 
 /**
- * A quad is usable if it is non-degenerate (reasonable area), convex, and its
- * corners are roughly in the expected TL/TR/BR/BL arrangement.
+ * A quad is usable if it is non-degenerate (reasonable area), convex, its corners
+ * are distinct, and they sit in the expected TL/TR/BR/BL arrangement (which also
+ * rejects the >45°-rotation case where auto-detect mislabels the corners). When
+ * this returns false, callers fall back to a near-full quad the artist can edit.
  */
 export function isValidQuad(q: Quad, minAreaFrac = 0.15): boolean {
   const p = quadPoints(q)
   if (p.some((pt) => !Number.isFinite(pt.x) || !Number.isFinite(pt.y))) return false
   if (quadArea(q) < minAreaFrac) return false
+
+  // No two corners may coincide (kills a degenerate triangle masquerading as a quad).
+  const eps = 1e-3
+  for (let i = 0; i < 4; i++) {
+    for (let j = i + 1; j < 4; j++) {
+      if (Math.hypot(p[i].x - p[j].x, p[i].y - p[j].y) < eps) return false
+    }
+  }
+
+  // Expected arrangement: left corners left of right corners, top corners above bottom.
+  if (!(q.tl.x < q.tr.x && q.bl.x < q.br.x && q.tl.y < q.bl.y && q.tr.y < q.br.y)) return false
+
   // Convexity: all cross-products of consecutive edges share one sign.
   let sign = 0
   for (let i = 0; i < 4; i++) {

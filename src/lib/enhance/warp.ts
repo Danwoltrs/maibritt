@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 import os from 'os'
 import path from 'path'
+import { randomUUID } from 'crypto'
 import { promises as fs } from 'fs'
 import type { Pt, Quad } from './types'
 import { quadPoints } from './quad'
@@ -95,16 +96,22 @@ export async function warpToRect(input: Buffer, quad: Quad): Promise<Buffer> {
     }
   }
 
-  let pipe = sharp(out, { raw: { width: outW, height: outH, channels: 4 } }).png()
-  try {
-    const meta = await sharp(input).metadata()
-    if (meta.icc) {
-      const tmp = path.join(os.tmpdir(), `enh-icc-${process.pid}-${outW}x${outH}.icc`)
+  const encode = () => sharp(out, { raw: { width: outW, height: outH, channels: 4 } }).png()
+
+  // Best-effort ICC preservation. sharp's withIccProfile takes a filename, so we
+  // stage the original profile to a UNIQUE temp file (concurrent same-size warps
+  // must not share a path — sharp reads it lazily at toBuffer()), then unlink it.
+  const meta = await sharp(input).metadata().catch(() => null)
+  if (meta?.icc) {
+    const tmp = path.join(os.tmpdir(), `enh-icc-${process.pid}-${randomUUID()}.icc`)
+    try {
       await fs.writeFile(tmp, meta.icc)
-      pipe = pipe.withIccProfile(tmp)
+      return await encode().withIccProfile(tmp).toBuffer()
+    } catch {
+      // fall through to sRGB-assumed output
+    } finally {
+      fs.unlink(tmp).catch(() => {})
     }
-  } catch {
-    // Best-effort ICC preservation; fall through to sRGB-assumed output.
   }
-  return pipe.toBuffer()
+  return encode().toBuffer()
 }

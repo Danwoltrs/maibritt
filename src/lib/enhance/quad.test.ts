@@ -57,6 +57,14 @@ describe('isValidQuad', () => {
     const bowtie: Quad = { tl: { x: 0, y: 0 }, tr: { x: 1, y: 1 }, br: { x: 1, y: 0 }, bl: { x: 0, y: 1 } }
     expect(isValidQuad(bowtie, 0.01)).toBe(false)
   })
+  it('rejects a degenerate triangle (two coincident corners)', () => {
+    const tri: Quad = { tl: { x: 0.1, y: 0.1 }, tr: { x: 0.1, y: 0.1 }, br: { x: 0.9, y: 0.9 }, bl: { x: 0.1, y: 0.9 } }
+    expect(isValidQuad(tri, 0.01)).toBe(false)
+  })
+  it('rejects a mislabeled quad (tl right of tr — e.g. a >45° rotation)', () => {
+    const rotated: Quad = { tl: { x: 0.8, y: 0.1 }, tr: { x: 0.2, y: 0.1 }, br: { x: 0.9, y: 0.9 }, bl: { x: 0.1, y: 0.9 } }
+    expect(isValidQuad(rotated, 0.01)).toBe(false)
+  })
 })
 
 describe('quadPoints', () => {
