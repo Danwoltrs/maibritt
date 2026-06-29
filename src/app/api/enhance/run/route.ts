@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     jobId = body.jobId
-    const { imageUrl, quad, presetKey, baseFileName } = body
+    const { imageUrl, quad, presetKey, baseFileName, flatten, color } = body
 
     if (!imageUrl || !quad || !baseFileName) {
       return NextResponse.json({ error: 'missing fields' }, { status: 400 })
@@ -41,13 +41,21 @@ export async function POST(req: NextRequest) {
     if (jobId) await updateJob(jobId, { status: 'processing', stage: 'enhancing' })
 
     const original = Buffer.from(await (await fetch(imageUrl)).arrayBuffer())
-    const { enhanced, framed } = await enhanceToFramed(original, quad, presetKey)
+    // flatten / colour are opt-in (toggles re-run with these set). Default = geometry-only.
+    const { enhanced, framed } = await enhanceToFramed(original, quad, presetKey, {
+      flatten: !!flatten,
+      color: !!color,
+    })
 
     const enhancedUrl = await StorageService.uploadDerived('artworks', baseFileName, 'enhanced', enhanced)
     const framedUrl = await StorageService.uploadDerived('artworks', baseFileName, 'framed', framed)
 
-    if (jobId) await updateJob(jobId, { status: 'done', stage: 'done', result: { enhanced: enhancedUrl, framed: framedUrl, framePreset: presetKey } })
-    return NextResponse.json({ enhanced: enhancedUrl, framed: framedUrl })
+    // Toggling flatten/colour re-runs and OVERWRITES the same storage paths
+    // (upsert). Bust the CDN cache so the preview shows the new bytes, not a
+    // stale copy of the same URL.
+    const v = `?v=${Date.now()}`
+    if (jobId) await updateJob(jobId, { status: 'done', stage: 'done', result: { enhanced: enhancedUrl + v, framed: framedUrl + v, framePreset: presetKey } })
+    return NextResponse.json({ enhanced: enhancedUrl + v, framed: framedUrl + v })
   } catch (e) {
     console.error('enhance run failed', e)
     // 5. Sanitize persisted error — never store raw exception text in the DB.

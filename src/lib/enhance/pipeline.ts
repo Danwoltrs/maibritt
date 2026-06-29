@@ -18,7 +18,9 @@ export async function enhanceToFramed(
   original: Buffer,
   quad: Quad,
   presetKey: string,
-  opts: { workingMax?: number } = {},
+  // flatten / colour are OPT-IN. The default enhance is geometry-only (warp +
+  // crop + straighten + optional frame) so the artist's colours stay faithful.
+  opts: { workingMax?: number; flatten?: boolean; color?: boolean } = {},
 ): Promise<{ enhanced: Buffer; framed: Buffer }> {
   const preset = FRAME_PRESETS[presetKey] ?? FRAME_PRESETS['oak-floater']
   const workingMax = opts.workingMax ?? 2000
@@ -27,9 +29,13 @@ export async function enhanceToFramed(
   // De-keystone: warp the canvas quad to a straight rectangle (crop + straighten
   // + perspective correction in one geometric resample).
   const dewarped = await warpToRect(working, quad)
-  const flattened = await flattenToTaut(dewarped)
-  const colored = await autoColorCorrect(flattened)
-  const enhanced = await maybeUpscale(colored)
+  let cleaned = dewarped
+  // Flat-field lighting correction — only when the artist enables it (a slack
+  // canvas photographed under uneven light); hue-preserving, brightness only.
+  if (opts.flatten) cleaned = await flattenToTaut(cleaned)
+  // Hue-preserving exposure lift — only when the artist enables "Auto colour".
+  if (opts.color) cleaned = await autoColorCorrect(cleaned)
+  const enhanced = await maybeUpscale(cleaned)
 
   // Framing is optional downstream; never let it fail the whole enhance.
   let framed = enhanced

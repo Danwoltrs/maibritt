@@ -27,6 +27,7 @@ export async function requestDetect(imageUrl: string): Promise<Quad> {
 
 export async function runEnhance(args: {
   jobId?: string; imageUrl: string; quad: Quad; presetKey: string; baseFileName: string
+  flatten?: boolean; color?: boolean
 }): Promise<{ enhanced: string; framed: string }> {
   const res = await fetch('/api/enhance/run', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(args),

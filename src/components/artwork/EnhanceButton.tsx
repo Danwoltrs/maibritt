@@ -24,6 +24,7 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
   const [presetKey, setPresetKey] = useState(defaultPresetForCategory(category))
   const [framedUrl, setFramedUrl] = useState('')
   const [enhancedUrl, setEnhancedUrl] = useState('')
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const presetOptions = Object.values(FRAME_PRESETS).filter((p) =>
@@ -46,9 +47,21 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
   async function confirm(nextQuad: Quad, key: string) {
     setQuad(nextQuad); setPresetKey(key); setPhase('running')
     try {
+      // First run is geometry-only (faithful colours) — flatten/colour are opt-in toggles.
       const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName })
       setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setPhase('preview')
     } catch (e) { setError(String(e)); setPhase('confirm') }
+  }
+
+  // Re-run when the artist toggles "Flatten lighting" / "Auto colour" in the preview.
+  async function rerun(flags: { flatten: boolean; color: boolean }) {
+    if (!quad) return
+    setBusy(true); setError(null)
+    try {
+      const out = await runEnhance({ imageUrl, quad, presetKey, baseFileName, flatten: flags.flatten, color: flags.color })
+      setEnhancedUrl(out.enhanced); setFramedUrl(out.framed)
+    } catch (e) { setError(String(e)) }
+    finally { setBusy(false) }
   }
 
   return (
@@ -65,6 +78,7 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
       )}
       {phase === 'preview' && (
         <EnhancePreview beforeUrl={imageUrl} enhancedUrl={enhancedUrl} framedUrl={framedUrl}
+          busy={busy} onRerun={rerun}
           onApprove={({ useFrame }) => {
             // No frame chosen → the clean image becomes the display image; preset cleared.
             onFramed({

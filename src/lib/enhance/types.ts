@@ -34,8 +34,12 @@ export interface DeshadowOptions {
 }
 
 export interface ColorOptions {
+  /** Lower clamp on the scalar exposure gain (default 0.9 — never darken harshly). */
   minGain?: number
+  /** Upper clamp on the scalar exposure gain (default 1.15 — only a gentle lift). */
   maxGain?: number
+  /** Luminance value the robust bright point is mapped toward (default 245). */
+  targetHigh?: number
 }
 
 export interface EnhanceResult {

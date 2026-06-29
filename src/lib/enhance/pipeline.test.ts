@@ -30,4 +30,19 @@ describe('enhanceToFramed', () => {
     expect(fm.width!).toBeGreaterThan(em.width!) // frame adds margin
     expect(em.format).toBe('png')
   })
+
+  it('default run is geometry-only; the flatten flag (not the default) flattens shading', async () => {
+    const photo = await paintingPhoto(400, 400) // has a baked-in vertical brightness gradient
+    const quad = {
+      tl: { x: 20 / 400, y: 20 / 400 }, tr: { x: 380 / 400, y: 20 / 400 },
+      br: { x: 380 / 400, y: 380 / 400 }, bl: { x: 20 / 400, y: 380 / 400 },
+    }
+    const shadingStdev = async (buf: Buffer) => {
+      const c = (await sharp(buf).stats()).channels
+      return (c[0].stdev + c[1].stdev + c[2].stdev) / 3
+    }
+    const def = await enhanceToFramed(photo, quad, 'oak-floater')                    // default: no flatten
+    const flat = await enhanceToFramed(photo, quad, 'oak-floater', { flatten: true }) // opt-in flatten
+    expect(await shadingStdev(flat.enhanced)).toBeLessThan(await shadingStdev(def.enhanced))
+  })
 })

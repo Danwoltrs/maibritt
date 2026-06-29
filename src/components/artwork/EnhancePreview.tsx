@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -7,16 +8,32 @@ import { Label } from '@/components/ui/label'
 
 interface Props {
   beforeUrl: string
-  enhancedUrl: string      // cleaned, unframed
-  framedUrl: string        // cleaned + wood frame
+  enhancedUrl: string      // cleaned, unframed (reflects the current flatten/colour flags)
+  framedUrl: string        // cleaned + wood frame (same flags)
+  busy?: boolean           // true while a flatten/colour re-run is in flight
+  onRerun: (flags: { flatten: boolean; color: boolean }) => void
   onApprove: (choice: { useFrame: boolean }) => void
   onDiscard: () => void
 }
 
-export default function EnhancePreview({ beforeUrl, enhancedUrl, framedUrl, onApprove, onDiscard }: Props) {
-  // Default to the clean, unframed result — the artist may not want a frame at all.
+export default function EnhancePreview({ beforeUrl, enhancedUrl, framedUrl, busy = false, onRerun, onApprove, onDiscard }: Props) {
+  // Frame is instant (both variants are already returned for the current flags).
+  // Flatten / Auto colour are opt-in and re-run the server — default OFF so the
+  // shown image starts geometry-only (faithful colours).
   const [useFrame, setUseFrame] = useState(false)
+  const [flatten, setFlatten] = useState(false)
+  const [color, setColor] = useState(false)
   const afterUrl = useFrame ? framedUrl : enhancedUrl
+
+  function toggleFlatten(v: boolean) { setFlatten(v); onRerun({ flatten: v, color }) }
+  function toggleColor(v: boolean) { setColor(v); onRerun({ flatten, color: v }) }
+
+  const caption = [
+    'Cleaned / Limpa',
+    flatten ? '+ light' : null,
+    color ? '+ colour' : null,
+    useFrame ? '+ frame / moldura' : null,
+  ].filter(Boolean).join(' ')
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onDiscard() }}>
@@ -29,21 +46,39 @@ export default function EnhancePreview({ beforeUrl, enhancedUrl, framedUrl, onAp
             <figcaption className="text-xs text-gray-500 mt-1">Original</figcaption>
           </figure>
           <figure>
-            <img src={afterUrl} className="w-full rounded" alt="After" />
-            <figcaption className="text-xs text-gray-500 mt-1">
-              {useFrame ? 'Cleaned + framed / Limpa + moldura' : 'Cleaned / Limpa'}
-            </figcaption>
+            <div className="relative">
+              <img src={afterUrl} className="w-full rounded" alt="After" />
+              {busy && (
+                <div className="absolute inset-0 flex items-center justify-center rounded bg-black/30">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            <figcaption className="text-xs text-gray-500 mt-1">{caption}</figcaption>
           </figure>
         </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-2">
-            <Switch id="use-frame" checked={useFrame} onCheckedChange={setUseFrame} />
-            <Label htmlFor="use-frame" className="text-sm">Add wood frame / Adicionar moldura</Label>
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2">
+              <Switch id="use-frame" checked={useFrame} onCheckedChange={setUseFrame} />
+              <Label htmlFor="use-frame" className="text-sm">Add wood frame / Moldura</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch id="flatten" checked={flatten} disabled={busy} onCheckedChange={toggleFlatten} />
+              <Label htmlFor="flatten" className="text-sm">Flatten lighting / Nivelar luz</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch id="auto-color" checked={color} disabled={busy} onCheckedChange={toggleColor} />
+              <Label htmlFor="auto-color" className="text-sm">Auto colour / Cor automática</Label>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <p className="text-xs text-gray-400">
+            Colours stay faithful by default — only cropping and straightening are applied. Lighting and colour are optional.
+          </p>
+          <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onDiscard}>Discard</Button>
-            <Button type="button" onClick={() => onApprove({ useFrame })}>Use this image</Button>
+            <Button type="button" disabled={busy} onClick={() => onApprove({ useFrame })}>Use this image</Button>
           </div>
         </div>
       </DialogContent>
