@@ -272,20 +272,24 @@ export function PerImageDetailsStep({
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </Button>
-            {/* Enhance with AI: taut-canvas correction + framed catalogue image */}
-            {(() => {
+            {/* Enhance with AI: taut-canvas correction + framed catalogue image.
+                Shown for flat media (the common case); hidden only when the category
+                is explicitly non-flat (sculpture / video / installations). */}
+            {images[currentIndex] && (() => {
               const enhanceCategory = commonApplied.category ?? current.category ?? ''
-              if (!isEnhanceable(enhanceCategory) || !images[currentIndex]) return null
+              if (enhanceCategory && !isEnhanceable(enhanceCategory)) return null
               return (
-                <div className="absolute bottom-2 left-2 flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2">
                   <EnhanceButton
                     file={images[currentIndex].file}
-                    category={enhanceCategory}
+                    category={enhanceCategory || 'painting'}
                     onFramed={(urls) => onFramed(currentIndex, urls)}
                   />
-                  {enhancedByIndex[currentIndex] && (
-                    <span className="text-[11px] text-emerald-600 bg-white/80 px-1.5 py-0.5 rounded">
-                      Enhanced ✓
+                  {enhancedByIndex[currentIndex] ? (
+                    <span className="text-[11px] text-emerald-600">Enhanced ✓</span>
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground">
+                      Clean up &amp; frame this painting
                     </span>
                   )}
                 </div>
