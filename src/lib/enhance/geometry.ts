@@ -1,6 +1,5 @@
-import type { RotatedRect } from './types'
-
-interface Pt { x: number; y: number }
+import type { Pt, Quad, RotatedRect } from './types'
+import { fullFrameQuad, isValidQuad } from './quad'
 
 /** Convex hull (counter-clockwise) via Andrew's monotone chain. */
 function convexHull(points: Pt[]): Pt[] {
@@ -73,22 +72,11 @@ function minAreaRect(hull: Pt[]): RotatedRect | null {
 }
 
 /**
- * Fit a (possibly tilted) rectangle to a foreground mask.
- *
- * Earlier this used PCA on the bright-pixel spread, which an abstract painting's
- * interior shapes could skew. We now fit the *tightest enclosing rectangle*
- * around the mask's outline (convex hull → rotating calipers), reading the tilt
- * directly off the canvas edge. Far more robust to what is painted inside.
+ * Convex hull of the foreground mask. Per-row left/right extremes capture every
+ * hull vertex (each is the leftmost or rightmost foreground pixel in its row),
+ * so we get the full hull in O(w·h) without materialising every pixel.
  */
-export function maskToRotatedRect(
-  mask: Uint8Array | Buffer,
-  w: number,
-  h: number,
-  threshold = 127,
-): RotatedRect {
-  // Per-row left/right extremes: every convex-hull vertex is the leftmost or
-  // rightmost foreground pixel in its own row, so this captures the full hull
-  // in O(w·h) without materialising every foreground pixel.
+function maskHull(mask: Uint8Array | Buffer, w: number, h: number, threshold: number): { hull: Pt[]; n: number } {
   const pts: Pt[] = []
   let n = 0
   for (let y = 0; y < h; y++) {
@@ -103,8 +91,46 @@ export function maskToRotatedRect(
     }
     if (lo >= 0) { pts.push({ x: lo, y }); pts.push({ x: hi, y }) }
   }
-  if (n === 0) return { cx: w / 2, cy: h / 2, width: w, height: h, angleDeg: 0 }
+  return { hull: n === 0 ? [] : convexHull(pts), n }
+}
 
-  const rect = minAreaRect(convexHull(pts))
+/**
+ * Fit a (possibly tilted) rectangle to a foreground mask — the tightest
+ * enclosing rectangle around the outline (convex hull → rotating calipers),
+ * reading the tilt directly off the canvas edge. Robust to interior shapes.
+ */
+export function maskToRotatedRect(
+  mask: Uint8Array | Buffer,
+  w: number,
+  h: number,
+  threshold = 127,
+): RotatedRect {
+  const { hull, n } = maskHull(mask, w, h, threshold)
+  if (n === 0) return { cx: w / 2, cy: h / 2, width: w, height: h, angleDeg: 0 }
+  const rect = minAreaRect(hull)
   return rect ?? { cx: w / 2, cy: h / 2, width: w, height: h, angleDeg: 0 }
+}
+
+/**
+ * Fit the canvas as a general quadrilateral (so it can be a perspective
+ * trapezoid, not just a tilted rectangle). The four corners are the hull points
+ * extreme along the two diagonals — robust for roughly-upright canvas photos.
+ * Returns normalized [0,1] corners; falls back to a centred near-full quad when
+ * the mask is empty or the result is degenerate (BiRefNet grabbed an interior
+ * shape, etc.). The corners remain fully editable in the UI.
+ */
+export function maskToQuad(mask: Uint8Array | Buffer, w: number, h: number, threshold = 127): Quad {
+  const { hull, n } = maskHull(mask, w, h, threshold)
+  if (n === 0 || hull.length < 3) return fullFrameQuad(0.96)
+
+  let tl = hull[0], tr = hull[0], br = hull[0], bl = hull[0]
+  for (const p of hull) {
+    if (p.x + p.y < tl.x + tl.y) tl = p        // top-left  : min(x+y)
+    if (p.x + p.y > br.x + br.y) br = p        // bottom-right: max(x+y)
+    if (p.x - p.y > tr.x - tr.y) tr = p        // top-right : max(x−y)
+    if (p.x - p.y < bl.x - bl.y) bl = p        // bottom-left: min(x−y)
+  }
+  const norm = (p: Pt): Pt => ({ x: p.x / w, y: p.y / h })
+  const quad: Quad = { tl: norm(tl), tr: norm(tr), br: norm(br), bl: norm(bl) }
+  return isValidQuad(quad) ? quad : fullFrameQuad(0.96)
 }

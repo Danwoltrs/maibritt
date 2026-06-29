@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { RotatedRect } from '@/lib/enhance/types'
+import type { Quad } from '@/lib/enhance/types'
 
 /** Upload the original straight to Storage via a signed URL (bypasses serverless body cap). */
 export async function uploadOriginalSigned(file: File): Promise<{ imageUrl: string; baseFileName: string }> {
@@ -17,16 +17,16 @@ export async function uploadOriginalSigned(file: File): Promise<{ imageUrl: stri
   return { imageUrl, baseFileName }
 }
 
-export async function requestDetect(imageUrl: string): Promise<RotatedRect> {
+export async function requestDetect(imageUrl: string): Promise<Quad> {
   const res = await fetch('/api/enhance/detect', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageUrl }),
   })
   if (!res.ok) throw new Error('detection failed')
-  return (await res.json()).rect
+  return (await res.json()).quad
 }
 
 export async function runEnhance(args: {
-  jobId?: string; imageUrl: string; rect: RotatedRect; presetKey: string; baseFileName: string
+  jobId?: string; imageUrl: string; quad: Quad; presetKey: string; baseFileName: string
 }): Promise<{ enhanced: string; framed: string }> {
   const res = await fetch('/api/enhance/run', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(args),

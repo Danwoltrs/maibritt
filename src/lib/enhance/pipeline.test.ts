@@ -15,9 +15,13 @@ async function paintingPhoto(w: number, h: number) {
 describe('enhanceToFramed', () => {
   it('produces a bare enhanced image and a larger framed image', async () => {
     const photo = await paintingPhoto(320, 240)
+    // The painting occupies x∈[20,300], y∈[20,220] → normalized quad of that region.
     const { enhanced, framed } = await enhanceToFramed(
       photo,
-      { cx: 160, cy: 120, width: 260, height: 180, angleDeg: 0 },
+      {
+        tl: { x: 20 / 320, y: 20 / 240 }, tr: { x: 300 / 320, y: 20 / 240 },
+        br: { x: 300 / 320, y: 220 / 240 }, bl: { x: 20 / 320, y: 220 / 240 },
+      },
       'oak-floater',
     )
     const em = await sharp(enhanced).metadata()

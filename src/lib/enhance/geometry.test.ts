@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { maskToRotatedRect } from './geometry'
+import { maskToRotatedRect, maskToQuad } from './geometry'
 import { makeTiltedRectMask } from '../../test/images'
 
 describe('maskToRotatedRect', () => {
@@ -43,5 +43,30 @@ describe('maskToRotatedRect', () => {
     expect(Math.abs(Math.abs(r.angleDeg) - 35)).toBeLessThan(3)
     // Long edge stays the width after normalisation.
     expect(r.width).toBeGreaterThan(r.height)
+  })
+})
+
+describe('maskToQuad', () => {
+  it('returns the four canvas corners as normalized fractions', () => {
+    // 160x100 rect centred in 260x200 → corners at x∈[50,210], y∈[50,150].
+    const mask = makeTiltedRectMask(260, 200, 160, 100, 0)
+    const q = maskToQuad(mask, 260, 200)
+    expect(q.tl.x).toBeCloseTo(50 / 260, 1)
+    expect(q.tl.y).toBeCloseTo(50 / 200, 1)
+    expect(q.br.x).toBeCloseTo(210 / 260, 1)
+    expect(q.br.y).toBeCloseTo(150 / 200, 1)
+  })
+
+  it('falls back to a near-full quad when the mask is empty', () => {
+    const q = maskToQuad(new Uint8Array(100 * 100), 100, 100)
+    expect(q.tl.x).toBeCloseTo(0.02, 2) // fullFrameQuad(0.96)
+    expect(q.br.x).toBeCloseTo(0.98, 2)
+  })
+
+  it('falls back when BiRefNet grabs a tiny interior shape', () => {
+    const mask = makeTiltedRectMask(300, 300, 30, 20, 0) // ~0.7% area → degenerate
+    const q = maskToQuad(mask, 300, 300)
+    expect(q.tl.x).toBeCloseTo(0.02, 2)
+    expect(q.br.x).toBeCloseTo(0.98, 2)
   })
 })

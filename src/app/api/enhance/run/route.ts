@@ -3,6 +3,7 @@ import { enhanceToFramed } from '@/lib/enhance/pipeline'
 import { StorageService } from '@/services/storage.service'
 import { updateJob } from '@/services/imageJobs.service'
 import { getRequestUser, isAllowedImageUrl, isValidBaseFileName } from '@/lib/enhance/guards'
+import { isValidQuad } from '@/lib/enhance/quad'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -16,9 +17,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     jobId = body.jobId
-    const { imageUrl, rect, presetKey, baseFileName } = body
+    const { imageUrl, quad, presetKey, baseFileName } = body
 
-    if (!imageUrl || !rect || !baseFileName) {
+    if (!imageUrl || !quad || !baseFileName) {
       return NextResponse.json({ error: 'missing fields' }, { status: 400 })
     }
 
@@ -32,10 +33,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'invalid baseFileName' }, { status: 400 })
     }
 
+    // 4. Geometry guard — the crop quad must be a sane, non-degenerate shape.
+    if (!isValidQuad(quad, 0.02)) {
+      return NextResponse.json({ error: 'invalid crop' }, { status: 400 })
+    }
+
     if (jobId) await updateJob(jobId, { status: 'processing', stage: 'enhancing' })
 
     const original = Buffer.from(await (await fetch(imageUrl)).arrayBuffer())
-    const { enhanced, framed } = await enhanceToFramed(original, rect, presetKey)
+    const { enhanced, framed } = await enhanceToFramed(original, quad, presetKey)
 
     const enhancedUrl = await StorageService.uploadDerived('artworks', baseFileName, 'enhanced', enhanced)
     const framedUrl = await StorageService.uploadDerived('artworks', baseFileName, 'framed', framed)
@@ -44,7 +50,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ enhanced: enhancedUrl, framed: framedUrl })
   } catch (e) {
     console.error('enhance run failed', e)
-    // 4. Sanitize persisted error — never store raw exception text in the DB.
+    // 5. Sanitize persisted error — never store raw exception text in the DB.
     if (jobId) await updateJob(jobId, { status: 'failed', error: 'enhance_failed' }).catch(() => {})
     return NextResponse.json({ error: 'enhance failed' }, { status: 500 })
   }

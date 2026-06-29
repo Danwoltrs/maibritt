@@ -1,6 +1,6 @@
 import sharp from 'sharp'
-import type { RotatedRect } from './types'
-import { cropStraighten } from './crop'
+import type { Quad } from './types'
+import { warpToRect } from './warp'
 import { flattenToTaut } from './deshadow'
 import { autoColorCorrect } from './color'
 import { maybeUpscale } from './upscale'
@@ -16,7 +16,7 @@ async function toWorking(buf: Buffer, workingMax: number): Promise<Buffer> {
 
 export async function enhanceToFramed(
   original: Buffer,
-  rect: RotatedRect,
+  quad: Quad,
   presetKey: string,
   opts: { workingMax?: number } = {},
 ): Promise<{ enhanced: Buffer; framed: Buffer }> {
@@ -24,10 +24,19 @@ export async function enhanceToFramed(
   const workingMax = opts.workingMax ?? 2000
 
   const working = await toWorking(original, workingMax)
-  const cropped = await cropStraighten(working, rect)
-  const flattened = await flattenToTaut(cropped)
+  // De-keystone: warp the canvas quad to a straight rectangle (crop + straighten
+  // + perspective correction in one geometric resample).
+  const dewarped = await warpToRect(working, quad)
+  const flattened = await flattenToTaut(dewarped)
   const colored = await autoColorCorrect(flattened)
   const enhanced = await maybeUpscale(colored)
-  const framed = await composeFrame(enhanced, preset)
+
+  // Framing is optional downstream; never let it fail the whole enhance.
+  let framed = enhanced
+  try {
+    framed = await composeFrame(enhanced, preset)
+  } catch (e) {
+    console.error('composeFrame failed; returning unframed enhanced image', e)
+  }
   return { enhanced, framed }
 }

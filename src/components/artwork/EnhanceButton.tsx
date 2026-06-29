@@ -6,7 +6,7 @@ import CropConfirmModal from './CropConfirmModal'
 import EnhancePreview from './EnhancePreview'
 import { uploadOriginalSigned, requestDetect, runEnhance } from '@/services/enhance.service'
 import { FRAME_PRESETS, defaultPresetForCategory } from '@/lib/framing/presets'
-import type { RotatedRect } from '@/lib/enhance/types'
+import type { Quad } from '@/lib/enhance/types'
 
 type Phase = 'idle' | 'uploading' | 'detecting' | 'confirm' | 'running' | 'preview'
 
@@ -20,7 +20,7 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [imageUrl, setImageUrl] = useState('')
   const [baseFileName, setBaseFileName] = useState('')
-  const [rect, setRect] = useState<RotatedRect | null>(null)
+  const [quad, setQuad] = useState<Quad | null>(null)
   const [presetKey, setPresetKey] = useState(defaultPresetForCategory(category))
   const [framedUrl, setFramedUrl] = useState('')
   const [enhancedUrl, setEnhancedUrl] = useState('')
@@ -38,15 +38,15 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
       setImageUrl(up.imageUrl); setBaseFileName(up.baseFileName)
       setPhase('detecting')
       const detected = await requestDetect(up.imageUrl)
-      setRect(detected)
+      setQuad(detected)
       setPhase('confirm')
     } catch (e) { setError(String(e)); setPhase('idle') }
   }
 
-  async function confirm(r: RotatedRect, key: string) {
-    setRect(r); setPresetKey(key); setPhase('running')
+  async function confirm(nextQuad: Quad, key: string) {
+    setQuad(nextQuad); setPresetKey(key); setPhase('running')
     try {
-      const out = await runEnhance({ imageUrl, rect: r, presetKey: key, baseFileName })
+      const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName })
       setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setPhase('preview')
     } catch (e) { setError(String(e)); setPhase('confirm') }
   }
@@ -59,8 +59,8 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
       </Button>
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
 
-      {phase === 'confirm' && rect && (
-        <CropConfirmModal imageUrl={imageUrl} rect={rect} presetKey={presetKey}
+      {phase === 'confirm' && quad && (
+        <CropConfirmModal imageUrl={imageUrl} quad={quad} presetKey={presetKey}
           presetOptions={presetOptions} onConfirm={confirm} onCancel={() => setPhase('idle')} />
       )}
       {phase === 'preview' && (

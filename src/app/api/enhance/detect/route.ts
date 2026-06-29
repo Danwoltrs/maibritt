@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'invalid imageUrl' }, { status: 400 })
     }
 
-    const { rect } = await detectPainting(imageUrl)
-    return NextResponse.json({ rect })
+    const { quad } = await detectPainting(imageUrl)
+    return NextResponse.json({ quad })
   } catch (e) {
     console.error('detect failed', e)
     return NextResponse.json({ error: 'detection failed' }, { status: 500 })
