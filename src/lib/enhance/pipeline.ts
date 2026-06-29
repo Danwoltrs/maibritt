@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 import type { Quad } from './types'
 import { warpToRect } from './warp'
+import { dewarpDocRes } from './dewarp'
 import { flattenToTaut } from './deshadow'
 import { autoColorCorrect } from './color'
 import { maybeUpscale } from './upscale'
@@ -18,9 +19,10 @@ export async function enhanceToFramed(
   original: Buffer,
   quad: Quad,
   presetKey: string,
-  // flatten / colour are OPT-IN. The default enhance is geometry-only (warp +
-  // crop + straighten + optional frame) so the artist's colours stay faithful.
-  opts: { workingMax?: number; flatten?: boolean; color?: boolean } = {},
+  // dewarp / flatten / colour are all OPT-IN. The default enhance is geometry-only
+  // (4-corner warp + crop + straighten + optional frame) so the artist's colours
+  // stay faithful.
+  opts: { workingMax?: number; dewarp?: boolean; flatten?: boolean; color?: boolean } = {},
 ): Promise<{ enhanced: Buffer; framed: Buffer }> {
   const preset = FRAME_PRESETS[presetKey] ?? FRAME_PRESETS['oak-floater']
   const workingMax = opts.workingMax ?? 2000
@@ -30,6 +32,9 @@ export async function enhanceToFramed(
   // + perspective correction in one geometric resample).
   const dewarped = await warpToRect(working, quad)
   let cleaned = dewarped
+  // AI de-warp — only when the artist enables it. Moves pixels to straighten the
+  // canvas undulation (geometry-only, paid); falls back to input on any failure.
+  if (opts.dewarp) cleaned = await dewarpDocRes(cleaned)
   // Flat-field lighting correction — only when the artist enables it (a slack
   // canvas photographed under uneven light); hue-preserving, brightness only.
   if (opts.flatten) cleaned = await flattenToTaut(cleaned)

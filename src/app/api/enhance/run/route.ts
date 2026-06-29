@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     jobId = body.jobId
-    const { imageUrl, quad, presetKey, baseFileName, flatten, color } = body
+    const { imageUrl, quad, presetKey, baseFileName, dewarp, flatten, color } = body
 
     if (!imageUrl || !quad || !baseFileName) {
       return NextResponse.json({ error: 'missing fields' }, { status: 400 })
@@ -41,8 +41,9 @@ export async function POST(req: NextRequest) {
     if (jobId) await updateJob(jobId, { status: 'processing', stage: 'enhancing' })
 
     const original = Buffer.from(await (await fetch(imageUrl)).arrayBuffer())
-    // flatten / colour are opt-in (toggles re-run with these set). Default = geometry-only.
+    // dewarp / flatten / colour are opt-in (toggles re-run with these set). Default = geometry-only.
     const { enhanced, framed } = await enhanceToFramed(original, quad, presetKey, {
+      dewarp: !!dewarp,
       flatten: !!flatten,
       color: !!color,
     })

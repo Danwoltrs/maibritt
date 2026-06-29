@@ -10,26 +10,29 @@ interface Props {
   beforeUrl: string
   enhancedUrl: string      // cleaned, unframed (reflects the current flatten/colour flags)
   framedUrl: string        // cleaned + wood frame (same flags)
-  busy?: boolean           // true while a flatten/colour re-run is in flight
-  onRerun: (flags: { flatten: boolean; color: boolean }) => void
+  busy?: boolean           // true while a dewarp/flatten/colour re-run is in flight
+  onRerun: (flags: { dewarp: boolean; flatten: boolean; color: boolean }) => void
   onApprove: (choice: { useFrame: boolean }) => void
   onDiscard: () => void
 }
 
 export default function EnhancePreview({ beforeUrl, enhancedUrl, framedUrl, busy = false, onRerun, onApprove, onDiscard }: Props) {
   // Frame is instant (both variants are already returned for the current flags).
-  // Flatten / Auto colour are opt-in and re-run the server — default OFF so the
-  // shown image starts geometry-only (faithful colours).
+  // AI dewarp / Flatten / Auto colour are opt-in and re-run the server — default
+  // OFF so the shown image starts geometry-only (faithful colours).
   const [useFrame, setUseFrame] = useState(false)
+  const [dewarp, setDewarp] = useState(false)
   const [flatten, setFlatten] = useState(false)
   const [color, setColor] = useState(false)
   const afterUrl = useFrame ? framedUrl : enhancedUrl
 
-  function toggleFlatten(v: boolean) { setFlatten(v); onRerun({ flatten: v, color }) }
-  function toggleColor(v: boolean) { setColor(v); onRerun({ flatten, color: v }) }
+  function toggleDewarp(v: boolean) { setDewarp(v); onRerun({ dewarp: v, flatten, color }) }
+  function toggleFlatten(v: boolean) { setFlatten(v); onRerun({ dewarp, flatten: v, color }) }
+  function toggleColor(v: boolean) { setColor(v); onRerun({ dewarp, flatten, color: v }) }
 
   const caption = [
     'Cleaned / Limpa',
+    dewarp ? '+ dewarp' : null,
     flatten ? '+ light' : null,
     color ? '+ colour' : null,
     useFrame ? '+ frame / moldura' : null,
@@ -72,9 +75,14 @@ export default function EnhancePreview({ beforeUrl, enhancedUrl, framedUrl, busy
               <Switch id="auto-color" checked={color} disabled={busy} onCheckedChange={toggleColor} />
               <Label htmlFor="auto-color" className="text-sm">Auto colour / Cor automática</Label>
             </div>
+            <div className="flex items-center gap-2">
+              <Switch id="ai-dewarp" checked={dewarp} disabled={busy} onCheckedChange={toggleDewarp} />
+              <Label htmlFor="ai-dewarp" className="text-sm">AI dewarp · may alter / pode alterar</Label>
+            </div>
           </div>
           <p className="text-xs text-gray-400">
             Colours stay faithful by default — only cropping and straightening are applied. Lighting and colour are optional.
+            “AI dewarp” straightens the canvas’s waviness by reshaping the image and may slightly alter the painting — check the result.
           </p>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onDiscard}>Discard</Button>
