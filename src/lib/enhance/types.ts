@@ -28,8 +28,15 @@ export interface Quad {
 }
 
 export interface DeshadowOptions {
-  blurSigma?: number
+  /** Illumination-estimate blur that KEEPS the wave band (px; default ~1.2% of long edge). */
+  sigmaHigh?: number
+  /** Broad-arc blur that rejects the waves (px; default ~15% of long edge). */
+  sigmaLow?: number
+  /** How hard to divide out the wave band, 0..~1.5 (default 1.0). */
+  strength?: number
+  /** Lower clamp on the per-pixel scalar gain (default 0.7). */
   minGain?: number
+  /** Upper clamp on the per-pixel scalar gain (default 1.4). */
   maxGain?: number
 }
 
