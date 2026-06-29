@@ -23,4 +23,25 @@ describe('maskToRotatedRect', () => {
     expect(r.width).toBe(100)
     expect(r.height).toBe(100)
   })
+
+  it('fits the canvas edges tightly, not the interior spread', () => {
+    // Filled rect 160x100 — the tight box should recover those extents closely.
+    const mask = makeTiltedRectMask(260, 200, 160, 100, 0)
+    const r = maskToRotatedRect(mask, 260, 200)
+    expect(r.cx).toBeCloseTo(130, 0)
+    expect(r.cy).toBeCloseTo(100, 0)
+    expect(r.width).toBeGreaterThan(150)
+    expect(r.width).toBeLessThan(170)
+    expect(r.height).toBeGreaterThan(92)
+    expect(r.height).toBeLessThan(108)
+  })
+
+  it('reports tilt as a minimal straightening angle in (-45, 45]', () => {
+    const mask = makeTiltedRectMask(300, 300, 180, 70, 35)
+    const r = maskToRotatedRect(mask, 300, 300)
+    expect(Math.abs(r.angleDeg)).toBeLessThanOrEqual(45)
+    expect(Math.abs(Math.abs(r.angleDeg) - 35)).toBeLessThan(3)
+    // Long edge stays the width after normalisation.
+    expect(r.width).toBeGreaterThan(r.height)
+  })
 })

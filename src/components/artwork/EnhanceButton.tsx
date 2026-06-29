@@ -64,8 +64,16 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
           presetOptions={presetOptions} onConfirm={confirm} onCancel={() => setPhase('idle')} />
       )}
       {phase === 'preview' && (
-        <EnhancePreview beforeUrl={imageUrl} framedUrl={framedUrl}
-          onApprove={() => { onFramed({ enhanced: enhancedUrl, framed: framedUrl, framePreset: presetKey }); setPhase('idle') }}
+        <EnhancePreview beforeUrl={imageUrl} enhancedUrl={enhancedUrl} framedUrl={framedUrl}
+          onApprove={({ useFrame }) => {
+            // No frame chosen → the clean image becomes the display image; preset cleared.
+            onFramed({
+              enhanced: enhancedUrl,
+              framed: useFrame ? framedUrl : enhancedUrl,
+              framePreset: useFrame ? presetKey : '',
+            })
+            setPhase('idle')
+          }}
           onDiscard={() => setPhase('idle')} />
       )}
     </>
