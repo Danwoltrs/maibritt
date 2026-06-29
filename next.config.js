@@ -40,7 +40,10 @@ const nextConfig = {
   },
   serverExternalPackages: ['sharp'],
   outputFileTracingIncludes: {
-    '/api/enhance/**': ['./node_modules/@img/**'],
+    // Bundle sharp's native binaries AND the wood-frame textures into the
+    // serverless function. public/ is NOT included in the lambda by default,
+    // so composeFrame's texture read would ENOENT on Vercel without this.
+    '/api/enhance/**': ['./node_modules/@img/**', './public/frames/**'],
   },
 }
 
