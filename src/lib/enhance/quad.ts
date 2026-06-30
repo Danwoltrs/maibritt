@@ -22,6 +22,22 @@ export function setCorner(q: Quad, c: Corner, x: number, y: number): Quad {
   return { ...q, [c]: { x: clamp01(x), y: clamp01(y) } }
 }
 
+/**
+ * Scale the quad outward from its centroid by `frac` (e.g. 0.03 = 3% larger),
+ * clamped to the image. Recovers mask under-segmentation / rounded corners so the
+ * auto-crop doesn't eat into the canvas. Preserves the shape (incl. perspective).
+ */
+export function expandQuad(q: Quad, frac: number): Quad {
+  const p = quadPoints(q)
+  const cx = (p[0].x + p[1].x + p[2].x + p[3].x) / 4
+  const cy = (p[0].y + p[1].y + p[2].y + p[3].y) / 4
+  const push = (pt: Pt): Pt => ({
+    x: clamp01(cx + (pt.x - cx) * (1 + frac)),
+    y: clamp01(cy + (pt.y - cy) * (1 + frac)),
+  })
+  return { tl: push(q.tl), tr: push(q.tr), br: push(q.br), bl: push(q.bl) }
+}
+
 /** Translate the whole quad, clamping the shift so no corner leaves the image. */
 export function moveQuad(q: Quad, dx: number, dy: number): Quad {
   const pts = quadPoints(q)

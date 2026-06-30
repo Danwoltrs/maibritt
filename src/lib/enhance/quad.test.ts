@@ -1,8 +1,23 @@
 import { describe, it, expect } from 'vitest'
-import { fullFrameQuad, setCorner, moveQuad, quadArea, isValidQuad, quadPoints } from './quad'
+import { fullFrameQuad, setCorner, moveQuad, quadArea, isValidQuad, quadPoints, expandQuad } from './quad'
 import type { Quad } from './types'
 
 const unit: Quad = { tl: { x: 0, y: 0 }, tr: { x: 1, y: 0 }, br: { x: 1, y: 1 }, bl: { x: 0, y: 1 } }
+
+describe('expandQuad', () => {
+  it('scales the quad outward from its centroid', () => {
+    const e = expandQuad(fullFrameQuad(0.5), 0.2) // corners 0.25..0.75 → 0.2..0.8
+    expect(e.tl.x).toBeCloseTo(0.2, 6)
+    expect(e.tl.y).toBeCloseTo(0.2, 6)
+    expect(e.br.x).toBeCloseTo(0.8, 6)
+    expect(e.br.y).toBeCloseTo(0.8, 6)
+  })
+  it('clamps to the image bounds', () => {
+    const e = expandQuad(fullFrameQuad(0.98), 0.5) // corners 0.01..0.99 → clamp
+    expect(e.tl.x).toBe(0)
+    expect(e.br.x).toBe(1)
+  })
+})
 
 describe('fullFrameQuad', () => {
   it('returns the whole image at frac=1', () => {

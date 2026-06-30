@@ -1,5 +1,5 @@
 import type { Pt, Quad, RotatedRect } from './types'
-import { fullFrameQuad, isValidQuad } from './quad'
+import { fullFrameQuad, isValidQuad, expandQuad } from './quad'
 
 /** Convex hull (counter-clockwise) via Andrew's monotone chain. */
 function convexHull(points: Pt[]): Pt[] {
@@ -115,13 +115,16 @@ export function maskToRotatedRect(
  * Fit the canvas as a general quadrilateral (so it can be a perspective
  * trapezoid, not just a tilted rectangle). The four corners are the hull points
  * extreme along the two diagonals — robust for roughly-upright canvas photos.
- * Returns normalized [0,1] corners; falls back to a centred near-full quad when
- * the mask is empty or the result is degenerate (BiRefNet grabbed an interior
- * shape, etc.). The corners remain fully editable in the UI.
+ * Returns normalized [0,1] corners, expanded outward by `expandFrac` so a slightly
+ * under-segmented mask (BiRefNet tends to shrink a frame-filling canvas) doesn't
+ * crop into the painting. Falls back to a centred near-full quad when the mask is
+ * empty or the result is degenerate. The corners remain fully editable in the UI.
  */
-export function maskToQuad(mask: Uint8Array | Buffer, w: number, h: number, threshold = 127): Quad {
+export function maskToQuad(
+  mask: Uint8Array | Buffer, w: number, h: number, threshold = 127, expandFrac = 0.03,
+): Quad {
   const { hull, n } = maskHull(mask, w, h, threshold)
-  if (n === 0 || hull.length < 3) return fullFrameQuad(0.96)
+  if (n === 0 || hull.length < 3) return fullFrameQuad(0.99)
 
   let tl = hull[0], tr = hull[0], br = hull[0], bl = hull[0]
   for (const p of hull) {
@@ -132,5 +135,6 @@ export function maskToQuad(mask: Uint8Array | Buffer, w: number, h: number, thre
   }
   const norm = (p: Pt): Pt => ({ x: p.x / w, y: p.y / h })
   const quad: Quad = { tl: norm(tl), tr: norm(tr), br: norm(br), bl: norm(bl) }
-  return isValidQuad(quad) ? quad : fullFrameQuad(0.96)
+  if (!isValidQuad(quad)) return fullFrameQuad(0.99)
+  return expandFrac > 0 ? expandQuad(quad, expandFrac) : quad
 }

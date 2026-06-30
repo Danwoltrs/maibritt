@@ -31,6 +31,9 @@ export async function detectPainting(
   const resp = await fetch(maskUrl)
   const maskBuf = Buffer.from(await resp.arrayBuffer())
   const { data, info } = await sharp(maskBuf).greyscale().raw().toBuffer({ resolveWithObject: true })
-  const quad = maskToQuad(data, info.width, info.height, 127)
+  // Expand the detected quad outward a little: BiRefNet tends to under-segment a
+  // frame-filling canvas, which would crop into the painting. Tunable via env.
+  const margin = Number(process.env.ENHANCE_DETECT_MARGIN ?? 0.03)
+  const quad = maskToQuad(data, info.width, info.height, 127, margin)
   return { quad, maskWidth: info.width, maskHeight: info.height }
 }

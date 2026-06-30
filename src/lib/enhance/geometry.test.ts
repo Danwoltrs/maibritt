@@ -50,23 +50,32 @@ describe('maskToQuad', () => {
   it('returns the four canvas corners as normalized fractions', () => {
     // 160x100 rect centred in 260x200 → corners at x∈[50,210], y∈[50,150].
     const mask = makeTiltedRectMask(260, 200, 160, 100, 0)
-    const q = maskToQuad(mask, 260, 200)
+    const q = maskToQuad(mask, 260, 200, 127, 0) // no expansion → raw corners
     expect(q.tl.x).toBeCloseTo(50 / 260, 1)
     expect(q.tl.y).toBeCloseTo(50 / 200, 1)
     expect(q.br.x).toBeCloseTo(210 / 260, 1)
     expect(q.br.y).toBeCloseTo(150 / 200, 1)
   })
 
+  it('expands outward by default so the auto-crop does not eat into the canvas', () => {
+    const mask = makeTiltedRectMask(260, 200, 160, 100, 0)
+    const q = maskToQuad(mask, 260, 200) // default margin
+    expect(q.tl.x).toBeLessThan(50 / 260)   // pushed left of the detected edge
+    expect(q.tl.y).toBeLessThan(50 / 200)   // pushed above
+    expect(q.br.x).toBeGreaterThan(210 / 260) // pushed right
+    expect(q.br.y).toBeGreaterThan(150 / 200) // pushed below
+  })
+
   it('falls back to a near-full quad when the mask is empty', () => {
     const q = maskToQuad(new Uint8Array(100 * 100), 100, 100)
-    expect(q.tl.x).toBeCloseTo(0.02, 2) // fullFrameQuad(0.96)
-    expect(q.br.x).toBeCloseTo(0.98, 2)
+    expect(q.tl.x).toBeCloseTo(0.005, 2) // fullFrameQuad(0.99) — minimal crop
+    expect(q.br.x).toBeCloseTo(0.995, 2)
   })
 
   it('falls back when BiRefNet grabs a tiny interior shape', () => {
     const mask = makeTiltedRectMask(300, 300, 30, 20, 0) // ~0.7% area → degenerate
     const q = maskToQuad(mask, 300, 300)
-    expect(q.tl.x).toBeCloseTo(0.02, 2)
-    expect(q.br.x).toBeCloseTo(0.98, 2)
+    expect(q.tl.x).toBeCloseTo(0.005, 2)
+    expect(q.br.x).toBeCloseTo(0.995, 2)
   })
 })
