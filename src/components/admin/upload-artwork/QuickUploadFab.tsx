@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { UploadArtworkDialog } from './UploadArtworkDialog'
 import { shouldShowQuickUploadFab } from './quickUploadFab.logic'
 import { MAX_IMAGE_COUNT } from './imageFiles'
+import { useFabVisibilityStore } from '@/stores/fabVisibilityStore'
 
 /**
  * Mobile-only floating button for the logged-in artist.
@@ -19,6 +20,7 @@ export function QuickUploadFab() {
   const pathname = usePathname()
   const inputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<File[] | null>(null)
+  const suppressed = useFabVisibilityStore((s) => s.suppressed)
 
   const dialogOpen = files !== null
   const showButton = shouldShowQuickUploadFab({
@@ -26,6 +28,7 @@ export function QuickUploadFab() {
     loading,
     pathname,
     dialogOpen,
+    suppressed,
   })
 
   function handlePick(e: React.ChangeEvent<HTMLInputElement>) {

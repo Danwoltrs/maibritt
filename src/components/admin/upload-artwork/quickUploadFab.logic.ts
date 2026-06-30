@@ -3,6 +3,7 @@ export interface QuickUploadFabVisibility {
   loading: boolean
   pathname: string | null
   dialogOpen: boolean
+  suppressed: boolean
 }
 
 /**
@@ -14,10 +15,12 @@ export function shouldShowQuickUploadFab({
   loading,
   pathname,
   dialogOpen,
+  suppressed,
 }: QuickUploadFabVisibility): boolean {
   if (loading) return false
   if (!isAuthenticated) return false
   if (dialogOpen) return false
+  if (suppressed) return false
   if (pathname === '/login') return false
   return true
 }

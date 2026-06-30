@@ -6,6 +6,7 @@ const base = {
   loading: false,
   pathname: '/artworks',
   dialogOpen: false,
+  suppressed: false,
 }
 
 describe('shouldShowQuickUploadFab', () => {
@@ -31,5 +32,9 @@ describe('shouldShowQuickUploadFab', () => {
 
   it('tolerates a null pathname', () => {
     expect(shouldShowQuickUploadFab({ ...base, pathname: null })).toBe(true)
+  })
+
+  it('is hidden while suppressed (e.g. bulk-action bar showing)', () => {
+    expect(shouldShowQuickUploadFab({ ...base, suppressed: true })).toBe(false)
   })
 })
