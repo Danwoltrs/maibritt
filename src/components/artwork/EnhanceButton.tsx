@@ -53,12 +53,12 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
     } catch (e) { setError(String(e)); setPhase('confirm') }
   }
 
-  // Re-run when the artist toggles "AI dewarp" / "Flatten lighting" / "Auto colour".
-  async function rerun(flags: { dewarp: boolean; flatten: boolean; color: boolean }) {
+  // Re-run when the artist toggles AI dewarp / Flatten / Auto colour / AI flatten.
+  async function rerun(flags: { dewarp: boolean; flatten: boolean; color: boolean; aiFlatten: boolean }) {
     if (!quad) return
     setBusy(true); setError(null)
     try {
-      const out = await runEnhance({ imageUrl, quad, presetKey, baseFileName, dewarp: flags.dewarp, flatten: flags.flatten, color: flags.color })
+      const out = await runEnhance({ imageUrl, quad, presetKey, baseFileName, dewarp: flags.dewarp, flatten: flags.flatten, color: flags.color, aiFlatten: flags.aiFlatten })
       setEnhancedUrl(out.enhanced); setFramedUrl(out.framed)
     } catch (e) { setError(String(e)) }
     finally { setBusy(false) }

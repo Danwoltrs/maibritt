@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     jobId = body.jobId
-    const { imageUrl, quad, presetKey, baseFileName, dewarp, flatten, color } = body
+    const { imageUrl, quad, presetKey, baseFileName, dewarp, flatten, color, aiFlatten } = body
 
     if (!imageUrl || !quad || !baseFileName) {
       return NextResponse.json({ error: 'missing fields' }, { status: 400 })
@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
       dewarp: !!dewarp,
       flatten: !!flatten,
       color: !!color,
+      aiFlatten: !!aiFlatten,
     })
 
     const enhancedUrl = await StorageService.uploadDerived('artworks', baseFileName, 'enhanced', enhanced)
