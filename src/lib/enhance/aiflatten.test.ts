@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import sharp from 'sharp'
 
 const subscribe = vi.fn()
 const upload = vi.fn()
@@ -28,14 +29,17 @@ describe('aiFlattenGenerative', () => {
     expect(subscribe).not.toHaveBeenCalled()
   })
 
-  it('uploads, calls Qwen edit with image_urls + a preserve prompt, returns the result', async () => {
+  it('uploads, calls Qwen edit with image_urls + a preserve prompt, recomposites the result', async () => {
     process.env.FAL_KEY = 'k'
+    // Real PNGs so the recomposite step can run on the model output.
+    const inputPng = await sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 180, g: 40, b: 40 } } }).png().toBuffer()
+    const editedPng = await sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 150, g: 35, b: 35 } } }).png().toBuffer()
     upload.mockResolvedValue('https://fal.storage/in.png')
     subscribe.mockResolvedValue({ data: { images: [{ url: 'https://fal.storage/out.png' }] } })
-    const fetchMock = vi.fn().mockResolvedValue({ arrayBuffer: async () => new TextEncoder().encode('flattened').buffer })
+    const fetchMock = vi.fn().mockResolvedValue({ arrayBuffer: async () => new Uint8Array(editedPng).buffer })
     vi.stubGlobal('fetch', fetchMock)
 
-    const out = await aiFlattenGenerative(Buffer.from('original'))
+    const out = await aiFlattenGenerative(inputPng)
 
     expect(upload).toHaveBeenCalledOnce()
     const [model, payload] = subscribe.mock.calls[0]
@@ -44,7 +48,10 @@ describe('aiFlattenGenerative', () => {
     expect(typeof payload.input.prompt).toBe('string')
     expect(payload.input.prompt.length).toBeGreaterThan(0)
     expect(fetchMock).toHaveBeenCalledWith('https://fal.storage/out.png')
-    expect(out.toString()).toBe('flattened')
+    // Output is a valid recomposited PNG at the original size (not the raw model bytes).
+    const meta = await sharp(out).metadata()
+    expect(meta.format).toBe('png')
+    expect(meta.width).toBe(32)
   })
 
   it('falls back to the input when the model returns no image', async () => {
