@@ -16,9 +16,14 @@ interface ArtworkDetailClientProps {
 export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showFullscreen, setShowFullscreen] = useState(false)
+  const [view, setView] = useState<'enhanced' | 'original'>('enhanced')
 
   const currentImage = artwork.images[currentImageIndex]
   const hasMultipleImages = artwork.images.length > 1
+  // The enhanced catalogue image (display) differs from the actual photo (original)
+  // only when the artwork was enhanced. Offer a toggle to see the real photo.
+  const isEnhanced = !!currentImage?.enhanced && currentImage.original !== currentImage.display
+  const mainSrc = currentImage ? (view === 'original' ? currentImage.original : currentImage.display) : ''
 
   const handleDownload = async () => {
     if (!currentImage) return
@@ -63,7 +68,7 @@ export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProp
                 {currentImage ? (
                   <>
                     <Image
-                      src={currentImage.display}
+                      src={mainSrc}
                       alt={artwork.title.en}
                       fill
                       className="object-contain cursor-zoom-in"
@@ -101,6 +106,26 @@ export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProp
                   </>
                 )}
               </div>
+
+              {/* Enhanced ↔ original photo toggle (only when the image was enhanced) */}
+              {isEnhanced && (
+                <div className="mt-4 inline-flex rounded-md border overflow-hidden text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setView('enhanced')}
+                    className={view === 'enhanced' ? 'bg-gray-900 text-white px-3 py-1.5' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100'}
+                  >
+                    Enhanced · Realçada
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView('original')}
+                    className={view === 'original' ? 'bg-gray-900 text-white px-3 py-1.5' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100'}
+                  >
+                    Original photo · Foto original
+                  </button>
+                </div>
+              )}
 
               {/* Thumbnails */}
               {hasMultipleImages && (
@@ -217,7 +242,7 @@ export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProp
           onClick={() => setShowFullscreen(false)}
         >
           <Image
-            src={currentImage.original}
+            src={view === 'original' ? currentImage.original : (currentImage.display || currentImage.original)}
             alt={artwork.title.en}
             fill
             className="object-contain p-8"

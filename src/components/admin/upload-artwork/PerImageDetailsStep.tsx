@@ -69,6 +69,10 @@ export function PerImageDetailsStep({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [imgView, setImgView] = useState<'original' | 'enhanced'>('original')
+
+  // Reset to the original photo when switching between artworks.
+  useEffect(() => { setImgView('original') }, [currentIndex])
 
   // Medium/dimensions dropdowns
   const [knownMediums, setKnownMediums] = useState<{ ptBR: string; en: string }[]>([])
@@ -197,6 +201,12 @@ export function PerImageDetailsStep({
 
   const progressPercent = ((currentIndex + 1) / images.length) * 100
 
+  // The left preview shows the actual photo by default; once enhanced, the artist can
+  // toggle to the enhanced/framed result. `preview` is the raw photo's object URL.
+  const enh = enhancedByIndex[currentIndex]
+  const previewSrc = images[currentIndex]?.preview
+  const leftSrc = imgView === 'enhanced' && enh ? (enh.framed || enh.enhanced) : previewSrc
+
   // Determine the current medium select value
   const currentMediumValue = knownMediums.find(
     m => m.en === current.mediumEn && m.ptBR === current.mediumPt
@@ -260,10 +270,29 @@ export function PerImageDetailsStep({
           {/* LEFT column: large image preview */}
           <div className="relative md:sticky md:top-6">
             <img
-              src={images[currentIndex]?.preview}
+              src={leftSrc}
               alt={`Artwork ${currentIndex + 1}`}
               className="w-full max-h-[20vh] md:max-h-[calc(100vh-220px)] object-contain rounded-lg border bg-gray-50"
             />
+            {/* Original ↔ enhanced toggle (only once enhanced) */}
+            {enh && (
+              <div className="absolute bottom-2 left-2 inline-flex rounded-md overflow-hidden text-[11px] shadow">
+                <button
+                  type="button"
+                  onClick={() => setImgView('original')}
+                  className={imgView === 'original' ? 'bg-gray-900 text-white px-2 py-1' : 'bg-white/90 text-gray-600 px-2 py-1 hover:bg-white'}
+                >
+                  Original
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImgView('enhanced')}
+                  className={imgView === 'enhanced' ? 'bg-gray-900 text-white px-2 py-1' : 'bg-white/90 text-gray-600 px-2 py-1 hover:bg-white'}
+                >
+                  Enhanced
+                </button>
+              </div>
+            )}
             <Button
               variant="secondary"
               size="sm"
@@ -587,7 +616,7 @@ export function PerImageDetailsStep({
             <DialogTitle>Artwork Preview</DialogTitle>
           </DialogHeader>
           <img
-            src={images[currentIndex]?.preview}
+            src={leftSrc}
             alt={`Artwork ${currentIndex + 1}`}
             className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
           />
