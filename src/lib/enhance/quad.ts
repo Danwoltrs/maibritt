@@ -38,6 +38,17 @@ export function expandQuad(q: Quad, frac: number): Quad {
   return { tl: push(q.tl), tr: push(q.tr), br: push(q.br), bl: push(q.bl) }
 }
 
+/**
+ * Snap each corner to the image border (0 or 1) when it sits within `snap` of it,
+ * so a canvas that bleeds to the photo edge isn't needlessly cropped — while a
+ * canvas shot with a real wall margin (corners well inside) is left to crop tight.
+ */
+export function snapQuadToBorder(q: Quad, snap: number): Quad {
+  const s = (v: number) => (v < snap ? 0 : v > 1 - snap ? 1 : v)
+  const sp = (p: Pt): Pt => ({ x: s(p.x), y: s(p.y) })
+  return { tl: sp(q.tl), tr: sp(q.tr), br: sp(q.br), bl: sp(q.bl) }
+}
+
 /** Translate the whole quad, clamping the shift so no corner leaves the image. */
 export function moveQuad(q: Quad, dx: number, dy: number): Quad {
   const pts = quadPoints(q)

@@ -66,6 +66,13 @@ describe('maskToQuad', () => {
     expect(q.br.y).toBeGreaterThan(150 / 200) // pushed below
   })
 
+  it('snaps a frame-filling canvas to the full frame (no needless crop)', () => {
+    const mask = makeTiltedRectMask(200, 200, 196, 196, 0) // canvas bleeds to the edges
+    const q = maskToQuad(mask, 200, 200) // default expand + snap
+    expect(q.tl.x).toBe(0); expect(q.tl.y).toBe(0)
+    expect(q.br.x).toBe(1); expect(q.br.y).toBe(1)
+  })
+
   it('falls back to a near-full quad when the mask is empty', () => {
     const q = maskToQuad(new Uint8Array(100 * 100), 100, 100)
     expect(q.tl.x).toBeCloseTo(0.005, 2) // fullFrameQuad(0.99) — minimal crop

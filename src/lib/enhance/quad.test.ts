@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fullFrameQuad, setCorner, moveQuad, quadArea, isValidQuad, quadPoints, expandQuad } from './quad'
+import { fullFrameQuad, setCorner, moveQuad, quadArea, isValidQuad, quadPoints, expandQuad, snapQuadToBorder } from './quad'
 import type { Quad } from './types'
 
 const unit: Quad = { tl: { x: 0, y: 0 }, tr: { x: 1, y: 0 }, br: { x: 1, y: 1 }, bl: { x: 0, y: 1 } }
@@ -16,6 +16,19 @@ describe('expandQuad', () => {
     const e = expandQuad(fullFrameQuad(0.98), 0.5) // corners 0.01..0.99 → clamp
     expect(e.tl.x).toBe(0)
     expect(e.br.x).toBe(1)
+  })
+})
+
+describe('snapQuadToBorder', () => {
+  it('snaps near-border corners to the image edge', () => {
+    const q: Quad = { tl: { x: 0.02, y: 0.03 }, tr: { x: 0.97, y: 0.02 }, br: { x: 0.98, y: 0.99 }, bl: { x: 0.01, y: 0.98 } }
+    const s = snapQuadToBorder(q, 0.05)
+    expect(s.tl).toEqual({ x: 0, y: 0 })
+    expect(s.br).toEqual({ x: 1, y: 1 })
+  })
+  it('leaves interior corners untouched', () => {
+    const q = fullFrameQuad(0.6) // corners at 0.2..0.8 — well inside
+    expect(snapQuadToBorder(q, 0.05)).toEqual(q)
   })
 })
 
