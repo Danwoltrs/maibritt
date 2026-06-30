@@ -3,6 +3,7 @@ import { Inter, Cormorant_Garamond, Jost } from 'next/font/google'
 import './globals.css'
 import ConditionalHeader from '@/components/ConditionalHeader'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { QuickUploadFab } from '@/components/admin/upload-artwork/QuickUploadFab'
 
 const inter = Inter({ subsets: ['latin'] })
 const cormorant = Cormorant_Garamond({
@@ -65,6 +66,7 @@ export default function RootLayout({
           <main className="min-h-screen">
             {children}
           </main>
+          <QuickUploadFab />
         </AuthProvider>
       </body>
     </html>
