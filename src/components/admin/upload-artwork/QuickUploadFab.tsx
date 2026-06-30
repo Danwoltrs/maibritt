@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Camera } from 'lucide-react'
 
@@ -9,6 +9,7 @@ import { UploadArtworkDialog } from './UploadArtworkDialog'
 import { shouldShowQuickUploadFab } from './quickUploadFab.logic'
 import { MAX_IMAGE_COUNT } from './imageFiles'
 import { useFabVisibilityStore } from '@/stores/fabVisibilityStore'
+import { computeScrollHidden } from './scrollDirection'
 
 /**
  * Mobile-only floating button for the logged-in artist.
@@ -21,6 +22,25 @@ export function QuickUploadFab() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<File[] | null>(null)
   const suppressed = useFabVisibilityStore((s) => s.suppressed)
+  const [hiddenByScroll, setHiddenByScroll] = useState(false)
+
+  // Hide the FAB while scrolling down, reveal it when scrolling up (or near the top).
+  useEffect(() => {
+    let lastY = window.scrollY
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        const currentY = window.scrollY
+        setHiddenByScroll((prev) => computeScrollHidden({ prevY: lastY, currentY, prevHidden: prev }))
+        lastY = currentY
+        ticking = false
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const dialogOpen = files !== null
   const showButton = shouldShowQuickUploadFab({
@@ -56,7 +76,7 @@ export function QuickUploadFab() {
             aria-label="Add artwork"
             onClick={() => inputRef.current?.click()}
             style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
-            className="lg:hidden fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gray-900 text-white shadow-lg transition-transform active:scale-95"
+            className={`lg:hidden fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gray-900 text-white shadow-lg transition-transform duration-300 active:scale-95 ${hiddenByScroll ? 'translate-y-[200%] pointer-events-none' : 'translate-y-0'}`}
           >
             <Camera className="h-6 w-6" />
           </button>
