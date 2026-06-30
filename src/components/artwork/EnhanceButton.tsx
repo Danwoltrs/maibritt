@@ -24,6 +24,7 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
   const [presetKey, setPresetKey] = useState(defaultPresetForCategory(category))
   const [framedUrl, setFramedUrl] = useState('')
   const [enhancedUrl, setEnhancedUrl] = useState('')
+  const [croppedUrl, setCroppedUrl] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -49,7 +50,7 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
     try {
       // AI flatten is applied automatically; the preview can toggle it off.
       const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName, aiFlatten: true })
-      setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setPhase('preview')
+      setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setCroppedUrl(out.cropped); setPhase('preview')
     } catch (e) { setError(String(e)); setPhase('confirm') }
   }
 
@@ -59,7 +60,7 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
     setBusy(true); setError(null)
     try {
       const out = await runEnhance({ imageUrl, quad, presetKey, baseFileName, dewarp: flags.dewarp, color: flags.color, aiFlatten: flags.aiFlatten })
-      setEnhancedUrl(out.enhanced); setFramedUrl(out.framed)
+      setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setCroppedUrl(out.cropped)
     } catch (e) { setError(String(e)) }
     finally { setBusy(false) }
   }
@@ -77,7 +78,7 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
           presetOptions={presetOptions} onConfirm={confirm} onCancel={() => setPhase('idle')} />
       )}
       {phase === 'preview' && (
-        <EnhancePreview beforeUrl={imageUrl} enhancedUrl={enhancedUrl} framedUrl={framedUrl}
+        <EnhancePreview beforeUrl={imageUrl} croppedUrl={croppedUrl} enhancedUrl={enhancedUrl} framedUrl={framedUrl}
           busy={busy} onRerun={rerun}
           onApprove={({ useFrame }) => {
             // No frame chosen → the clean image becomes the display image; preset cleared.

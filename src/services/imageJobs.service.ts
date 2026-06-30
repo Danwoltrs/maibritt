@@ -8,7 +8,7 @@ export interface ImageJob {
   stage: string | null
   frame_preset: string
   quad: unknown | null
-  result: { enhanced?: string; framed?: string; framePreset?: string } | null
+  result: { enhanced?: string; framed?: string; cropped?: string; framePreset?: string } | null
   error: string | null
 }
 

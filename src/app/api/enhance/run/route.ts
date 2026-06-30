@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     const original = Buffer.from(await (await fetch(imageUrl)).arrayBuffer())
     // dewarp / flatten / colour are opt-in (toggles re-run with these set). Default = geometry-only.
-    const { enhanced, framed } = await enhanceToFramed(original, quad, presetKey, {
+    const { enhanced, framed, cropped } = await enhanceToFramed(original, quad, presetKey, {
       dewarp: !!dewarp,
       flatten: !!flatten,
       color: !!color,
@@ -51,13 +51,16 @@ export async function POST(req: NextRequest) {
 
     const enhancedUrl = await StorageService.uploadDerived('artworks', baseFileName, 'enhanced', enhanced)
     const framedUrl = await StorageService.uploadDerived('artworks', baseFileName, 'framed', framed)
+    // Geometry-only (crop/straighten, no AI) — shown as the preview's left "before"
+    // so the crop and the AI flatten can be judged apart. Display-only, never persisted.
+    const croppedUrl = await StorageService.uploadDerived('artworks', baseFileName, 'cropped', cropped)
 
     // Toggling flatten/colour re-runs and OVERWRITES the same storage paths
     // (upsert). Bust the CDN cache so the preview shows the new bytes, not a
     // stale copy of the same URL.
     const v = `?v=${Date.now()}`
-    if (jobId) await updateJob(jobId, { status: 'done', stage: 'done', result: { enhanced: enhancedUrl + v, framed: framedUrl + v, framePreset: presetKey } })
-    return NextResponse.json({ enhanced: enhancedUrl + v, framed: framedUrl + v })
+    if (jobId) await updateJob(jobId, { status: 'done', stage: 'done', result: { enhanced: enhancedUrl + v, framed: framedUrl + v, cropped: croppedUrl + v, framePreset: presetKey } })
+    return NextResponse.json({ enhanced: enhancedUrl + v, framed: framedUrl + v, cropped: croppedUrl + v })
   } catch (e) {
     console.error('enhance run failed', e)
     // 5. Sanitize persisted error — never store raw exception text in the DB.

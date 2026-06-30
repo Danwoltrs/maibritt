@@ -24,7 +24,7 @@ export async function enhanceToFramed(
   // geometry-only (4-corner warp + crop + straighten + optional frame) so the
   // artist's colours stay faithful.
   opts: { workingMax?: number; dewarp?: boolean; flatten?: boolean; color?: boolean; aiFlatten?: boolean } = {},
-): Promise<{ enhanced: Buffer; framed: Buffer }> {
+): Promise<{ enhanced: Buffer; framed: Buffer; cropped: Buffer }> {
   const preset = FRAME_PRESETS[presetKey] ?? FRAME_PRESETS['oak-floater']
   const workingMax = opts.workingMax ?? 2000
 
@@ -52,5 +52,9 @@ export async function enhanceToFramed(
   } catch (e) {
     console.error('composeFrame failed; returning unframed enhanced image', e)
   }
-  return { enhanced, framed }
+  // `dewarped` is the geometry-only result (warp = crop + straighten + perspective,
+  // no AI/flatten/colour). Surface it as `cropped` so the preview can show crop-vs-AI
+  // side by side — letting the artist tell whether the crop or the AI flatten changed
+  // the framing.
+  return { enhanced, framed, cropped: dewarped }
 }

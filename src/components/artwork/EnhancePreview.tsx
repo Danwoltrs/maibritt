@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 
 interface Props {
   beforeUrl: string
+  croppedUrl?: string      // geometry-only (warp/crop/straighten, no AI); shown as the left "before"
   enhancedUrl: string      // cleaned, unframed (reflects the current flatten/colour flags)
   framedUrl: string        // cleaned + wood frame (same flags)
   busy?: boolean           // true while a dewarp/colour/AI-flatten re-run is in flight
@@ -16,7 +17,7 @@ interface Props {
   onDiscard: () => void
 }
 
-export default function EnhancePreview({ beforeUrl, enhancedUrl, framedUrl, busy = false, onRerun, onApprove, onDiscard }: Props) {
+export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, framedUrl, busy = false, onRerun, onApprove, onDiscard }: Props) {
   // Frame is instant (both variants are already returned for the current flags).
   // AI flatten is applied automatically (default ON); AI dewarp / Auto colour are
   // opt-in. Toggling any of these re-runs the server.
@@ -45,8 +46,8 @@ export default function EnhancePreview({ beforeUrl, enhancedUrl, framedUrl, busy
 
         <div className="grid grid-cols-2 gap-4">
           <figure>
-            <img src={beforeUrl} className="w-full rounded" alt="Before" />
-            <figcaption className="text-xs text-gray-500 mt-1">Original</figcaption>
+            <img src={croppedUrl || beforeUrl} className="w-full rounded" alt="Cropped (no AI)" />
+            <figcaption className="text-xs text-gray-500 mt-1">{croppedUrl ? 'Cropped · no AI / sem IA' : 'Original'}</figcaption>
           </figure>
           <figure>
             <div className="relative">

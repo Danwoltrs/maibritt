@@ -215,7 +215,7 @@ export class StorageService {
   static async uploadDerived(
     bucket: 'artworks' | 'exhibitions' | 'series',
     baseFileName: string,
-    kind: 'enhanced' | 'framed',
+    kind: 'enhanced' | 'framed' | 'cropped',
     buf: Buffer | Blob,
   ): Promise<string> {
     const client = supabaseAdmin ?? supabase
