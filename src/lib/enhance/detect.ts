@@ -1,6 +1,8 @@
 import { fal } from '@fal-ai/client'
 import sharp from 'sharp'
 import { maskToQuad } from './geometry'
+import { detectContentBounds, clampQuadToBounds } from './content'
+import { isValidQuad } from './quad'
 import type { Quad } from './types'
 
 let configured = false
@@ -38,6 +40,22 @@ export async function detectPainting(
   // wall margin. Both tunable via env.
   const margin = Number(process.env.ENHANCE_DETECT_MARGIN ?? 0.015)
   const snap = Number(process.env.ENHANCE_DETECT_SNAP ?? 0)
-  const quad = maskToQuad(data, info.width, info.height, 127, margin, snap)
+  let quad = maskToQuad(data, info.width, info.height, 127, margin, snap)
+
+  // Content trim — independent of BiRefNet. A vivid painting on a near-white wall:
+  // clamp the quad to the photo's saturated content so the box hugs the canvas even
+  // when the mask swallowed the wall or fell back to the full frame. Capped so it can
+  // never eat into the art; falls through to the raw quad on any failure or if the
+  // clamp would degenerate it. Off via ENHANCE_CONTENT_TRIM=0.
+  if (process.env.ENHANCE_CONTENT_TRIM !== '0') {
+    try {
+      const origBuf = Buffer.from(await (await fetch(imageUrl)).arrayBuffer())
+      const bounds = await detectContentBounds(origBuf)
+      const trimmed = clampQuadToBounds(quad, bounds)
+      if (isValidQuad(trimmed, 0.02)) quad = trimmed
+    } catch (e) {
+      console.error('content trim failed; using the mask quad', e)
+    }
+  }
   return { quad, maskWidth: info.width, maskHeight: info.height }
 }
