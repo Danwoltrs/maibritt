@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { maskToRotatedRect, maskToQuad } from './geometry'
-import { makeTiltedRectMask } from '../../test/images'
+import { makeTiltedRectMask, makeRectWithExtra } from '../../test/images'
 
 describe('maskToRotatedRect', () => {
   it('finds an upright rectangle', () => {
@@ -84,5 +84,28 @@ describe('maskToQuad', () => {
     const q = maskToQuad(mask, 300, 300)
     expect(q.tl.x).toBeCloseTo(0.005, 2)
     expect(q.br.x).toBeCloseTo(0.995, 2)
+  })
+
+  it('ignores a detached wall blob instead of stretching the crop to the image edge', () => {
+    // 160x100 canvas centred in 260x200 → real right edge at x=210. A detached bright
+    // blob sits in the right margin near the image edge (x∈[235,255]); the naive
+    // single-extreme corner pick would slam tr/br out to ~x=255 (≈0.98 → snaps to 1).
+    const mask = makeRectWithExtra(260, 200, 160, 100, { x0: 235, x1: 255, y0: 80, y1: 120 })
+    const q = maskToQuad(mask, 260, 200, 127, 0) // no expand → isolate the corner pick
+    expect(q.tr.x).toBeLessThan(0.85) // hugs the canvas (210/260≈0.81), not the blob
+    expect(q.br.x).toBeLessThan(0.85)
+    expect(q.tr.x).toBeCloseTo(210 / 260, 1)
+  })
+
+  it('ignores scattered mask speckle near the margins', () => {
+    // Realistic BiRefNet speckle: a few isolated foreground pixels out in the right /
+    // bottom margins. The naive extreme-vertex pick would let the outermost speck
+    // define a corner; dropping all but the largest component removes them.
+    const mask = makeTiltedRectMask(260, 200, 160, 100, 0) // canvas x∈[50,210]
+    for (const [x, y] of [[252, 18], [248, 22], [255, 100], [240, 188]] as const) mask[y * 260 + x] = 255
+    const q = maskToQuad(mask, 260, 200, 127, 0)
+    expect(q.tr.x).toBeLessThan(0.85)
+    expect(q.br.x).toBeLessThan(0.85)
+    expect(q.br.y).toBeLessThan(0.9) // bottom speck at y=188 (≈0.94) does not pull br down
   })
 })

@@ -37,6 +37,19 @@ export function makeTiltedRectMask(
   return mask
 }
 
+/** Filled centred rect PLUS an extra filled box [x0,x1)×[y0,y1) — simulates BiRefNet
+ * also grabbing a bright wall strip / detached blob beside the canvas. */
+export function makeRectWithExtra(
+  w: number, h: number, rectW: number, rectH: number,
+  extra: { x0: number; x1: number; y0: number; y1: number },
+): Uint8Array {
+  const mask = makeTiltedRectMask(w, h, rectW, rectH, 0)
+  for (let y = Math.max(0, extra.y0); y < Math.min(h, extra.y1); y++)
+    for (let x = Math.max(0, extra.x0); x < Math.min(w, extra.x1); x++)
+      mask[y * w + x] = 255
+  return mask
+}
+
 export async function rawStats(buf: Buffer) {
   return sharp(buf).stats()
 }

@@ -36,7 +36,7 @@ export async function detectPainting(
   // background (the artist drags in to trim) rather than cutting the art. Snapping
   // to the photo border is OFF by default — it over-extends when the painting has a
   // wall margin. Both tunable via env.
-  const margin = Number(process.env.ENHANCE_DETECT_MARGIN ?? 0.04)
+  const margin = Number(process.env.ENHANCE_DETECT_MARGIN ?? 0.015)
   const snap = Number(process.env.ENHANCE_DETECT_SNAP ?? 0)
   const quad = maskToQuad(data, info.width, info.height, 127, margin, snap)
   return { quad, maskWidth: info.width, maskHeight: info.height }

@@ -112,27 +112,70 @@ export function maskToRotatedRect(
 }
 
 /**
+ * Keep only the largest 4-connected foreground component of a binarized mask.
+ * BiRefNet sometimes labels a bright wall strip or stray speckle beside the canvas
+ * as foreground; those detached blobs would otherwise drag a corner out to the image
+ * edge. Iterative flood fill over a flat stack — O(w·h), no recursion.
+ */
+function largestComponent(mask: Uint8Array | Buffer, w: number, h: number, threshold: number): Uint8Array {
+  const N = w * h
+  const bin = new Uint8Array(N)
+  for (let i = 0; i < N; i++) bin[i] = mask[i] > threshold ? 1 : 0
+
+  const label = new Int32Array(N).fill(-1)
+  const stack = new Int32Array(N)
+  let bestLabel = -1, bestSize = 0, cur = 0
+  for (let s = 0; s < N; s++) {
+    if (bin[s] === 0 || label[s] !== -1) continue
+    let sp = 0, size = 0
+    stack[sp++] = s; label[s] = cur
+    while (sp > 0) {
+      const p = stack[--sp]; size++
+      const x = p % w, y = (p - x) / w
+      if (x > 0 && bin[p - 1] && label[p - 1] === -1) { label[p - 1] = cur; stack[sp++] = p - 1 }
+      if (x < w - 1 && bin[p + 1] && label[p + 1] === -1) { label[p + 1] = cur; stack[sp++] = p + 1 }
+      if (y > 0 && bin[p - w] && label[p - w] === -1) { label[p - w] = cur; stack[sp++] = p - w }
+      if (y < h - 1 && bin[p + w] && label[p + w] === -1) { label[p + w] = cur; stack[sp++] = p + w }
+    }
+    if (size > bestSize) { bestSize = size; bestLabel = cur }
+    cur++
+  }
+  const out = new Uint8Array(N)
+  if (bestLabel >= 0) for (let i = 0; i < N; i++) if (label[i] === bestLabel) out[i] = 1
+  return out
+}
+
+/**
  * Fit the canvas as a general quadrilateral (so it can be a perspective
- * trapezoid, not just a tilted rectangle). The four corners are the hull points
- * extreme along the two diagonals — robust for roughly-upright canvas photos.
+ * trapezoid, not just a tilted rectangle). The mask is first reduced to its largest
+ * connected component (drops detached wall/speckle), then each corner is taken at a
+ * low percentile of the diagonal-projection extremes rather than the single most-extreme
+ * hull vertex — so one stray edge pixel can't slam a corner to the image border. (With a
+ * clean, small hull the percentile coincides with the extreme.)
  * Returns normalized [0,1] corners, expanded outward by `expandFrac` (recovers a
  * slightly under-segmented mask) and snapped to the image border within `snapFrac`
  * (so a frame-filling canvas isn't cropped at all). Falls back to a centred near-full
  * quad when the mask is empty or degenerate. Corners remain fully editable in the UI.
  */
 export function maskToQuad(
-  mask: Uint8Array | Buffer, w: number, h: number, threshold = 127, expandFrac = 0.03, snapFrac = 0.04,
+  mask: Uint8Array | Buffer, w: number, h: number, threshold = 127, expandFrac = 0.015, snapFrac = 0.04,
 ): Quad {
-  const { hull, n } = maskHull(mask, w, h, threshold)
+  const clean = largestComponent(mask, w, h, threshold)
+  const { hull, n } = maskHull(clean, w, h, 0) // already binarized 0/1
   if (n === 0 || hull.length < 3) return fullFrameQuad(0.99)
 
-  let tl = hull[0], tr = hull[0], br = hull[0], bl = hull[0]
-  for (const p of hull) {
-    if (p.x + p.y < tl.x + tl.y) tl = p        // top-left  : min(x+y)
-    if (p.x + p.y > br.x + br.y) br = p        // bottom-right: max(x+y)
-    if (p.x - p.y > tr.x - tr.y) tr = p        // top-right : max(x−y)
-    if (p.x - p.y < bl.x - bl.y) bl = p        // bottom-left: min(x−y)
+  // Corner = the hull vertex at a low percentile of its diagonal projection, so a lone
+  // outlier vertex no longer defines the corner. Small hulls collapse to the extreme.
+  const pick = (key: (p: Pt) => number, low: boolean): Pt => {
+    const sorted = hull.slice().sort((a, b) => key(a) - key(b))
+    const idx = Math.round((low ? 0.02 : 0.98) * (sorted.length - 1))
+    return sorted[idx]
   }
+  const tl = pick((p) => p.x + p.y, true)   // top-left    : min(x+y)
+  const br = pick((p) => p.x + p.y, false)  // bottom-right : max(x+y)
+  const tr = pick((p) => p.x - p.y, false)  // top-right   : max(x−y)
+  const bl = pick((p) => p.x - p.y, true)   // bottom-left : min(x−y)
+
   const norm = (p: Pt): Pt => ({ x: p.x / w, y: p.y / h })
   const quad: Quad = { tl: norm(tl), tr: norm(tr), br: norm(br), bl: norm(bl) }
   if (!isValidQuad(quad)) return fullFrameQuad(0.99)
