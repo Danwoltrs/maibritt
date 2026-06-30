@@ -47,18 +47,18 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
   async function confirm(nextQuad: Quad, key: string) {
     setQuad(nextQuad); setPresetKey(key); setPhase('running')
     try {
-      // First run is geometry-only (faithful colours) — flatten/colour are opt-in toggles.
-      const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName })
+      // AI flatten is applied automatically; the preview can toggle it off.
+      const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName, aiFlatten: true })
       setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setPhase('preview')
     } catch (e) { setError(String(e)); setPhase('confirm') }
   }
 
-  // Re-run when the artist toggles AI dewarp / Flatten / Auto colour / AI flatten.
-  async function rerun(flags: { dewarp: boolean; flatten: boolean; color: boolean; aiFlatten: boolean }) {
+  // Re-run when the artist toggles AI flatten / AI dewarp / Auto colour.
+  async function rerun(flags: { dewarp: boolean; color: boolean; aiFlatten: boolean }) {
     if (!quad) return
     setBusy(true); setError(null)
     try {
-      const out = await runEnhance({ imageUrl, quad, presetKey, baseFileName, dewarp: flags.dewarp, flatten: flags.flatten, color: flags.color, aiFlatten: flags.aiFlatten })
+      const out = await runEnhance({ imageUrl, quad, presetKey, baseFileName, dewarp: flags.dewarp, color: flags.color, aiFlatten: flags.aiFlatten })
       setEnhancedUrl(out.enhanced); setFramedUrl(out.framed)
     } catch (e) { setError(String(e)) }
     finally { setBusy(false) }
