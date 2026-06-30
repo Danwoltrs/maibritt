@@ -31,11 +31,13 @@ export async function detectPainting(
   const resp = await fetch(maskUrl)
   const maskBuf = Buffer.from(await resp.arrayBuffer())
   const { data, info } = await sharp(maskBuf).greyscale().raw().toBuffer({ resolveWithObject: true })
-  // BiRefNet tends to under-segment a frame-filling canvas, which would crop into
-  // the painting. Expand the quad outward a little, and snap it to the photo border
-  // when the canvas already bleeds to the edge. Both tunable via env.
-  const margin = Number(process.env.ENHANCE_DETECT_MARGIN ?? 0.03)
-  const snap = Number(process.env.ENHANCE_DETECT_SNAP ?? 0.04)
+  // BiRefNet tends to under-segment, which would crop into the painting. Expand the
+  // quad outward a little so the auto-box errs toward including a sliver of
+  // background (the artist drags in to trim) rather than cutting the art. Snapping
+  // to the photo border is OFF by default — it over-extends when the painting has a
+  // wall margin. Both tunable via env.
+  const margin = Number(process.env.ENHANCE_DETECT_MARGIN ?? 0.04)
+  const snap = Number(process.env.ENHANCE_DETECT_SNAP ?? 0)
   const quad = maskToQuad(data, info.width, info.height, 127, margin, snap)
   return { quad, maskWidth: info.width, maskHeight: info.height }
 }

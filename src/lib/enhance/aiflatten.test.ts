@@ -20,6 +20,7 @@ beforeEach(() => {
   delete process.env.FAL_KEY
   delete process.env.ENHANCE_FLATTEN_MODEL
   delete process.env.ENHANCE_FLATTEN_GUIDANCE
+  delete process.env.ENHANCE_FLATTEN_RECOMPOSITE
 })
 
 describe('aiFlattenGenerative', () => {
@@ -29,9 +30,8 @@ describe('aiFlattenGenerative', () => {
     expect(subscribe).not.toHaveBeenCalled()
   })
 
-  it('uploads, calls Qwen edit with image_urls + a preserve prompt, recomposites the result', async () => {
+  it('uploads, calls Qwen edit with image_urls + preserve prompt + image_size, returns the model output', async () => {
     process.env.FAL_KEY = 'k'
-    // Real PNGs so the recomposite step can run on the model output.
     const inputPng = await sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 180, g: 40, b: 40 } } }).png().toBuffer()
     const editedPng = await sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 150, g: 35, b: 35 } } }).png().toBuffer()
     upload.mockResolvedValue('https://fal.storage/in.png')
@@ -47,8 +47,9 @@ describe('aiFlattenGenerative', () => {
     expect(payload.input.image_urls).toEqual(['https://fal.storage/in.png'])
     expect(typeof payload.input.prompt).toBe('string')
     expect(payload.input.prompt.length).toBeGreaterThan(0)
+    expect(payload.input.image_size).toEqual({ width: 32, height: 32 }) // keep original framing
     expect(fetchMock).toHaveBeenCalledWith('https://fal.storage/out.png')
-    // Output is a valid recomposited PNG at the original size (not the raw model bytes).
+    // Default path returns the raw model PNG (recomposite is opt-in).
     const meta = await sharp(out).metadata()
     expect(meta.format).toBe('png')
     expect(meta.width).toBe(32)

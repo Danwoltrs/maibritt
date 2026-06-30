@@ -1,3 +1,4 @@
+import sharp from 'sharp'
 import { runFalImageEdit } from './falImage'
 import { recompositeLowFreq } from './recomposite'
 
@@ -16,21 +17,21 @@ const FLATTEN_NEG =
 
 /**
  * Optional GENERATIVE AI flatten (Qwen-Image-Edit) — re-renders the painting to look
- * taut and evenly lit. The model evens the lighting and removes the wavy look, but it
- * RE-SYNTHESIZES pixels, so it also hallucinates fine texture ("scratches") and erases
- * real detail (e.g. a signature). To keep it faithful we transfer only the model's
- * LOW-frequency change (the flattening) back onto the original's high-frequency detail
- * via recompositeLowFreq — adopting the taut look while discarding invented texture and
- * restoring erased detail.
+ * taut and evenly lit. It RE-SYNTHESIZES pixels, so it may slightly alter the artwork
+ * (a little invented texture, softened detail). OFF by default, labelled "may repaint",
+ * judged per-image. We pass `image_size` = the original's dimensions so the output keeps
+ * the same framing (no zoom/reframe).
  *
- * OFF by default, labelled "may repaint", judged per-image. `guidance_scale` trades
- * prompt-adherence against faithfulness; model id + guidance + the recomposite cutoff
- * are env-overridable for prod tuning. Falls back to the input unchanged on any failure
- * (and skips the recomposite when the model call no-ops).
+ * `guidance_scale` trades prompt-adherence against faithfulness; lower = subtler/more
+ * faithful. The low-freq recomposite (keep original detail, adopt only the AI's lighting)
+ * is OPT-IN via ENHANCE_FLATTEN_RECOMPOSITE — on real paintings it can ring/halo around
+ * high-contrast shapes, so the default is the raw model output. All env-overridable.
+ * Falls back to the input unchanged on any model failure.
  */
 export async function aiFlattenGenerative(input: Buffer): Promise<Buffer> {
   const model = process.env.ENHANCE_FLATTEN_MODEL ?? 'fal-ai/qwen-image-edit-2511'
   const guidance = Number(process.env.ENHANCE_FLATTEN_GUIDANCE ?? 2.5)
+  const meta = await sharp(input).metadata().catch(() => null)
   const edited = await runFalImageEdit(
     input,
     model,
@@ -41,15 +42,19 @@ export async function aiFlattenGenerative(input: Buffer): Promise<Buffer> {
       guidance_scale: guidance,
       num_images: 1,
       output_format: 'png',
+      ...(meta?.width && meta?.height ? { image_size: { width: meta.width, height: meta.height } } : {}),
     }),
     (r) => r?.data?.images?.[0]?.url ?? r?.images?.[0]?.url,
   )
-  if (edited === input) return input // model no-op'd / failed → nothing to recomposite
-  const sigmaFrac = Number(process.env.ENHANCE_FLATTEN_DETAIL_SIGMA ?? 0.025)
-  try {
-    return await recompositeLowFreq(input, edited, sigmaFrac)
-  } catch (e) {
-    console.error('recomposite failed; returning the raw AI flatten', e)
-    return edited
+  if (edited === input) return input // model no-op'd / failed
+  if (process.env.ENHANCE_FLATTEN_RECOMPOSITE === '1') {
+    try {
+      const sigmaFrac = Number(process.env.ENHANCE_FLATTEN_DETAIL_SIGMA ?? 0.025)
+      return await recompositeLowFreq(input, edited, sigmaFrac)
+    } catch (e) {
+      console.error('recomposite failed; returning the raw AI flatten', e)
+      return edited
+    }
   }
+  return edited
 }

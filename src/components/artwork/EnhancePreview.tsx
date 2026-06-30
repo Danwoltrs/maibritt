@@ -64,6 +64,16 @@ export default function EnhancePreview({ beforeUrl, enhancedUrl, framedUrl, busy
           </figure>
         </div>
 
+        {busy && (
+          <div className="mt-3">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+              <div className="h-full w-1/3 rounded-full bg-emerald-500" style={{ animation: 'enhBar 1.1s ease-in-out infinite' }} />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">Processing… AI steps (dewarp / flatten) can take ~20–40s.</p>
+            <style>{`@keyframes enhBar{0%{transform:translateX(-120%)}100%{transform:translateX(360%)}}`}</style>
+          </div>
+        )}
+
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <div className="flex items-center gap-2">
