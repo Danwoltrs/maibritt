@@ -1,10 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { filesToUploadedImages } from './imageFiles'
+
+const _originalCreateObjectURL = URL.createObjectURL
 
 beforeEach(() => {
   // jsdom does not implement URL.createObjectURL — provide a deterministic stub
   ;(URL as unknown as { createObjectURL: (f: File) => string }).createObjectURL =
     vi.fn((file: File) => `blob:mock-${file.name}`)
+})
+
+afterEach(() => {
+  // Restore to the original (undefined in jsdom) so the stub can't leak into other suites
+  ;(URL as unknown as { createObjectURL: typeof URL.createObjectURL | undefined }).createObjectURL =
+    _originalCreateObjectURL
 })
 
 describe('filesToUploadedImages', () => {

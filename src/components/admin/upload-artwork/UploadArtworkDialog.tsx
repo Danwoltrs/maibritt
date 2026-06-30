@@ -33,7 +33,7 @@ import { PerImageDetailsStep, type EnhancedResult } from './PerImageDetailsStep'
 import type { UploadedImage, ArtworkDetails, CommonMetadata, ApplyToAll } from './types'
 import { useBackgroundUploads } from './useBackgroundUploads'
 import { saveDraft, loadDraft, clearDraft, draftHasContent } from './draftStorage'
-import { filesToUploadedImages } from './imageFiles'
+import { filesToUploadedImages, MAX_IMAGE_COUNT } from './imageFiles'
 import { SessionRecoveryDialog } from './SessionRecoveryDialog'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
   // Dropzone
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { 'image/jpeg': ['.jpg', '.jpeg'], 'image/png': ['.png'], 'image/webp': ['.webp'] },
-    maxFiles: 20,
+    maxFiles: MAX_IMAGE_COUNT,
     maxSize: 50 * 1024 * 1024,
     onDrop: (accepted) => {
       const newImages = filesToUploadedImages(accepted)
@@ -429,7 +429,7 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto max-lg:left-0 max-lg:top-0 max-lg:translate-x-0 max-lg:translate-y-0 max-lg:w-screen max-lg:h-dvh max-lg:max-h-dvh max-lg:max-w-none max-lg:rounded-none max-lg:border-0">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto max-lg:left-0 max-lg:top-0 max-lg:translate-x-0 max-lg:translate-y-0 max-lg:w-screen max-lg:h-dvh max-lg:max-h-dvh max-lg:!max-w-none max-lg:!rounded-none max-lg:border-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
@@ -460,7 +460,7 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
               <p className="mt-2 text-sm text-gray-600">
                 {images.length > 0 ? 'Add more images' : 'Drag & drop images here, or click to select'}
               </p>
-              <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP up to 50MB each (max 20)</p>
+              <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP up to 50MB each (max {MAX_IMAGE_COUNT})</p>
             </div>
 
             {/* Image thumbnails */}
