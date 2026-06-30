@@ -33,6 +33,7 @@ import { PerImageDetailsStep, type EnhancedResult } from './PerImageDetailsStep'
 import type { UploadedImage, ArtworkDetails, CommonMetadata, ApplyToAll } from './types'
 import { useBackgroundUploads } from './useBackgroundUploads'
 import { saveDraft, loadDraft, clearDraft, draftHasContent } from './draftStorage'
+import { filesToUploadedImages } from './imageFiles'
 import { SessionRecoveryDialog } from './SessionRecoveryDialog'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -191,7 +192,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
     maxFiles: 20,
     maxSize: 50 * 1024 * 1024,
     onDrop: (accepted) => {
-      const newImages = accepted.map(file => ({ file, preview: URL.createObjectURL(file) }))
+      const newImages = filesToUploadedImages(accepted)
       setImages(prev => [...prev, ...newImages])
       setError(null)
     },
