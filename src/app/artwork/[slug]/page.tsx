@@ -18,15 +18,21 @@ export async function generateMetadata({ params }: ArtworkPageProps): Promise<Me
   const title = `${artwork.title.en} — Mai-Britt Wolthers`
   const description = artwork.description.en
     || `${artwork.medium.en}, ${artwork.dimensions}, ${artwork.year}`
-  const ogImage = artwork.images[0]?.display
+  // Share preview = the faithful cropped image (fall back to the chosen display, then raw).
+  const first = artwork.images[0]
+  const ogImage = first?.cropped || first?.display || first?.original
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://maibrittwolthers.com'
 
   return {
+    metadataBase: new URL(siteUrl),
     title,
     description,
+    alternates: { canonical: `/artwork/${slug}` },
     openGraph: {
       title,
       description,
       type: 'article',
+      url: `/artwork/${slug}`,
       ...(ogImage && { images: [{ url: ogImage }] }),
     },
     twitter: {

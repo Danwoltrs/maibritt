@@ -31,7 +31,10 @@ import type { UploadState } from './useBackgroundUploads'
 export interface EnhancedResult {
   enhanced: string
   framed: string
+  cropped: string
   framePreset: string
+  // Which variant the artist chose as the artwork's main (first-shown) image.
+  displayChoice: 'cropped' | 'enhanced' | 'original'
 }
 
 export type { ArtworkDetails } from './types'

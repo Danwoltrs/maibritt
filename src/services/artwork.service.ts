@@ -23,7 +23,7 @@ export interface ArtworkCreateData {
   category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   seriesId?: string
   images: File[]
-  enhancements?: Record<number, { enhanced: string; framed: string; framePreset: string }>
+  enhancements?: Record<number, { enhanced: string; framed: string; cropped?: string; framePreset: string; displayChoice?: 'cropped' | 'enhanced' | 'original' }>
   forSale?: boolean
   price?: number
   currency?: 'BRL' | 'USD' | 'EUR'
@@ -364,10 +364,19 @@ export class ArtworkService {
         imageUrls = uploadResults.map((result, i) => {
           const enh = artworkData.enhancements?.[i]
           if (enh) {
+            // The artist picks which variant is the main (first-shown) image:
+            // cropped (geometry-only, no AI) · enhanced (AI, framed per the toggle) ·
+            // original (raw photo). Default to cropped when unspecified.
+            const choice = enh.displayChoice ?? 'cropped'
+            const display =
+              choice === 'original' ? result.urls.original
+              : choice === 'cropped' ? (enh.cropped ?? enh.framed)
+              : enh.framed
             return {
               ...result.urls,
-              display: enh.framed,
+              display,
               enhanced: enh.enhanced,
+              cropped: enh.cropped,
               framed: enh.framed,
               framePreset: enh.framePreset,
               enhancedAt: new Date().toISOString(),

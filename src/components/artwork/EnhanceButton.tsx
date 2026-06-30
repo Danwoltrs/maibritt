@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { Sparkles, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import CropConfirmModal from './CropConfirmModal'
-import EnhancePreview from './EnhancePreview'
+import EnhancePreview, { type DisplayChoice } from './EnhancePreview'
 import { uploadOriginalSigned, requestDetect, runEnhance } from '@/services/enhance.service'
 import { FRAME_PRESETS, defaultPresetForCategory } from '@/lib/framing/presets'
 import type { Quad } from '@/lib/enhance/types'
@@ -13,7 +13,7 @@ type Phase = 'idle' | 'uploading' | 'detecting' | 'confirm' | 'running' | 'previ
 interface Props {
   file: File
   category: string
-  onFramed: (urls: { enhanced: string; framed: string; framePreset: string }) => void
+  onFramed: (urls: { enhanced: string; framed: string; cropped: string; framePreset: string; displayChoice: DisplayChoice }) => void
 }
 
 export default function EnhanceButton({ file, category, onFramed }: Props) {
@@ -80,12 +80,14 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
       {phase === 'preview' && (
         <EnhancePreview beforeUrl={imageUrl} croppedUrl={croppedUrl} enhancedUrl={enhancedUrl} framedUrl={framedUrl}
           busy={busy} onRerun={rerun}
-          onApprove={({ useFrame }) => {
+          onApprove={({ useFrame, displayChoice }) => {
             // No frame chosen → the clean image becomes the display image; preset cleared.
             onFramed({
               enhanced: enhancedUrl,
               framed: useFrame ? framedUrl : enhancedUrl,
+              cropped: croppedUrl,
               framePreset: useFrame ? presetKey : '',
+              displayChoice,
             })
             setPhase('idle')
           }}

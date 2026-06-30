@@ -13,9 +13,12 @@ interface Props {
   framedUrl: string        // cleaned + wood frame (same flags)
   busy?: boolean           // true while a dewarp/colour/AI-flatten re-run is in flight
   onRerun: (flags: { dewarp: boolean; color: boolean; aiFlatten: boolean }) => void
-  onApprove: (choice: { useFrame: boolean }) => void
+  onApprove: (choice: { useFrame: boolean; displayChoice: DisplayChoice }) => void
   onDiscard: () => void
 }
+
+// Which variant the artist wants shown first on the public page.
+export type DisplayChoice = 'cropped' | 'enhanced' | 'original'
 
 export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, framedUrl, busy = false, onRerun, onApprove, onDiscard }: Props) {
   // Frame is instant (both variants are already returned for the current flags).
@@ -25,6 +28,9 @@ export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, fra
   const [dewarp, setDewarp] = useState(false)
   const [color, setColor] = useState(false)
   const [aiFlatten, setAiFlatten] = useState(true)
+  // Which variant becomes the artwork's main (first-shown) image. Default to the
+  // cropped, no-AI photo — faithful and free of the AI flatten's reframing.
+  const [displayChoice, setDisplayChoice] = useState<DisplayChoice>('cropped')
   const afterUrl = useFrame ? framedUrl : enhancedUrl
 
   function toggleDewarp(v: boolean) { setDewarp(v); onRerun({ dewarp: v, color, aiFlatten }) }
@@ -95,9 +101,30 @@ export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, fra
             “AI flatten” re-renders the canvas to look taut and evenly lit — it's applied automatically; turn it off to keep the raw photo.
             Colour and the wood frame are optional; “AI dewarp” straightens the canvas geometry but may alter the painting.
           </p>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onDiscard}>Discard</Button>
-            <Button type="button" disabled={busy} onClick={() => onApprove({ useFrame })}>Use this image</Button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show first · Mostrar primeiro</span>
+              <div className="inline-flex rounded-md border overflow-hidden text-sm">
+                {([
+                  ['cropped', 'Cropped'],
+                  ['enhanced', 'Enhanced'],
+                  ['original', 'Original'],
+                ] as [DisplayChoice, string][]).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setDisplayChoice(value)}
+                    className={displayChoice === value ? 'bg-gray-900 text-white px-3 py-1.5' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100'}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onDiscard}>Discard</Button>
+              <Button type="button" disabled={busy} onClick={() => onApprove({ useFrame, displayChoice })}>Use this image</Button>
+            </div>
           </div>
         </div>
       </DialogContent>

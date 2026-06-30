@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Download, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
+import { ArrowLeft, Download, ChevronLeft, ChevronRight, ZoomIn, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Artwork } from '@/types'
@@ -16,14 +16,52 @@ interface ArtworkDetailClientProps {
 export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showFullscreen, setShowFullscreen] = useState(false)
-  const [view, setView] = useState<'enhanced' | 'original'>('enhanced')
+  const [view, setView] = useState<'main' | 'alt'>('main')
+  const [shared, setShared] = useState(false)
 
   const currentImage = artwork.images[currentImageIndex]
   const hasMultipleImages = artwork.images.length > 1
-  // The enhanced catalogue image (display) differs from the actual photo (original)
-  // only when the artwork was enhanced. Offer a toggle to see the real photo.
-  const isEnhanced = !!currentImage?.enhanced && currentImage.original !== currentImage.display
-  const mainSrc = currentImage ? (view === 'original' ? currentImage.original : currentImage.display) : ''
+
+  // The main image is the artist's chosen variant (`display`). The toggle swaps to a
+  // second view: the real photo, unless the main already IS the photo — then it offers
+  // the cropped (no-AI) catalogue image. Either way the visitor can always reach the
+  // real photo. `alt` is empty when there's nothing different to show.
+  const mainUrl = currentImage?.display || currentImage?.original || ''
+  const altUrl = currentImage
+    ? (currentImage.original && currentImage.original !== mainUrl
+        ? currentImage.original
+        : (currentImage.cropped && currentImage.cropped !== mainUrl
+            ? currentImage.cropped
+            : (currentImage.enhanced && currentImage.enhanced !== mainUrl ? currentImage.enhanced : '')))
+    : ''
+  const hasAlt = !!altUrl
+  const labelFor = (url: string): string => {
+    if (!currentImage) return ''
+    if (url === currentImage.original) return 'Original photo · Foto original'
+    if (url === currentImage.cropped) return 'Cropped · Sem realce'
+    return 'Enhanced · Realçada'
+  }
+  const mainSrc = view === 'alt' && hasAlt ? altUrl : mainUrl
+
+  const handleShare = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : ''
+    const data = { title: `${artwork.title.en} — Mai-Britt Wolthers`, url }
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share(data)
+        return
+      }
+    } catch {
+      return // user dismissed the share sheet
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setShared(true)
+      setTimeout(() => setShared(false), 2000)
+    } catch {
+      // clipboard blocked — nothing graceful to do
+    }
+  }
 
   const handleDownload = async () => {
     if (!currentImage) return
@@ -107,22 +145,23 @@ export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProp
                 )}
               </div>
 
-              {/* Enhanced ↔ original photo toggle (only when the image was enhanced) */}
-              {isEnhanced && (
+              {/* View toggle — swaps between the artist's chosen image and the alternate
+                  (always lets the visitor reach the real photo). */}
+              {hasAlt && (
                 <div className="mt-4 inline-flex rounded-md border overflow-hidden text-sm">
                   <button
                     type="button"
-                    onClick={() => setView('enhanced')}
-                    className={view === 'enhanced' ? 'bg-gray-900 text-white px-3 py-1.5' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100'}
+                    onClick={() => setView('main')}
+                    className={view === 'main' ? 'bg-gray-900 text-white px-3 py-1.5' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100'}
                   >
-                    Enhanced · Realçada
+                    {labelFor(mainUrl)}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setView('original')}
-                    className={view === 'original' ? 'bg-gray-900 text-white px-3 py-1.5' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100'}
+                    onClick={() => setView('alt')}
+                    className={view === 'alt' ? 'bg-gray-900 text-white px-3 py-1.5' : 'px-3 py-1.5 text-gray-600 hover:bg-gray-100'}
                   >
-                    Original photo · Foto original
+                    {labelFor(altUrl)}
                   </button>
                 </div>
               )}
@@ -223,6 +262,10 @@ export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProp
                     Download Image
                   </Button>
                 )}
+                <Button onClick={handleShare} variant="outline" className="gap-2">
+                  <Share2 className="w-4 h-4" />
+                  {shared ? 'Link copied' : 'Share'}
+                </Button>
                 <Button asChild variant="outline">
                   <Link href="/contact">Inquire</Link>
                 </Button>
@@ -242,7 +285,7 @@ export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProp
           onClick={() => setShowFullscreen(false)}
         >
           <Image
-            src={view === 'original' ? currentImage.original : (currentImage.display || currentImage.original)}
+            src={mainSrc || currentImage.original}
             alt={artwork.title.en}
             fill
             className="object-contain p-8"

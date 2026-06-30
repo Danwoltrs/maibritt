@@ -28,6 +28,7 @@ export interface Artwork {
     display: string
     thumbnail: string
     enhanced?: string
+    cropped?: string
     framed?: string
     framePreset?: string
     enhancedAt?: string
