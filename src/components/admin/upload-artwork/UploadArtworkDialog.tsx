@@ -59,11 +59,13 @@ const generateYearOptions = () => {
 interface UploadArtworkDialogProps {
   open: boolean
   onClose: () => void
+  /** Pre-selected files (e.g. from the mobile quick-upload FAB) to seed step 1. */
+  initialFiles?: File[]
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps) {
+export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtworkDialogProps) {
   const [step, setStep] = useState<'upload' | 'details' | 'finalizing' | 'success'>('upload')
 
   // Step 1 state
@@ -115,6 +117,14 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
       }).catch(console.error)
     }
   }, [open])
+
+  // Seed step 1 with files passed in from the quick-upload FAB
+  useEffect(() => {
+    if (open && initialFiles && initialFiles.length > 0) {
+      setImages(filesToUploadedImages(initialFiles))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialFiles])
 
   // Check for saved draft when dialog opens
   useEffect(() => {
@@ -419,7 +429,7 @@ export function UploadArtworkDialog({ open, onClose }: UploadArtworkDialogProps)
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto max-lg:left-0 max-lg:top-0 max-lg:translate-x-0 max-lg:translate-y-0 max-lg:w-screen max-lg:h-dvh max-lg:max-h-dvh max-lg:max-w-none max-lg:rounded-none max-lg:border-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
