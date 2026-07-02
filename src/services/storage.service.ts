@@ -227,6 +227,26 @@ export class StorageService {
     return client.storage.from(bucket).getPublicUrl(path).data.publicUrl
   }
 
+  /** Upload a generated AR model (GLB/USDZ) and return its public URL.
+   * Service-role client for the same reason as uploadDerived: the artworks
+   * bucket INSERT policy is authenticated-only, and this runs server-side
+   * from the public AR route. Files are content-addressed (hash in the name),
+   * so long cache + upsert is safe. */
+  static async uploadArModel(
+    baseName: string,
+    kind: 'glb' | 'usdz',
+    buf: Uint8Array,
+  ): Promise<string> {
+    const client = supabaseAdmin ?? supabase
+    const path = `ar/${baseName}.${kind}`
+    const contentType = kind === 'usdz' ? 'model/vnd.usdz+zip' : 'model/gltf-binary'
+    const { error } = await client.storage.from('artworks').upload(path, buf, {
+      cacheControl: '31536000', upsert: true, contentType,
+    })
+    if (error) throw error
+    return client.storage.from('artworks').getPublicUrl(path).data.publicUrl
+  }
+
   /**
    * Get public URL for a file
    */

@@ -44,6 +44,7 @@ const nextConfig = {
     // serverless function. public/ is NOT included in the lambda by default,
     // so composeFrame's texture read would ENOENT on Vercel without this.
     '/api/enhance/**': ['./node_modules/@img/**', './public/frames/**'],
+    '/api/ar/**': ['./node_modules/@img/**'],
   },
 }
 
