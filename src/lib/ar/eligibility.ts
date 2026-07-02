@@ -13,7 +13,7 @@ export function qualifiesForAr(row: {
   category?: string
   height_cm?: unknown
   width_cm?: unknown
-  images?: { display?: string; enhanced?: string; framePreset?: string }[]
+  images?: { original?: string; thumbnail?: string; display?: string; enhanced?: string; framePreset?: string }[]
 }): ArQualification {
   if (!row.category || !(AR_CATEGORIES as readonly string[]).includes(row.category)) {
     return { ok: false, reason: 'category_not_flat' }

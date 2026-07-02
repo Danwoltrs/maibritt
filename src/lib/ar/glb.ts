@@ -12,7 +12,7 @@ export interface ArBuildOptions {
 }
 
 /** Quad soup -> two triangles per quad, sequential vertices. */
-function triIndices(quadCount: number): Uint32Array {
+function triIndices(quadCount: number): Uint32Array<ArrayBuffer> {
   const idx = new Uint32Array(quadCount * 6)
   for (let q = 0; q < quadCount; q++) {
     const v = q * 4, t = q * 6
