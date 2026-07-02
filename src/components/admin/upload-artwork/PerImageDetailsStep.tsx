@@ -27,6 +27,7 @@ import EnhanceButton from '@/components/artwork/EnhanceButton'
 import { isEnhanceable } from '@/lib/framing/presets'
 import type { UploadedImage, ArtworkDetails, CommonApplied } from './types'
 import type { UploadState } from './useBackgroundUploads'
+import { parseDimensionsToCm, composeDimensions } from '@/lib/dimensions'
 
 export interface EnhancedResult {
   enhanced: string
@@ -94,7 +95,8 @@ export function PerImageDetailsStep({
 
   const current = artworkDetails[currentIndex] || {
     titlePt: '', titleEn: '', mediumPt: '', mediumEn: '',
-    dimensions: '', descriptionPt: '', descriptionEn: '', featured: false,
+    dimensions: '', heightCm: '', widthCm: '',
+    descriptionPt: '', descriptionEn: '', featured: false,
   }
 
   const handlePrev = () => { if (currentIndex > 0) setCurrentIndex(currentIndex - 1) }
@@ -188,7 +190,12 @@ export function PerImageDetailsStep({
       setShowNewDimension(true)
       return
     }
-    onUpdateDetails(currentIndex, { dimensions: value })
+    const parsed = parseDimensionsToCm(value)
+    onUpdateDetails(currentIndex, {
+      dimensions: value,
+      heightCm: parsed ? String(parsed.heightCm).replace('.', ',') : '',
+      widthCm: parsed ? String(parsed.widthCm).replace('.', ',') : '',
+    })
   }
 
   const handleAddNewDimension = () => {
@@ -197,9 +204,26 @@ export function PerImageDetailsStep({
     if (!knownDimensions.includes(dim)) {
       setKnownDimensions(prev => [...prev, dim].sort())
     }
-    onUpdateDetails(currentIndex, { dimensions: dim })
+    const parsed = parseDimensionsToCm(dim)
+    onUpdateDetails(currentIndex, {
+      dimensions: dim,
+      heightCm: parsed ? String(parsed.heightCm).replace('.', ',') : '',
+      widthCm: parsed ? String(parsed.widthCm).replace('.', ',') : '',
+    })
     setNewDimension('')
     setShowNewDimension(false)
+  }
+
+  const handleDimensionNumbers = (field: 'heightCm' | 'widthCm', raw: string) => {
+    const next = { ...current, [field]: raw }
+    const toNum = (s: string) => {
+      const v = parseFloat((s || '').replace(',', '.'))
+      return Number.isFinite(v) && v > 0 ? v : undefined
+    }
+    onUpdateDetails(currentIndex, {
+      [field]: raw,
+      dimensions: composeDimensions(toNum(next.heightCm), toNum(next.widthCm)) || current.dimensions,
+    })
   }
 
   const progressPercent = ((currentIndex + 1) / images.length) * 100
@@ -452,6 +476,26 @@ export function PerImageDetailsStep({
             {/* Dimensions - Dropdown */}
             <div className="space-y-2">
               <Label>Dimensions</Label>
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">Height (cm) / Altura</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={current.heightCm}
+                    onChange={(e) => handleDimensionNumbers('heightCm', e.target.value)}
+                    placeholder="185"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">Width (cm) / Largura</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={current.widthCm}
+                    onChange={(e) => handleDimensionNumbers('widthCm', e.target.value)}
+                    placeholder="285"
+                  />
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Select value={currentDimensionValue} onValueChange={handleSelectDimension}>
                   <SelectTrigger className="flex-1">

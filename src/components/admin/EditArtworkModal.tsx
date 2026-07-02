@@ -17,6 +17,7 @@ import { ArtworkService } from '@/services/artwork.service'
 import { GalleryService, Gallery } from '@/services/gallery.service'
 import { ExhibitionsService } from '@/services/exhibitions.service'
 import { Artwork, Exhibition } from '@/types'
+import { parseDimensionsToCm, composeDimensions } from '@/lib/dimensions'
 
 const DEFAULT_CATEGORIES = [
   { value: 'painting', label: 'Painting / Pintura' },
@@ -56,6 +57,11 @@ interface EditArtworkModalProps {
 }
 
 export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: EditArtworkModalProps) {
+  const toNum = (s: string) => {
+    const v = parseFloat((s || '').replace(',', '.'))
+    return Number.isFinite(v) && v > 0 ? v : undefined
+  }
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -67,6 +73,8 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
   const [mediumPt, setMediumPt] = useState('')
   const [mediumEn, setMediumEn] = useState('')
   const [dimensions, setDimensions] = useState('')
+  const [heightCmVal, setHeightCmVal] = useState('')
+  const [widthCmVal, setWidthCmVal] = useState('')
   const [descriptionPt, setDescriptionPt] = useState('')
   const [descriptionEn, setDescriptionEn] = useState('')
   const [category, setCategory] = useState<string>('')
@@ -155,6 +163,8 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
         setMediumPt(data.medium.ptBR)
         setMediumEn(data.medium.en)
         setDimensions(data.dimensions)
+        setHeightCmVal(data.heightCm != null ? String(data.heightCm).replace('.', ',') : '')
+        setWidthCmVal(data.widthCm != null ? String(data.widthCm).replace('.', ',') : '')
         setDescriptionPt(data.description?.ptBR || '')
         setDescriptionEn(data.description?.en || '')
         setCategory(data.category)
@@ -240,6 +250,8 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
         year,
         medium: { ptBR: mediumPt, en: mediumEn },
         dimensions,
+        heightCm: toNum(heightCmVal),
+        widthCm: toNum(widthCmVal),
         description: { ptBR: descriptionPt, en: descriptionEn },
         category: category as any,
         forSale,
@@ -461,11 +473,42 @@ export function EditArtworkModal({ artwork, open, onOpenChange, onUpdate }: Edit
             <div className="space-y-2">
               <Label>Dimensions</Label>
               <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">Height (cm) / Altura</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={heightCmVal}
+                    onChange={(e) => {
+                      setHeightCmVal(e.target.value)
+                      const composed = composeDimensions(toNum(e.target.value), toNum(widthCmVal))
+                      if (composed) setDimensions(composed)
+                    }}
+                    placeholder="185"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">Width (cm) / Largura</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={widthCmVal}
+                    onChange={(e) => {
+                      setWidthCmVal(e.target.value)
+                      const composed = composeDimensions(toNum(heightCmVal), toNum(e.target.value))
+                      if (composed) setDimensions(composed)
+                    }}
+                    placeholder="285"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
                 <Select
                   value={knownDimensions.includes(dimensions) ? dimensions : ''}
                   onValueChange={(v) => {
                     if (v === '__new__') { setShowNewDimension(true); return }
                     setDimensions(v)
+                    const parsed = parseDimensionsToCm(v)
+                    setHeightCmVal(parsed ? String(parsed.heightCm).replace('.', ',') : '')
+                    setWidthCmVal(parsed ? String(parsed.widthCm).replace('.', ',') : '')
                   }}
                 >
                   <SelectTrigger className="flex-1">

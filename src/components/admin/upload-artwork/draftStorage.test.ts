@@ -6,6 +6,7 @@ const sampleDetails: Record<number, ArtworkDetails> = {
   0: {
     titlePt: 'Obra Um', titleEn: 'Work One',
     mediumPt: '', mediumEn: '', dimensions: '',
+    heightCm: '', widthCm: '',
     descriptionPt: '', descriptionEn: '', featured: false,
   },
 }
@@ -83,6 +84,7 @@ describe('draftHasContent', () => {
           0: {
             titlePt: '', titleEn: 'Hello',
             mediumPt: '', mediumEn: '', dimensions: '',
+            heightCm: '', widthCm: '',
             descriptionPt: '', descriptionEn: '', featured: false,
           },
         },
@@ -102,6 +104,7 @@ describe('draftHasContent', () => {
           0: {
             titlePt: '', titleEn: '',
             mediumPt: '', mediumEn: '', dimensions: '',
+            heightCm: '', widthCm: '',
             descriptionPt: '', descriptionEn: '', featured: false,
           },
         },

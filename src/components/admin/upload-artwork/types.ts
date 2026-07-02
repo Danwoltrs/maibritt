@@ -9,6 +9,8 @@ export interface ArtworkDetails {
   mediumPt: string
   mediumEn: string
   dimensions: string
+  heightCm: string   // form input value, e.g. "185" or "80,5"
+  widthCm: string
   descriptionPt: string
   descriptionEn: string
   featured: boolean

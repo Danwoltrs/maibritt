@@ -35,6 +35,7 @@ import { useBackgroundUploads } from './useBackgroundUploads'
 import { saveDraft, loadDraft, clearDraft, draftHasContent } from './draftStorage'
 import { filesToUploadedImages, MAX_IMAGE_COUNT } from './imageFiles'
 import { SessionRecoveryDialog } from './SessionRecoveryDialog'
+import { composeDimensions } from '@/lib/dimensions'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -228,7 +229,8 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
     images.forEach((_, i) => {
       details[i] = {
         titlePt: '', titleEn: '', mediumPt: '', mediumEn: '',
-        dimensions: '', descriptionPt: '', descriptionEn: '', featured: false,
+        dimensions: '', heightCm: '', widthCm: '',
+        descriptionPt: '', descriptionEn: '', featured: false,
       }
     })
     setArtworkDetails(details)
@@ -250,11 +252,19 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
       const d = artworkDetails[i]
       const category = applyToAll.category ? commonMeta.category : d?.category
       const year = applyToAll.year ? commonMeta.year : d?.year ?? new Date().getFullYear()
+      const toNum = (s: string) => {
+        const v = parseFloat((s || '').replace(',', '.'))
+        return Number.isFinite(v) && v > 0 ? v : undefined
+      }
+      const heightCm = toNum(d.heightCm)
+      const widthCm = toNum(d.widthCm)
       return {
         title: { ptBR: d.titlePt, en: d.titleEn },
         year,
         medium: { ptBR: d.mediumPt, en: d.mediumEn },
-        dimensions: d.dimensions,
+        dimensions: d.dimensions || composeDimensions(heightCm, widthCm),
+        heightCm,
+        widthCm,
         description: { ptBR: d.descriptionPt, en: d.descriptionEn },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         category: category as any,
