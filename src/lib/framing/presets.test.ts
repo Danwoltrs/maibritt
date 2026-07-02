@@ -18,4 +18,9 @@ describe('frame presets', () => {
     expect(isEnhanceable('sculpture')).toBe(false)
     expect(isEnhanceable('video')).toBe(false)
   })
+  it('every preset carries a wood hex color for AR', () => {
+    for (const p of Object.values(FRAME_PRESETS)) {
+      expect(p.woodHex).toMatch(/^#[0-9A-Fa-f]{6}$/)
+    }
+  })
 })
