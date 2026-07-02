@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Artwork } from '@/types'
 import { Badge } from '@/components/ui/badge'
+import ArWallButton from '@/components/artwork/ArWallButton'
 
 interface ArtworkOverlayProps {
   artwork: Artwork | null
@@ -20,6 +21,9 @@ export default function ArtworkOverlay({
   artwork, onClose,
   onPrev, onNext, hasPrev = false, hasNext = false, positionLabel,
 }: ArtworkOverlayProps) {
+  const [view, setView] = useState<'enhanced' | 'original'>('enhanced')
+  useEffect(() => { setView('enhanced') }, [artwork?.id])
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -46,7 +50,12 @@ export default function ArtworkOverlay({
 
   const title = artwork.title.en || artwork.title.ptBR
   const medium = artwork.medium.en || artwork.medium.ptBR
-  const mainImage = artwork.images?.[0]?.display || artwork.images?.[0]?.original
+  const img0 = artwork.images?.[0]
+  const enhancedUrl = img0?.framed || img0?.enhanced || ''
+  const hasToggle = !!enhancedUrl && !!img0?.original && enhancedUrl !== img0.original
+  const mainImage = hasToggle
+    ? (view === 'original' ? img0!.original : enhancedUrl)
+    : (img0?.display || img0?.original)
 
   return (
     <AnimatePresence>
@@ -84,7 +93,11 @@ export default function ArtworkOverlay({
           {/* Image area (top ~75%) */}
           <div className="relative bg-neutral-900 flex-1 min-h-0 flex items-center justify-center">
             {mainImage ? (
-              <img
+              <motion.img
+                key={mainImage}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
                 src={mainImage}
                 alt={title}
                 className="max-w-full max-h-full object-contain"
@@ -144,6 +157,37 @@ export default function ArtworkOverlay({
                     <span>{artwork.artSeries.nameEn || artwork.artSeries.namePt}</span>
                   </div>
                 )}
+              </div>
+
+              {/* Enhanced | Original + AR */}
+              <div className="flex items-center gap-5 self-end max-md:self-start whitespace-nowrap">
+                {hasToggle && (
+                  <div className="text-[10px] tracking-[2px] uppercase font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setView('enhanced')}
+                      className={view === 'enhanced' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600 transition-colors'}
+                    >
+                      Enhanced
+                    </button>
+                    <span className="text-gray-300 mx-1.5">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setView('original')}
+                      className={view === 'original' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600 transition-colors'}
+                    >
+                      Original
+                    </button>
+                  </div>
+                )}
+                <ArWallButton
+                  artworkId={artwork.id}
+                  slug={artwork.slug}
+                  category={artwork.category}
+                  heightCm={artwork.heightCm}
+                  widthCm={artwork.widthCm}
+                  variant="bar"
+                />
               </div>
 
               {/* View full link */}
