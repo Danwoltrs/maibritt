@@ -39,6 +39,8 @@ CREATE TABLE artworks (
   medium_pt TEXT NOT NULL,
   medium_en TEXT NOT NULL,
   dimensions TEXT NOT NULL,
+  height_cm NUMERIC(6,1),
+  width_cm NUMERIC(6,1),
   description_pt TEXT,
   description_en TEXT,
   category artwork_category NOT NULL,

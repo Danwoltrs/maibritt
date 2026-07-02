@@ -18,6 +18,8 @@ export interface Artwork {
   year: number
   medium: Content
   dimensions: string
+  heightCm?: number   // physical height in cm (H x W convention)
+  widthCm?: number    // physical width in cm
   description: Content
   category: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   series?: string

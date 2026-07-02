@@ -19,6 +19,8 @@ export interface ArtworkCreateData {
   year?: number
   medium?: Content
   dimensions?: string
+  heightCm?: number
+  widthCm?: number
   description?: Content
   category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   seriesId?: string
@@ -35,6 +37,8 @@ export interface ArtworkUpdateData {
   year?: number
   medium?: Content
   dimensions?: string
+  heightCm?: number
+  widthCm?: number
   description?: Content
   category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   seriesId?: string | null
@@ -414,6 +418,8 @@ export class ArtworkService {
           medium_pt: artworkData.medium?.ptBR || '',
           medium_en: artworkData.medium?.en || '',
           dimensions: dims,
+          height_cm: artworkData.heightCm ?? null,
+          width_cm: artworkData.widthCm ?? null,
           description_pt: artworkData.description?.ptBR || '',
           description_en: artworkData.description?.en || '',
           category: artworkData.category || 'painting',
@@ -481,6 +487,8 @@ export class ArtworkService {
       }
 
       if (updateData.dimensions !== undefined) updateObject.dimensions = updateData.dimensions
+      if (updateData.heightCm !== undefined) updateObject.height_cm = updateData.heightCm
+      if (updateData.widthCm !== undefined) updateObject.width_cm = updateData.widthCm
 
       if (updateData.description) {
         updateObject.description_pt = updateData.description.ptBR
@@ -908,6 +916,8 @@ export class ArtworkService {
         en: data.medium_en
       },
       dimensions: data.dimensions,
+      heightCm: data.height_cm != null ? Number(data.height_cm) : undefined,
+      widthCm: data.width_cm != null ? Number(data.width_cm) : undefined,
       description: {
         ptBR: data.description_pt || '',
         en: data.description_en || ''
