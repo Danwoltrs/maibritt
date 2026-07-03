@@ -5,6 +5,7 @@ import { View, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { currentArPlatform, type ArPlatform } from '@/lib/ar/device'
 import { AR_CATEGORIES } from '@/lib/ar/constants'
+import { getArEnabled } from '@/lib/ar/flags'
 
 interface ArWallButtonProps {
   artworkId: string
@@ -32,6 +33,7 @@ export default function ArWallButton({
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [androidUrls, setAndroidUrls] = useState<ArUrls | null>(null)
   const [pulse, setPulse] = useState(autoOpen)
+  const [arEnabled, setArEnabled] = useState<boolean | null>(null)
   const urlsRef = useRef<ArUrls | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -42,6 +44,8 @@ export default function ArWallButton({
 
   // Platform is browser-only; render nothing during SSR.
   useEffect(() => { setPlatform(currentArPlatform()) }, [])
+
+  useEffect(() => { getArEnabled().then(setArEnabled) }, [])
 
   const fetchUrls = async (): Promise<ArUrls> => {
     if (urlsRef.current) return urlsRef.current
@@ -98,13 +102,13 @@ export default function ArWallButton({
 
   // QR hand-off arrival: pre-generate the model and pull the button into view.
   useEffect(() => {
-    if (!autoOpen || !eligible || !platform || platform === 'desktop') return
+    if (!autoOpen || !eligible || arEnabled !== true || !platform || platform === 'desktop') return
     buttonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     fetchUrls().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoOpen, eligible, platform])
+  }, [autoOpen, eligible, arEnabled, platform])
 
-  if (!eligible || platform === null) return null
+  if (!eligible || platform === null || arEnabled !== true) return null
 
   const barClasses =
     'inline-flex items-center gap-1.5 text-[10px] tracking-[2px] uppercase font-medium text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap disabled:opacity-50'

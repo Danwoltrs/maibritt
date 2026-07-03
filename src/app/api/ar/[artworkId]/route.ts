@@ -26,6 +26,18 @@ export async function POST(
 
   try {
     const client = supabaseAdmin ?? supabase
+
+    // Site-wide AR kill switch (admin Settings -> Features). Missing row or
+    // read error fails open — only an explicit false blocks.
+    const { data: flagRow } = await client
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'ar_enabled')
+      .single()
+    if (flagRow && !(flagRow.value === true || flagRow.value === 'true')) {
+      return NextResponse.json({ error: 'ar_disabled' }, { status: 403 })
+    }
+
     const { data, error } = await client
       .from('artworks')
       .select('id, category, height_cm, width_cm, images')
