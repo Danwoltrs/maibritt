@@ -51,7 +51,7 @@ export async function POST(
     }
 
     // Generate. Image URL comes from our own DB row (Supabase public URL).
-    const imgRes = await fetch(q.imageUrl)
+    const imgRes = await fetch(q.imageUrl, { signal: AbortSignal.timeout(15_000) })
     if (!imgRes.ok) return NextResponse.json({ error: 'image_fetch_failed' }, { status: 500 })
     const textureJpeg = await prepareTexture(Buffer.from(await imgRes.arrayBuffer()))
 

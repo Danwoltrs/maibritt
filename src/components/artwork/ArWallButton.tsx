@@ -31,6 +31,7 @@ export default function ArWallButton({
   const [error, setError] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [androidUrls, setAndroidUrls] = useState<ArUrls | null>(null)
+  const [pulse, setPulse] = useState(autoOpen)
   const urlsRef = useRef<ArUrls | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -72,6 +73,7 @@ export default function ArWallButton({
   }
 
   const handleClick = async () => {
+    setPulse(false)
     setError(false)
     if (platform === 'desktop') {
       const target = `${window.location.origin}/artwork/${slug}?ar=1`
@@ -117,7 +119,7 @@ export default function ArWallButton({
         onClick={handleClick}
         disabled={loading}
         title={`${LABEL} / ${LABEL_PT}`}
-        className={`${variant === 'bar' ? barClasses : detailClasses} ${autoOpen ? 'animate-pulse' : ''}`}
+        className={`${variant === 'bar' ? barClasses : detailClasses} ${pulse ? 'animate-pulse' : ''}`}
       >
         <View className={variant === 'bar' ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
         {loading ? 'Preparing… / Preparando…' : LABEL}

@@ -6,7 +6,7 @@ export interface FramePreset {
   family: FrameFamily
   texturePath: string      // wood texture swatch in /public
   frameWidthFrac: number   // frame strip width as fraction of long edge
-  woodHex: string          // sRGB frame color for the AR 3D model
+  woodHex: string          // sRGB frame color for the AR 3D model. Changing woodHex/frameWidthFrac requires bumping AR_MODEL_VERSION in src/lib/ar/constants.ts (cached AR models hash the preset KEY only).
 }
 
 export const FRAME_PRESETS: Record<string, FramePreset> = {
