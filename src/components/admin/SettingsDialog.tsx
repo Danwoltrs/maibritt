@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog'
-import { SettingsService, SiteSettings, HomepageSections } from '@/services/settings.service'
+import { SettingsService, SiteSettings, HomepageSections, FeatureFlags } from '@/services/settings.service'
 
 const rotationSpeedOptions = [
   { value: '8000', label: 'Fast (8s)' },
@@ -43,6 +43,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     showJournal: true,
     showAvailableWorks: true,
   })
+  const [features, setFeatures] = useState<FeatureFlags>({
+    arEnabled: true,
+    userPostsEnabled: false,
+  })
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -58,14 +62,16 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         setLoading(true)
         setError(null)
         setSuccess(false)
-        const [carouselSettings, homepageSections, currentLogoUrl] = await Promise.all([
+        const [carouselSettings, homepageSections, currentLogoUrl, featureFlags] = await Promise.all([
           SettingsService.getCarouselSettings(),
           SettingsService.getHomepageSections(),
           SettingsService.getLogoUrl(),
+          SettingsService.getFeatureFlags(),
         ])
         setSettings(carouselSettings)
         setSections(homepageSections)
         setLogoUrl(currentLogoUrl)
+        setFeatures(featureFlags)
       } catch (err) {
         console.error('Error loading settings:', err)
         setError('Failed to load settings')
@@ -119,6 +125,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       await Promise.all([
         SettingsService.updateCarouselSettings(settings),
         SettingsService.updateHomepageSections(sections),
+        SettingsService.updateFeatureFlags(features),
       ])
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -257,6 +264,39 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     checked={sections.showAvailableWorks}
                     onCheckedChange={(checked) =>
                       setSections(prev => ({ ...prev, showAvailableWorks: checked }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Features */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Features</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-0">
+                <div className="flex items-center justify-between py-2.5">
+                  <div>
+                    <Label className="text-sm">AR wall preview</Label>
+                    <p className="text-xs text-gray-500">Show the &quot;View on your wall&quot; button and allow AR model generation</p>
+                  </div>
+                  <Switch
+                    checked={features.arEnabled}
+                    onCheckedChange={(checked) =>
+                      setFeatures(prev => ({ ...prev, arEnabled: checked }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2.5 border-t">
+                  <div>
+                    <Label className="text-sm">Visitor wall posts</Label>
+                    <p className="text-xs text-gray-500">Coming soon — not built yet. This switch will control it when it ships.</p>
+                  </div>
+                  <Switch
+                    checked={features.userPostsEnabled}
+                    onCheckedChange={(checked) =>
+                      setFeatures(prev => ({ ...prev, userPostsEnabled: checked }))
                     }
                   />
                 </div>
