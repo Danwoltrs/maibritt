@@ -11,18 +11,20 @@ let cached: Promise<boolean> | null = null
  */
 export function getArEnabled(): Promise<boolean> {
   if (!cached) {
-    cached = supabase
-      .from('site_settings')
-      .select('value')
-      .eq('key', 'ar_enabled')
-      .single()
-      .then(
-        ({ data, error }) => {
-          if (error || !data) return true
-          return data.value === true || data.value === 'true'
-        },
-        () => true,
-      )
+    cached = Promise.resolve(
+      supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'ar_enabled')
+        .single()
+        .then(
+          ({ data, error }) => {
+            if (error || !data) return true
+            return data.value === true || data.value === 'true'
+          },
+          () => true,
+        )
+    )
   }
   return cached
 }
