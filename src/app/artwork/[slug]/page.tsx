@@ -5,6 +5,7 @@ import ArtworkDetailClient from './ArtworkDetailClient'
 
 interface ArtworkPageProps {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ ar?: string }>
 }
 
 export async function generateMetadata({ params }: ArtworkPageProps): Promise<Metadata> {
@@ -44,13 +45,14 @@ export async function generateMetadata({ params }: ArtworkPageProps): Promise<Me
   }
 }
 
-export default async function ArtworkPage({ params }: ArtworkPageProps) {
+export default async function ArtworkPage({ params, searchParams }: ArtworkPageProps) {
   const { slug } = await params
+  const { ar } = await searchParams
   const artwork = await ArtworkService.getArtworkBySlug(slug)
 
   if (!artwork) {
     notFound()
   }
 
-  return <ArtworkDetailClient artwork={artwork} />
+  return <ArtworkDetailClient artwork={artwork} autoOpenAr={ar === '1'} />
 }

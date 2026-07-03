@@ -7,13 +7,15 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, ZoomIn, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import ArWallButton from '@/components/artwork/ArWallButton'
 import { Artwork } from '@/types'
 
 interface ArtworkDetailClientProps {
   artwork: Artwork
+  autoOpenAr?: boolean
 }
 
-export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProps) {
+export default function ArtworkDetailClient({ artwork, autoOpenAr = false }: ArtworkDetailClientProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showFullscreen, setShowFullscreen] = useState(false)
   const [view, setView] = useState<'main' | 'alt'>('main')
@@ -256,6 +258,15 @@ export default function ArtworkDetailClient({ artwork }: ArtworkDetailClientProp
               )}
 
               <div className="flex gap-3 mt-auto">
+                <ArWallButton
+                  artworkId={artwork.id}
+                  slug={artwork.slug}
+                  category={artwork.category}
+                  heightCm={artwork.heightCm}
+                  widthCm={artwork.widthCm}
+                  autoOpen={autoOpenAr}
+                  variant="detail"
+                />
                 {currentImage && (
                   <Button onClick={handleDownload} variant="outline" className="gap-2">
                     <Download className="w-4 h-4" />
