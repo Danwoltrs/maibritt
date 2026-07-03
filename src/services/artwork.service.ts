@@ -37,8 +37,8 @@ export interface ArtworkUpdateData {
   year?: number
   medium?: Content
   dimensions?: string
-  heightCm?: number
-  widthCm?: number
+  heightCm?: number | null
+  widthCm?: number | null
   description?: Content
   category?: 'painting' | 'sculpture' | 'engraving' | 'video' | 'installations' | 'mixed-media'
   seriesId?: string | null
