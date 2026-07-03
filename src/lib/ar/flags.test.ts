@@ -44,6 +44,10 @@ describe('getArEnabled', () => {
     state.response = { data: { value: false }, error: null }
     expect(await getArEnabled()).toBe(false)
   })
+  it('false when the stored value is a garbage non-boolean string', async () => {
+    state.response = { data: { value: 'yes' }, error: null }
+    expect(await getArEnabled()).toBe(false)
+  })
   it('true when the key is missing (PGRST116-style error)', async () => {
     state.response = { data: null, error: { code: 'PGRST116' } }
     expect(await getArEnabled()).toBe(true)

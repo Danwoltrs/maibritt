@@ -50,6 +50,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const loadedFeaturesRef = useRef<FeatureFlags | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -72,6 +73,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         setSections(homepageSections)
         setLogoUrl(currentLogoUrl)
         setFeatures(featureFlags)
+        loadedFeaturesRef.current = featureFlags
       } catch (err) {
         console.error('Error loading settings:', err)
         setError('Failed to load settings')
@@ -122,11 +124,25 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       setSaving(true)
       setError(null)
       setSuccess(false)
+      // Only write feature flags the admin actually changed in this dialog
+      // session — a failed read falls back to defaults, and we must not let
+      // an unrelated save silently overwrite a stored flag with that default.
+      const loadedFeatures = loadedFeaturesRef.current
+      const changedFeatures: Partial<FeatureFlags> = {}
+      if (loadedFeatures) {
+        if (features.arEnabled !== loadedFeatures.arEnabled) {
+          changedFeatures.arEnabled = features.arEnabled
+        }
+        if (features.userPostsEnabled !== loadedFeatures.userPostsEnabled) {
+          changedFeatures.userPostsEnabled = features.userPostsEnabled
+        }
+      }
       await Promise.all([
         SettingsService.updateCarouselSettings(settings),
         SettingsService.updateHomepageSections(sections),
-        SettingsService.updateFeatureFlags(features),
+        SettingsService.updateFeatureFlags(changedFeatures),
       ])
+      loadedFeaturesRef.current = features
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
