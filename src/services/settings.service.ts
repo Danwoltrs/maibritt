@@ -16,6 +16,11 @@ export interface HomepageSections {
   showAvailableWorks: boolean
 }
 
+export interface FeatureFlags {
+  arEnabled: boolean        // ar_enabled — missing key means ENABLED
+  userPostsEnabled: boolean // user_posts_enabled — missing key means disabled (feature not built yet)
+}
+
 export class SettingsService {
   /**
    * Get a specific setting by key
@@ -143,6 +148,47 @@ export class SettingsService {
     }
     for (const u of updates) {
       await this.upsertSetting(u.key, u.value)
+    }
+  }
+
+  /**
+   * Get feature flags. Missing keys fall back to defaults; errors fail open
+   * (a broken settings read must never disable a live feature by accident).
+   */
+  static async getFeatureFlags(): Promise<FeatureFlags> {
+    const flags: FeatureFlags = { arEnabled: true, userPostsEnabled: false }
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .in('key', ['ar_enabled', 'user_posts_enabled'])
+
+      if (error) throw error
+
+      data?.forEach(setting => {
+        if (setting.key === 'ar_enabled') {
+          flags.arEnabled = setting.value === true || setting.value === 'true'
+        }
+        if (setting.key === 'user_posts_enabled') {
+          flags.userPostsEnabled = setting.value === true || setting.value === 'true'
+        }
+      })
+      return flags
+    } catch (error) {
+      console.error('Error fetching feature flags:', error)
+      return flags
+    }
+  }
+
+  /**
+   * Update feature flags (only the provided fields).
+   */
+  static async updateFeatureFlags(flags: Partial<FeatureFlags>): Promise<void> {
+    if (flags.arEnabled !== undefined) {
+      await this.upsertSetting('ar_enabled', flags.arEnabled)
+    }
+    if (flags.userPostsEnabled !== undefined) {
+      await this.upsertSetting('user_posts_enabled', flags.userPostsEnabled)
     }
   }
 
