@@ -257,7 +257,7 @@ export default function ArtworkDetailClient({ artwork, autoOpenAr = false }: Art
                 </div>
               )}
 
-              <div className="flex gap-3 mt-auto">
+              <div className="flex flex-wrap gap-3 mt-auto">
                 <ArWallButton
                   artworkId={artwork.id}
                   slug={artwork.slug}
