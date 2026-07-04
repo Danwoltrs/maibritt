@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 import { runFalImageEdit } from './falImage'
 import { recompositeLowFreq } from './recomposite'
+import { matchColors } from './colormatch'
 
 // Strong preserve-prompt: the goal is to make the canvas LOOK taut and evenly lit
 // while changing the artwork as little as possible. This is the higher-risk tier —
@@ -47,14 +48,22 @@ export async function aiFlattenGenerative(input: Buffer): Promise<Buffer> {
     (r) => r?.data?.images?.[0]?.url ?? r?.images?.[0]?.url,
   )
   if (edited === input) return input // model no-op'd / failed
+  let result = edited
   if (process.env.ENHANCE_FLATTEN_RECOMPOSITE === '1') {
     try {
       const sigmaFrac = Number(process.env.ENHANCE_FLATTEN_DETAIL_SIGMA ?? 0.025)
-      return await recompositeLowFreq(input, edited, sigmaFrac)
+      result = await recompositeLowFreq(input, edited, sigmaFrac)
     } catch (e) {
       console.error('recomposite failed; returning the raw AI flatten', e)
-      return edited
     }
   }
-  return edited
+  // Lock the palette back to the pre-AI image: even with the preserve prompt
+  // Qwen drifts colours, and the artist's colours are non-negotiable. A global
+  // histogram match restores them without touching the flattening (it has no
+  // spatial component, so the removed waves cannot come back). Set
+  // ENHANCE_FLATTEN_COLORMATCH=0 to disable.
+  if (process.env.ENHANCE_FLATTEN_COLORMATCH !== '0') {
+    result = await matchColors(input, result)
+  }
+  return result
 }

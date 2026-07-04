@@ -21,6 +21,7 @@ beforeEach(() => {
   delete process.env.ENHANCE_FLATTEN_MODEL
   delete process.env.ENHANCE_FLATTEN_GUIDANCE
   delete process.env.ENHANCE_FLATTEN_RECOMPOSITE
+  delete process.env.ENHANCE_FLATTEN_COLORMATCH
 })
 
 describe('aiFlattenGenerative', () => {
@@ -49,10 +50,26 @@ describe('aiFlattenGenerative', () => {
     expect(payload.input.prompt.length).toBeGreaterThan(0)
     expect(payload.input.image_size).toEqual({ width: 32, height: 32 }) // keep original framing
     expect(fetchMock).toHaveBeenCalledWith('https://fal.storage/out.png')
-    // Default path returns the raw model PNG (recomposite is opt-in).
     const meta = await sharp(out).metadata()
     expect(meta.format).toBe('png')
     expect(meta.width).toBe(32)
+    // Colour-locked by default: the model's drifted red is matched back to the input's.
+    const { data } = await sharp(out).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+    expect([data[0], data[1], data[2]]).toEqual([180, 40, 40])
+  })
+
+  it('returns the raw model output when ENHANCE_FLATTEN_COLORMATCH=0', async () => {
+    process.env.FAL_KEY = 'k'
+    process.env.ENHANCE_FLATTEN_COLORMATCH = '0'
+    const inputPng = await sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 180, g: 40, b: 40 } } }).png().toBuffer()
+    const editedPng = await sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 150, g: 35, b: 35 } } }).png().toBuffer()
+    upload.mockResolvedValue('https://fal.storage/in.png')
+    subscribe.mockResolvedValue({ data: { images: [{ url: 'https://fal.storage/out.png' }] } })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ arrayBuffer: async () => new Uint8Array(editedPng).buffer }))
+
+    const out = await aiFlattenGenerative(inputPng)
+    const { data } = await sharp(out).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+    expect([data[0], data[1], data[2]]).toEqual([150, 35, 35])
   })
 
   it('falls back to the input when the model returns no image', async () => {
