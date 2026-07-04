@@ -48,18 +48,19 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
   async function confirm(nextQuad: Quad, key: string) {
     setQuad(nextQuad); setPresetKey(key); setPhase('running')
     try {
-      // AI flatten is applied automatically; the preview can toggle it off.
-      const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName, aiFlatten: true })
+      // Default de-wave is the FAITHFUL deterministic flatten (never repaints); the
+      // preview can turn it off or opt into the stronger generative "AI repaint".
+      const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName, flatten: true })
       setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setCroppedUrl(out.cropped); setPhase('preview')
     } catch (e) { setError(String(e)); setPhase('confirm') }
   }
 
-  // Re-run when the artist toggles AI flatten / AI dewarp / Auto colour.
-  async function rerun(flags: { dewarp: boolean; color: boolean; aiFlatten: boolean }) {
+  // Re-run when the artist toggles de-wave / AI repaint / AI dewarp / Auto colour.
+  async function rerun(flags: { flatten: boolean; dewarp: boolean; color: boolean; aiFlatten: boolean }) {
     if (!quad) return
     setBusy(true); setError(null)
     try {
-      const out = await runEnhance({ imageUrl, quad, presetKey, baseFileName, dewarp: flags.dewarp, color: flags.color, aiFlatten: flags.aiFlatten })
+      const out = await runEnhance({ imageUrl, quad, presetKey, baseFileName, flatten: flags.flatten, dewarp: flags.dewarp, color: flags.color, aiFlatten: flags.aiFlatten })
       setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setCroppedUrl(out.cropped)
     } catch (e) { setError(String(e)) }
     finally { setBusy(false) }

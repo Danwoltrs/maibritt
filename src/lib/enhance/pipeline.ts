@@ -36,9 +36,13 @@ export async function enhanceToFramed(
   // AI de-warp — only when the artist enables it. Moves pixels to straighten the
   // canvas undulation (geometry-only, paid); falls back to input on any failure.
   if (opts.dewarp) cleaned = await dewarpDocRes(cleaned)
-  // Flat-field lighting correction — only when the artist enables it (a slack
-  // canvas photographed under uneven light); hue-preserving, brightness only.
-  if (opts.flatten) cleaned = await flattenToTaut(cleaned)
+  // Faithful de-wave (the default AI Stretch): a band-stop flat-field correction
+  // that removes the wave SHADING — hue, saturation, shapes and brushwork are
+  // mathematically untouched, so it can never repaint the artwork. Intensity is
+  // tunable via ENHANCE_DEWAVE_STRENGTH (1 = default).
+  if (opts.flatten) {
+    cleaned = await flattenToTaut(cleaned, { strength: Number(process.env.ENHANCE_DEWAVE_STRENGTH ?? 1) })
+  }
   // Hue-preserving exposure lift — only when the artist enables "Auto colour".
   if (opts.color) cleaned = await autoColorCorrect(cleaned)
   // Generative AI flatten — strongest, may repaint. Last cleanup before framing.

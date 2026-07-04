@@ -11,8 +11,8 @@ interface Props {
   croppedUrl?: string      // geometry-only (warp/crop/straighten, no AI); shown as the left "before"
   enhancedUrl: string      // cleaned, unframed (reflects the current flatten/colour flags)
   framedUrl: string        // cleaned + wood frame (same flags)
-  busy?: boolean           // true while a dewarp/colour/AI-flatten re-run is in flight
-  onRerun: (flags: { dewarp: boolean; color: boolean; aiFlatten: boolean }) => void
+  busy?: boolean           // true while a de-wave/dewarp/colour/AI re-run is in flight
+  onRerun: (flags: { flatten: boolean; dewarp: boolean; color: boolean; aiFlatten: boolean }) => void
   onApprove: (choice: { useFrame: boolean; displayChoice: DisplayChoice }) => void
   onDiscard: () => void
 }
@@ -22,24 +22,28 @@ export type DisplayChoice = 'cropped' | 'enhanced' | 'original'
 
 export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, framedUrl, busy = false, onRerun, onApprove, onDiscard }: Props) {
   // Frame is instant (both variants are already returned for the current flags).
-  // AI flatten is applied automatically (default ON); AI dewarp / Auto colour are
-  // opt-in. Toggling any of these re-runs the server.
+  // The faithful de-wave (flatten) is applied automatically (default ON). The
+  // generative "AI repaint", AI dewarp and Auto colour are opt-in. Toggling any
+  // of these re-runs the server.
   const [useFrame, setUseFrame] = useState(false)
+  const [flatten, setFlatten] = useState(true)
   const [dewarp, setDewarp] = useState(false)
   const [color, setColor] = useState(false)
-  const [aiFlatten, setAiFlatten] = useState(true)
+  const [aiFlatten, setAiFlatten] = useState(false)
   // Which variant becomes the artwork's main (first-shown) image. Default to the
-  // cropped, no-AI photo — faithful and free of the AI flatten's reframing.
-  const [displayChoice, setDisplayChoice] = useState<DisplayChoice>('cropped')
+  // faithful de-waved result — the point of the tool, and it never repaints.
+  const [displayChoice, setDisplayChoice] = useState<DisplayChoice>('enhanced')
   const afterUrl = useFrame ? framedUrl : enhancedUrl
 
-  function toggleDewarp(v: boolean) { setDewarp(v); onRerun({ dewarp: v, color, aiFlatten }) }
-  function toggleColor(v: boolean) { setColor(v); onRerun({ dewarp, color: v, aiFlatten }) }
-  function toggleAiFlatten(v: boolean) { setAiFlatten(v); onRerun({ dewarp, color, aiFlatten: v }) }
+  function toggleFlatten(v: boolean) { setFlatten(v); onRerun({ flatten: v, dewarp, color, aiFlatten }) }
+  function toggleDewarp(v: boolean) { setDewarp(v); onRerun({ flatten, dewarp: v, color, aiFlatten }) }
+  function toggleColor(v: boolean) { setColor(v); onRerun({ flatten, dewarp, color: v, aiFlatten }) }
+  function toggleAiFlatten(v: boolean) { setAiFlatten(v); onRerun({ flatten, dewarp, color, aiFlatten: v }) }
 
   const caption = [
     'Cleaned / Limpa',
-    aiFlatten ? '+ AI flat' : null,
+    flatten ? '+ de-wave' : null,
+    aiFlatten ? '+ AI repaint' : null,
     dewarp ? '+ dewarp' : null,
     color ? '+ colour' : null,
     useFrame ? '+ frame / moldura' : null,
@@ -81,8 +85,8 @@ export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, fra
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <div className="flex items-center gap-2">
-              <Switch id="ai-flatten" checked={aiFlatten} disabled={busy} onCheckedChange={toggleAiFlatten} />
-              <Label htmlFor="ai-flatten" className="text-sm">AI flatten · taut canvas / tela esticada</Label>
+              <Switch id="flatten" checked={flatten} disabled={busy} onCheckedChange={toggleFlatten} />
+              <Label htmlFor="flatten" className="text-sm">Flatten waves · taut canvas / tela esticada</Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch id="use-frame" checked={useFrame} onCheckedChange={setUseFrame} />
@@ -93,13 +97,17 @@ export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, fra
               <Label htmlFor="auto-color" className="text-sm">Auto colour / Cor automática</Label>
             </div>
             <div className="flex items-center gap-2">
+              <Switch id="ai-flatten" checked={aiFlatten} disabled={busy} onCheckedChange={toggleAiFlatten} />
+              <Label htmlFor="ai-flatten" className="text-sm">AI repaint · stronger, may alter / pode alterar</Label>
+            </div>
+            <div className="flex items-center gap-2">
               <Switch id="ai-dewarp" checked={dewarp} disabled={busy} onCheckedChange={toggleDewarp} />
               <Label htmlFor="ai-dewarp" className="text-sm">AI dewarp · may alter / pode alterar</Label>
             </div>
           </div>
           <p className="text-xs text-gray-400">
-            “AI flatten” re-renders the canvas to look taut and evenly lit — it's applied automatically; turn it off to keep the raw photo.
-            Colour and the wood frame are optional; “AI dewarp” straightens the canvas geometry but may alter the painting.
+            “Flatten waves” removes the canvas ripples with a faithful lighting correction — same colours, shapes and brushwork, just evenly lit. It's applied automatically.
+            “AI repaint” is a stronger generative pass that can re-render the artwork — use only if you accept some change. Colour and the wood frame are optional; “AI dewarp” straightens the geometry but may alter the painting.
           </p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -107,7 +115,7 @@ export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, fra
               <div className="inline-flex rounded-md border overflow-hidden text-sm">
                 {([
                   ['cropped', 'Cropped'],
-                  ['enhanced', 'Enhanced'],
+                  ['enhanced', 'AI Stretch'],
                   ['original', 'Original'],
                 ] as [DisplayChoice, string][]).map(([value, label]) => (
                   <button
