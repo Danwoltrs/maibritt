@@ -26,7 +26,7 @@ export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, fra
   // generative "AI repaint", AI dewarp and Auto colour are opt-in. Toggling any
   // of these re-runs the server.
   const [useFrame, setUseFrame] = useState(false)
-  const [flatten, setFlatten] = useState(false)
+  const [flatten, setFlatten] = useState(true)
   const [dewarp, setDewarp] = useState(false)
   const [color, setColor] = useState(false)
   const [aiFlatten, setAiFlatten] = useState(false)
@@ -106,7 +106,7 @@ export default function EnhancePreview({ beforeUrl, croppedUrl, enhancedUrl, fra
             </div>
           </div>
           <p className="text-xs text-gray-400">
-            Default is crop &amp; straighten only — zero colour, tone or line change. “Flatten waves” gently softens the canvas ripple shading; it keeps every colour exactly (hue &amp; saturation are untouched) and only nudges local lightness. “AI repaint” is a stronger generative pass that CAN re-render the artwork — use only if you accept change. Colour, frame and “AI dewarp” are optional.
+            Default is crop &amp; straighten + “Flatten waves” — the wave-shading softener that keeps every colour exactly (hue &amp; saturation untouched, overall brightness preserved; only local lightness is nudged). Turn “Flatten waves” off for a pure crop with zero tone change. “AI repaint” is a stronger generative pass that CAN re-render the artwork — use only if you accept change. Colour, frame and “AI dewarp” are optional.
           </p>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">

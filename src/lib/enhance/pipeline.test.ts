@@ -56,4 +56,25 @@ describe('enhanceToFramed', () => {
     const flat = await enhanceToFramed(photo, quad, 'oak-floater', { flatten: true }) // opt-in flatten
     expect(await shadingStdev(flat.enhanced)).toBeLessThan(await shadingStdev(def.enhanced))
   })
+
+  it('with de-wave on, enhanced is NOT a byte-copy of cropped (no passthrough)', async () => {
+    const w = 400, h = 400, raw = Buffer.alloc(w * h * 3, 255)
+    for (let y = 20; y < h - 20; y++) {
+      const k = 1 + 0.18 * Math.sin((2 * Math.PI * y) / (h * 0.08))
+      for (let x = 20; x < w - 20; x++) {
+        const p = (y * w + x) * 3
+        raw[p] = Math.min(255, Math.round(180 * k))
+        raw[p + 1] = Math.min(255, Math.round(70 * k))
+        raw[p + 2] = Math.min(255, Math.round(60 * k))
+      }
+    }
+    const photo = await sharp(raw, { raw: { width: w, height: h, channels: 3 } }).png().toBuffer()
+    const quad = {
+      tl: { x: 20 / w, y: 20 / h }, tr: { x: 380 / w, y: 20 / h },
+      br: { x: 380 / w, y: 380 / h }, bl: { x: 20 / w, y: 380 / h },
+    }
+    const { enhanced, cropped } = await enhanceToFramed(photo, quad, 'oak-floater', { flatten: true })
+    // The de-wave did real work — the "enhanced" file is not identical to the crop.
+    expect(enhanced.equals(cropped)).toBe(false)
+  })
 })

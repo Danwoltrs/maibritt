@@ -38,6 +38,14 @@ export interface DeshadowOptions {
   minGain?: number
   /** Upper clamp on the per-pixel scalar gain (default 1.4). */
   maxGain?: number
+  /**
+   * After de-shading, rescale the whole image by ONE scalar so its overall
+   * brightness matches the input (default true). The flat-field divide tends to
+   * darken the mean by a few levels; a single global scalar restores it without
+   * touching hue or saturation (same factor on R, G, B) and — being global — cannot
+   * reintroduce the wave shading. Keeps per-channel means within tolerance of the input.
+   */
+  preserveMean?: boolean
 }
 
 export interface ColorOptions {

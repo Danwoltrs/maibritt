@@ -48,9 +48,10 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
   async function confirm(nextQuad: Quad, key: string) {
     setQuad(nextQuad); setPresetKey(key); setPhase('running')
     try {
-      // Default is crop/straighten ONLY — zero colour, tone or line change. The
-      // preview lets the artist opt into the gentle de-wave (or the AI repaint).
-      const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName })
+      // Default = crop/straighten + the colour-safe de-wave (hue & saturation are
+      // untouched; only the wave SHADING is softened). The preview lets the artist
+      // toggle de-wave off (pure crop) or opt into the AI repaint / dewarp / colour.
+      const out = await runEnhance({ imageUrl, quad: nextQuad, presetKey: key, baseFileName, flatten: true })
       setEnhancedUrl(out.enhanced); setFramedUrl(out.framed); setCroppedUrl(out.cropped); setPhase('preview')
     } catch (e) { setError(String(e)); setPhase('confirm') }
   }

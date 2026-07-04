@@ -41,10 +41,13 @@ export async function POST(req: NextRequest) {
     if (jobId) await updateJob(jobId, { status: 'processing', stage: 'enhancing' })
 
     const original = Buffer.from(await (await fetch(imageUrl)).arrayBuffer())
-    // dewarp / flatten / colour are opt-in (toggles re-run with these set). Default = geometry-only.
+    // De-wave (`flatten`) is ON by default — the colour-safe "make it taut" step — so
+    // it runs unless the client explicitly sends flatten:false (the preview toggle).
+    // dewarp / colour / aiFlatten stay opt-in (default off). `cropped` is always the
+    // geometry-only buffer regardless.
     const { enhanced, framed, cropped } = await enhanceToFramed(original, quad, presetKey, {
       dewarp: !!dewarp,
-      flatten: !!flatten,
+      flatten: flatten ?? true,
       color: !!color,
       aiFlatten: !!aiFlatten,
     })

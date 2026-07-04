@@ -46,6 +46,8 @@ export async function flattenToTaut(input: Buffer, opts: DeshadowOptions = {}): 
   const sL = Math.max(1, Math.round(blurLow.length / n))
   const usePow = strength !== 1
   const out = Buffer.alloc(rgb.length)
+  // Per-channel sums (input vs de-shaded) drive the mean-preserving rescale below.
+  const sumIn = [0, 0, 0], sumOut = [0, 0, 0]
   for (let q = 0, p = 0; q < n; q++, p += 3) {
     const hi = blurHigh[q * sH] + 1 // +1 epsilon: avoid divide-by-zero on pure black
     const lo = blurLow[q * sL] + 1
@@ -54,8 +56,31 @@ export async function flattenToTaut(input: Buffer, opts: DeshadowOptions = {}): 
     if (gain < minGain) gain = minGain
     else if (gain > maxGain) gain = maxGain
     for (let c = 0; c < 3; c++) {
-      const v = rgb[p + c] * gain
-      out[p + c] = v > 255 ? 255 : v < 0 ? 0 : v
+      const src = rgb[p + c]
+      const v = src * gain
+      const clamped = v > 255 ? 255 : v < 0 ? 0 : v
+      out[p + c] = clamped
+      sumIn[c] += src
+      sumOut[c] += clamped
+    }
+  }
+
+  // Mean-preserve: ONE scalar applied to all three channels (so hue and saturation
+  // stay pinned) chosen by least squares to best restore the per-channel means to the
+  // input — k = Σ(inᵢ·outᵢ)/Σ(outᵢ²). The largest channel dominates the fit, so the
+  // channel that drifted most is corrected most; no per-channel mean can run away
+  // while colour is held. (A plain sum-match leaves the dominant channel short.)
+  if (opts.preserveMean ?? true) {
+    let num = 0, den = 0
+    for (let c = 0; c < 3; c++) { num += sumIn[c] * sumOut[c]; den += sumOut[c] * sumOut[c] }
+    if (den > 0) {
+      const k = Math.max(0.5, Math.min(2, num / den))
+      if (Math.abs(k - 1) > 1e-3) {
+        for (let i = 0; i < out.length; i++) {
+          const v = out[i] * k
+          out[i] = v > 255 ? 255 : v < 0 ? 0 : v
+        }
+      }
     }
   }
 

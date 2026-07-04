@@ -64,7 +64,10 @@ export function outputSize(cornersPx: Pt[]): { w: number; h: number } {
  * re-attached best-effort.
  */
 export async function warpToRect(input: Buffer, quad: Quad): Promise<Buffer> {
-  const { data, info } = await sharp(input, { failOn: 'none' }).ensureAlpha().raw()
+  // Opaque RGB source (photos have no meaningful alpha). Reading — and writing —
+  // 3 channels means the warp can never emit a transparent pixel, so downstream
+  // framing cannot composite a hole into white.
+  const { data, info } = await sharp(input, { failOn: 'none' }).removeAlpha().raw()
     .toBuffer({ resolveWithObject: true })
   const sw = info.width, sh = info.height
 
@@ -75,20 +78,25 @@ export async function warpToRect(input: Buffer, quad: Quad): Promise<Buffer> {
   const dst: Pt[] = [{ x: 0, y: 0 }, { x: outW, y: 0 }, { x: outW, y: outH }, { x: 0, y: outH }]
   const H = solveHomography(dst, cornersPx) // output pixel -> source pixel
 
-  const out = Buffer.alloc(outW * outH * 4)
+  const out = Buffer.alloc(outW * outH * 3)
   for (let Y = 0; Y < outH; Y++) {
     for (let X = 0; X < outW; X++) {
       const denom = H[6] * X + H[7] * Y + 1
-      const sx = (H[0] * X + H[1] * Y + H[2]) / denom
-      const sy = (H[3] * X + H[4] * Y + H[5]) / denom
-      const o = (Y * outW + X) * 4
-      if (sx < 0 || sy < 0 || sx > sw - 1 || sy > sh - 1) { out[o + 3] = 0; continue }
+      let sx = (H[0] * X + H[1] * Y + H[2]) / denom
+      let sy = (H[3] * X + H[4] * Y + H[5]) / denom
+      // CLAMP the source sample into the image. A corner sitting on the very edge, or
+      // a near-degenerate / non-convex quad, would otherwise map some output pixels
+      // outside the photo; clamping smears the nearest edge pixel instead of injecting
+      // a transparent/white one. No white margin or clipped hole can ever enter.
+      if (sx < 0) sx = 0; else if (sx > sw - 1) sx = sw - 1
+      if (sy < 0) sy = 0; else if (sy > sh - 1) sy = sh - 1
+      const o = (Y * outW + X) * 3
       const x0 = Math.floor(sx), y0 = Math.floor(sy)
       const x1 = Math.min(x0 + 1, sw - 1), y1 = Math.min(y0 + 1, sh - 1)
       const fx = sx - x0, fy = sy - y0
-      const i00 = (y0 * sw + x0) * 4, i10 = (y0 * sw + x1) * 4
-      const i01 = (y1 * sw + x0) * 4, i11 = (y1 * sw + x1) * 4
-      for (let c = 0; c < 4; c++) {
+      const i00 = (y0 * sw + x0) * 3, i10 = (y0 * sw + x1) * 3
+      const i01 = (y1 * sw + x0) * 3, i11 = (y1 * sw + x1) * 3
+      for (let c = 0; c < 3; c++) {
         const top = data[i00 + c] * (1 - fx) + data[i10 + c] * fx
         const bot = data[i01 + c] * (1 - fx) + data[i11 + c] * fx
         out[o + c] = Math.round(top * (1 - fy) + bot * fy)
@@ -96,7 +104,7 @@ export async function warpToRect(input: Buffer, quad: Quad): Promise<Buffer> {
     }
   }
 
-  const encode = () => sharp(out, { raw: { width: outW, height: outH, channels: 4 } }).png()
+  const encode = () => sharp(out, { raw: { width: outW, height: outH, channels: 3 } }).png()
 
   // Best-effort ICC preservation. sharp's withIccProfile takes a filename, so we
   // stage the original profile to a UNIQUE temp file (concurrent same-size warps

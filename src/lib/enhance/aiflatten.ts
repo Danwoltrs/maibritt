@@ -2,6 +2,7 @@ import sharp from 'sharp'
 import { runFalImageEdit } from './falImage'
 import { recompositeLowFreq } from './recomposite'
 import { matchColors } from './colormatch'
+import { colorDelta, formatColorDelta } from './colorstats'
 import { padToSquare, cropFromSquare } from './squarepad'
 
 // Strong preserve-prompt: the goal is to make the canvas LOOK taut and evenly lit
@@ -78,6 +79,21 @@ export async function aiFlattenGenerative(input: Buffer): Promise<Buffer> {
   // ENHANCE_FLATTEN_COLORMATCH=0 to disable.
   if (process.env.ENHANCE_FLATTEN_COLORMATCH !== '0') {
     result = await matchColors(input, result)
+    // VERIFY the lock actually held (don't assume). Compare the matched result to
+    // the pre-AI image and log the numbers; if the model reframed, the histogram
+    // match can leave colour out of tolerance — surface a loud warning so it's not
+    // silently shipped as "colour-safe".
+    try {
+      const d = await colorDelta(input, result)
+      console.log(formatColorDelta('ai-flatten', d))
+      if (!d.withinTolerance) {
+        console.warn(
+          `[colour ai-flatten] palette lock DID NOT hold within tolerance ` +
+          `(sat ${d.satPct.toFixed(2)}%, meanΔ ${d.meanDeltas.map((x) => x.toFixed(1)).join('/')}). ` +
+          `The generative reframe likely misaligned the histogram; treat this output as colour-altered.`,
+        )
+      }
+    } catch { /* verification must never fail the enhance */ }
   }
   return result
 }

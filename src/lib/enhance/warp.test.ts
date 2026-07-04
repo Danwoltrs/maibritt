@@ -60,4 +60,43 @@ describe('warpToRect', () => {
     expect(data[p + 2]).toBeLessThan(80)      // B low
     expect(info.width).toBeCloseTo(50, -1)    // ~half width
   })
+
+  // A mid-tone source with NO pure-black and NO pure-white pixels, so any 0 or 255
+  // in the output must have been INJECTED by an out-of-bounds sample (the failure mode).
+  async function midToneGradient(w: number, h: number): Promise<Buffer> {
+    const raw = Buffer.alloc(w * h * 3)
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const p = (y * w + x) * 3
+        raw[p] = 50 + Math.round((x / w) * 150)      // 50..200
+        raw[p + 1] = 60 + Math.round((y / h) * 140)  // 60..200
+        raw[p + 2] = 90
+      }
+    }
+    return sharp(raw, { raw: { width: w, height: h, channels: 3 } }).png().toBuffer()
+  }
+
+  it('outputs opaque RGB (no alpha channel) so framing cannot composite transparency to white', async () => {
+    const img = await midToneGradient(80, 80)
+    const out = await warpToRect(img, fullFrameQuad(1))
+    const m = await sharp(out).metadata()
+    expect(m.channels).toBe(3) // no alpha — a transparent/white pixel is impossible by construction
+  })
+
+  it('a degenerate/non-convex quad injects NO white or black (clamps samples to the image edge)', async () => {
+    const img = await midToneGradient(80, 80)
+    // Bowtie: TL dragged right of TR. Interior maps partly outside [0,1]² — the old
+    // code emitted transparent(=white/black); the fix clamps to the nearest edge pixel.
+    const bowtie: Quad = { tl: { x: 0.7, y: 0.2 }, tr: { x: 0.3, y: 0.2 }, br: { x: 0.8, y: 0.8 }, bl: { x: 0.2, y: 0.8 } }
+    const out = await warpToRect(img, bowtie)
+    const { data, info } = await sharp(out).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+    let injected = 0
+    for (let i = 0; i < data.length; i += info.channels) {
+      const r = data[i], g = data[i + 1], b = data[i + 2]
+      const isWhite = r >= 250 && g >= 250 && b >= 250
+      const isBlack = r <= 5 && g <= 5 && b <= 5 // source min is 50 — pure black can only be injected
+      if (isWhite || isBlack) injected++
+    }
+    expect(injected).toBe(0)
+  })
 })
