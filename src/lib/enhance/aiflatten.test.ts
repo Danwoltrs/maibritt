@@ -22,6 +22,7 @@ beforeEach(() => {
   delete process.env.ENHANCE_FLATTEN_GUIDANCE
   delete process.env.ENHANCE_FLATTEN_RECOMPOSITE
   delete process.env.ENHANCE_FLATTEN_COLORMATCH
+  delete process.env.ENHANCE_FLATTEN_SQUAREPAD
 })
 
 describe('aiFlattenGenerative', () => {
@@ -56,6 +57,39 @@ describe('aiFlattenGenerative', () => {
     // Colour-locked by default: the model's drifted red is matched back to the input's.
     const { data } = await sharp(out).removeAlpha().raw().toBuffer({ resolveWithObject: true })
     expect([data[0], data[1], data[2]]).toEqual([180, 40, 40])
+  })
+
+  it('pads a non-square painting to a square for the model, then crops the framing back', async () => {
+    process.env.FAL_KEY = 'k'
+    process.env.ENHANCE_FLATTEN_COLORMATCH = '0' // isolate the reframe geometry
+    const inputPng = await sharp({ create: { width: 48, height: 32, channels: 3, background: { r: 180, g: 40, b: 40 } } }).png().toBuffer()
+    const editedSquare = await sharp({ create: { width: 48, height: 48, channels: 3, background: { r: 150, g: 35, b: 35 } } }).png().toBuffer()
+    upload.mockResolvedValue('https://fal.storage/in.png')
+    subscribe.mockResolvedValue({ data: { images: [{ url: 'https://fal.storage/out.png' }] } })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ arrayBuffer: async () => new Uint8Array(editedSquare).buffer }))
+
+    const out = await aiFlattenGenerative(inputPng)
+
+    // Model saw a square canvas (so it can't shear the artwork off the long edge)...
+    const [, payload] = subscribe.mock.calls[0]
+    expect(payload.input.image_size).toEqual({ width: 48, height: 48 })
+    // ...and the returned image is cropped back to the painting's real aspect.
+    const meta = await sharp(out).metadata()
+    expect([meta.width, meta.height]).toEqual([48, 32])
+  })
+
+  it('sends the image as-is (no pad) when ENHANCE_FLATTEN_SQUAREPAD=0', async () => {
+    process.env.FAL_KEY = 'k'
+    process.env.ENHANCE_FLATTEN_SQUAREPAD = '0'
+    const inputPng = await sharp({ create: { width: 48, height: 32, channels: 3, background: { r: 180, g: 40, b: 40 } } }).png().toBuffer()
+    const editedPng = await sharp({ create: { width: 48, height: 32, channels: 3, background: { r: 150, g: 35, b: 35 } } }).png().toBuffer()
+    upload.mockResolvedValue('https://fal.storage/in.png')
+    subscribe.mockResolvedValue({ data: { images: [{ url: 'https://fal.storage/out.png' }] } })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ arrayBuffer: async () => new Uint8Array(editedPng).buffer }))
+
+    await aiFlattenGenerative(inputPng)
+    const [, payload] = subscribe.mock.calls[0]
+    expect(payload.input.image_size).toEqual({ width: 48, height: 32 }) // original dims, not squared
   })
 
   it('returns the raw model output when ENHANCE_FLATTEN_COLORMATCH=0', async () => {
