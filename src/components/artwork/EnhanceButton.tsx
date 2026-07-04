@@ -69,7 +69,7 @@ export default function EnhanceButton({ file, category, onFramed }: Props) {
     <>
       <Button type="button" size="sm" variant="secondary" disabled={phase !== 'idle'} onClick={start} className="gap-1">
         {phase === 'idle' ? <Sparkles className="h-3.5 w-3.5" /> : <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-        {phase === 'idle' ? 'Enhance' : phase}
+        {phase === 'idle' ? 'AI Stretch' : phase}
       </Button>
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
 

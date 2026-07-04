@@ -316,7 +316,7 @@ export function PerImageDetailsStep({
                   onClick={() => setImgView('enhanced')}
                   className={imgView === 'enhanced' ? 'bg-gray-900 text-white px-2 py-1' : 'bg-white/90 text-gray-600 px-2 py-1 hover:bg-white'}
                 >
-                  Enhanced
+                  AI Stretch
                 </button>
               </div>
             )}
@@ -342,10 +342,10 @@ export function PerImageDetailsStep({
                     onFramed={(urls) => onFramed(currentIndex, urls)}
                   />
                   {enhancedByIndex[currentIndex] ? (
-                    <span className="text-[11px] text-emerald-600">Enhanced ✓</span>
+                    <span className="text-[11px] text-emerald-600">Stretched ✓</span>
                   ) : (
                     <span className="text-[11px] text-muted-foreground">
-                      Clean up &amp; frame this painting
+                      Flatten the canvas &amp; frame this painting
                     </span>
                   )}
                 </div>
