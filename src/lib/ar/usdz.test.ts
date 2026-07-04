@@ -35,6 +35,10 @@ describe('buildUsda', () => {
     expect(usda).toContain('uniform token preliminary:anchoring:type = "plane"')
     expect(usda).toContain('uniform token preliminary:planeAnchoring:alignment = "vertical"')
   })
+  it('rotates the upright geometry into ARKit wall-anchor space (X-Z = wall, +Y = out)', () => {
+    expect(usda).toContain('float xformOp:rotateX = -90')
+    expect(usda).toContain('uniform token[] xformOpOrder = ["xformOp:rotateX"]')
+  })
   it('meshes reference the packed texture and true-size points', () => {
     expect(usda).toContain('@textures/painting.jpg@')
     expect(usda).toContain('1.425')   // half width in meters (285cm/2)

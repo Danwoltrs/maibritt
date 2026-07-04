@@ -87,6 +87,10 @@ function colorMaterial(name: string, hex: string): string {
         }`
 }
 
+// ARKit maps a vertical-anchored prim's space onto the wall as X = along the
+// wall, +Y = out of the wall, +Z = down the wall. Geometry is authored upright
+// (face +Z, top +Y, like the GLB), so the prim rotates -90deg about X to land
+// face-out and top-up on the wall.
 export function buildUsda(opts: ArBuildOptions): string {
   const model = buildArtworkModel(opts.widthCm, opts.heightCm, opts.frameWidthFrac)
   return `#usda 1.0
@@ -105,6 +109,8 @@ def Xform "Artwork" (
 {
     uniform token preliminary:anchoring:type = "plane"
     uniform token preliminary:planeAnchoring:alignment = "vertical"
+    float xformOp:rotateX = -90
+    uniform token[] xformOpOrder = ["xformOp:rotateX"]
 ${meshBlock('Painting', model.painting, '</Artwork/Materials/PaintingMat>')}
 ${meshBlock('CanvasBody', model.canvas, '</Artwork/Materials/CanvasMat>')}
 ${meshBlock('Frame', model.frame, '</Artwork/Materials/WoodMat>')}
