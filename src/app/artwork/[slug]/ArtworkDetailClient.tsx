@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -41,9 +41,20 @@ export default function ArtworkDetailClient({ artwork, autoOpenAr = false }: Art
     if (!currentImage) return ''
     if (url === currentImage.original) return 'Original photo · Foto original'
     if (url === currentImage.cropped) return 'Cropped · Sem realce'
-    return 'Enhanced · Realçada'
+    return 'AI stretched · Esticada por IA'
   }
   const mainSrc = view === 'alt' && hasAlt ? altUrl : mainUrl
+
+  // Fullscreen: swipe or arrow between the two views (AI stretched <-> original).
+  const flipView = () => setView((v) => (v === 'main' ? 'alt' : 'main'))
+  const touchStartX = useRef<number | null>(null)
+  const onFsTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
+  const onFsTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartX.current
+    touchStartX.current = null
+    if (start === null || !hasAlt) return
+    if (Math.abs(e.changedTouches[0].clientX - start) > 50) flipView()
+  }
 
   const handleShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : ''
@@ -294,6 +305,8 @@ export default function ArtworkDetailClient({ artwork, autoOpenAr = false }: Art
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center cursor-zoom-out"
           onClick={() => setShowFullscreen(false)}
+          onTouchStart={onFsTouchStart}
+          onTouchEnd={onFsTouchEnd}
         >
           <Image
             src={mainSrc || currentImage.original}
@@ -301,6 +314,28 @@ export default function ArtworkDetailClient({ artwork, autoOpenAr = false }: Art
             fill
             className="object-contain p-8"
           />
+          {/* Swipe or arrow between the AI-stretched and original views */}
+          {hasAlt && (
+            <>
+              <button
+                aria-label="Previous view"
+                onClick={(e) => { e.stopPropagation(); flipView() }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 backdrop-blur-sm p-2 rounded-full text-white transition-colors"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                aria-label="Next view"
+                onClick={(e) => { e.stopPropagation(); flipView() }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 backdrop-blur-sm p-2 rounded-full text-white transition-colors"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+              <span className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-xs tracking-wide bg-black/40 px-3 py-1.5 rounded-full">
+                {labelFor(mainSrc || currentImage.original)}
+              </span>
+            </>
+          )}
           <button
             onClick={() => setShowFullscreen(false)}
             className="absolute top-6 right-6 text-white/70 hover:text-white text-lg"
