@@ -60,11 +60,13 @@ export default function ArWallButton({
     const pageUrl = `${window.location.origin}/artwork/${slug}`
     const anchor = document.createElement('a')
     anchor.setAttribute('rel', 'ar')
-    // Lock pinch-scaling (true size) and make Quick Look's share button
-    // point at the artwork page instead of the raw USDZ.
+    // Pinch-scaling stays enabled: the model opens at true size (100%) and
+    // Quick Look shows the scale % and snaps back at 100%, but large canvases
+    // must be shrinkable in small rooms. canonicalWebPageURL makes Quick
+    // Look's share button point at the artwork page instead of the raw USDZ.
     anchor.setAttribute(
       'href',
-      `${urls.usdz}#allowsContentScaling=0&canonicalWebPageURL=${encodeURIComponent(pageUrl)}`,
+      `${urls.usdz}#canonicalWebPageURL=${encodeURIComponent(pageUrl)}`,
     )
     // Quick Look requires an <img> child inside the rel=ar anchor.
     const img = document.createElement('img')
@@ -165,7 +167,6 @@ export default function ArWallButton({
             ar
             ar-modes="webxr scene-viewer quick-look"
             ar-placement="wall"
-            ar-scale="fixed"
             camera-controls
             style={{ flex: 1, width: '100%' }}
           />
