@@ -72,8 +72,12 @@ export default function CropConfirmModal({ imageUrl, quad, presetKey, presetOpti
           {' '}Arraste os 4 cantos para os cantos da pintura
         </p>
 
-        <div className="relative inline-block select-none touch-none">
-          <img ref={imgRef} src={imageUrl} alt="To enhance" draggable={false} className="block max-h-[60vh] w-auto rounded" />
+        {/* w-fit is load-bearing: DialogContent is a grid, which stretches this wrapper
+            to full column width. The SVG quad + handles are positioned in wrapper
+            percentages while drags normalize against the img rect — if the wrapper is
+            wider than the img, the overlay lies and confirmed crops cut into the art. */}
+        <div className="relative mx-auto w-fit max-w-full select-none touch-none">
+          <img ref={imgRef} src={imageUrl} alt="To enhance" draggable={false} className="block max-h-[60vh] max-w-full w-auto rounded" />
 
           <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 h-full w-full pointer-events-none">
             {/* Dim everything outside the quad (even-odd hole). */}
