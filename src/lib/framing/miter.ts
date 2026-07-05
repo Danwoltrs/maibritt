@@ -1,4 +1,4 @@
-import sharp from 'sharp'
+import sharp, { type OverlayOptions } from 'sharp'
 
 type Side = 'top' | 'bottom' | 'left' | 'right'
 const SIDES: Side[] = ['top', 'bottom', 'left', 'right']
@@ -73,7 +73,7 @@ function seamsSvg(frameW: number, frameH: number, t: number): Buffer {
 /** The full mitered frame ring (transparent centre) as one frameW×frameH RGBA layer. */
 export async function miteredFrame(texPath: string, frameW: number, frameH: number, t: number): Promise<Buffer> {
   const blank = { create: { width: frameW, height: frameH, channels: 4 as const, background: { r: 0, g: 0, b: 0, alpha: 0 } } }
-  const layers: sharp.OverlayOptions[] = []
+  const layers: OverlayOptions[] = []
   for (const side of SIDES) {
     const vertical = side === 'left' || side === 'right'
     const len = vertical ? frameH : frameW

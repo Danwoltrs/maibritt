@@ -9,7 +9,9 @@ const OUT = path.join(__dirname, '..', 'public', 'frames')
 
 const BAKES = [
   { out: 'real-oak.jpg',    src: 'oak_veneer_01.jpg',  rotate: 0,  mod: { brightness: 1.06, saturation: 0.96 } },
-  { out: 'real-ash.jpg',    src: 'plywood.jpg',        rotate: 0,  mod: { brightness: 1.16, saturation: 0.65 } },
+  // Ash is tinted to the preset's AR colour (#D8CDBA) — the plywood source is too
+  // grey on its own; tint keeps grain via luminance while matching the AR model.
+  { out: 'real-ash.jpg',    src: 'plywood.jpg',        rotate: 0,  mod: { brightness: 1.22 }, tint: '#D8CDBA' },
   { out: 'real-walnut.jpg', src: 'dark_wood.jpg',      rotate: 90, mod: { brightness: 1.02, saturation: 0.72, hue: -8 } },
   { out: 'real-black.jpg',  src: 'wood_table_001.jpg', rotate: 0,  mod: { brightness: 0.34, saturation: 0.25 } },
 ]
@@ -18,7 +20,9 @@ async function main() {
   for (const b of BAKES) {
     let img = sharp(path.join(SRC, b.src))
     if (b.rotate) img = img.rotate(b.rotate)
-    await img.modulate(b.mod)
+    img = img.modulate(b.mod)
+    if (b.tint) img = img.tint(b.tint)
+    await img
       .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 82 })
       .toFile(path.join(OUT, b.out))
