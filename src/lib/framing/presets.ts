@@ -10,11 +10,11 @@ export interface FramePreset {
 }
 
 export const FRAME_PRESETS: Record<string, FramePreset> = {
-  'oak-floater':   { key: 'oak-floater',   label: 'Natural Oak / Carvalho Natural', family: 'floater', texturePath: 'public/frames/oak.png',    frameWidthFrac: 0.022, woodHex: '#C6A678' },
-  'ash-floater':   { key: 'ash-floater',   label: 'Pale Ash / Freixo Claro',        family: 'floater', texturePath: 'public/frames/ash.png',    frameWidthFrac: 0.022, woodHex: '#D8CDBA' },
-  'walnut-floater':{ key: 'walnut-floater',label: 'Walnut / Nogueira',              family: 'floater', texturePath: 'public/frames/walnut.png', frameWidthFrac: 0.022, woodHex: '#7A5A3E' },
-  'black-floater': { key: 'black-floater', label: 'Thin Black / Preto Fino',        family: 'floater', texturePath: 'public/frames/black.png',  frameWidthFrac: 0.016, woodHex: '#222222' },
-  'oak-mat':       { key: 'oak-mat',       label: 'Oak + White Mat / Carvalho + Paspatur Branco', family: 'matted', texturePath: 'public/frames/oak.png', frameWidthFrac: 0.020, woodHex: '#C6A678' },
+  'oak-floater':   { key: 'oak-floater',   label: 'Natural Oak / Carvalho Natural', family: 'floater', texturePath: 'public/frames/real-oak.jpg',    frameWidthFrac: 0.022, woodHex: '#C6A678' },
+  'ash-floater':   { key: 'ash-floater',   label: 'Pale Ash / Freixo Claro',        family: 'floater', texturePath: 'public/frames/real-ash.jpg',    frameWidthFrac: 0.022, woodHex: '#D8CDBA' },
+  'walnut-floater':{ key: 'walnut-floater',label: 'Walnut / Nogueira',              family: 'floater', texturePath: 'public/frames/real-walnut.jpg', frameWidthFrac: 0.022, woodHex: '#7A5A3E' },
+  'black-floater': { key: 'black-floater', label: 'Thin Black / Preto Fino',        family: 'floater', texturePath: 'public/frames/real-black.jpg',  frameWidthFrac: 0.016, woodHex: '#222222' },
+  'oak-mat':       { key: 'oak-mat',       label: 'Oak + White Mat / Carvalho + Paspatur Branco', family: 'matted', texturePath: 'public/frames/real-oak.jpg', frameWidthFrac: 0.020, woodHex: '#C6A678' },
 }
 
 export function defaultPresetForCategory(category: string): string {
