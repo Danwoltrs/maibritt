@@ -14,16 +14,3 @@ export async function makeShadow(w: number, h: number, sigma: number, opacity: n
   const buffer = await sharp(svg).blur(sigma).png().toBuffer()
   return { buffer, margin }
 }
-
-/** Four gradient strips implying light from the upper-left: light top/left, dark bottom/right. */
-export function bevelSvg(w: number, h: number, t: number): Buffer {
-  return Buffer.from(
-    `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">` +
-    `<rect x="0" y="0" width="${w}" height="${t}" fill="white" fill-opacity="0.30"/>` +
-    `<rect x="0" y="0" width="${t}" height="${h}" fill="white" fill-opacity="0.18"/>` +
-    `<rect x="0" y="${h - t}" width="${w}" height="${t}" fill="black" fill-opacity="0.32"/>` +
-    `<rect x="${w - t}" y="0" width="${t}" height="${h}" fill="black" fill-opacity="0.22"/>` +
-    `<rect x="0.5" y="0.5" width="${w - 1}" height="${h - 1}" fill="none" stroke="black" stroke-opacity="0.5" stroke-width="1"/>` +
-    `</svg>`
-  )
-}

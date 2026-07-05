@@ -28,4 +28,29 @@ describe('composeFrame', () => {
     const meta = await sharp(out).metadata()
     expect(meta.width!).toBeGreaterThan(200 + 40) // mat + frame added
   })
+
+  it('is deterministic and preserves painting pixels exactly (floater)', async () => {
+    const art = await redPainting(320, 240)
+    const out1 = await composeFrame(art, FRAME_PRESETS['walnut-floater'])
+    const out2 = await composeFrame(art, FRAME_PRESETS['walnut-floater'])
+    expect(Buffer.compare(out1, out2)).toBe(0)
+    // Pixels just inside the painting bounds must be the exact source red —
+    // no bevel/vignette/tint may ever touch the artwork.
+    const meta = await sharp(out1).metadata()
+    const raw = await sharp(out1).raw().toBuffer()
+    const W = meta.width!, ch = meta.channels!
+    const ox = (W - 320) / 2, oy = (meta.height! - 240) / 2 // painting is centred
+    const at = (x: number, y: number) =>
+      [raw[(y * W + x) * ch], raw[(y * W + x) * ch + 1], raw[(y * W + x) * ch + 2]]
+    for (const [x, y] of [[ox + 1, oy + 1], [ox + 318, oy + 238], [ox + 160, oy + 120]] as const) {
+      expect(at(Math.round(x), Math.round(y))).toEqual([200, 30, 30])
+    }
+  })
+
+  it('handles extreme landscape aspect', async () => {
+    const art = await redPainting(600, 150)
+    const meta = await sharp(await composeFrame(art, FRAME_PRESETS['black-floater'])).metadata()
+    expect(meta.width!).toBeGreaterThan(600)
+    expect(meta.height!).toBeGreaterThan(150)
+  })
 })
