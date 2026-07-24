@@ -167,11 +167,19 @@ export function ArtworksTable({
               </TableCell>
               <TableCell>
                 {artwork.images.length > 0 ? (
-                  <img
-                    src={artwork.images[0].thumbnail || artwork.images[0].display}
-                    alt={artwork.title.en}
-                    className="w-12 h-12 object-cover rounded"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => onOpenModal('preview', artwork)}
+                    className="block rounded overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    aria-label={`Preview ${artwork.title.en}`}
+                    title="Preview"
+                  >
+                    <img
+                      src={artwork.images[0].thumbnail || artwork.images[0].display}
+                      alt={artwork.title.en}
+                      className="w-12 h-12 object-cover rounded cursor-pointer transition-transform hover:scale-105"
+                    />
+                  </button>
                 ) : (
                   <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
                     <ImageIcon className="h-5 w-5 text-gray-400" />

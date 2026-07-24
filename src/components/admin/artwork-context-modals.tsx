@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Image as ImageIcon, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
 
 import { Artwork } from '@/types'
 import { ArtworkService } from '@/services/artwork.service'
@@ -23,9 +23,10 @@ interface PreviewModalProps {
   artwork: Artwork
   open: boolean
   onOpenChange: (open: boolean) => void
+  onEdit?: () => void
 }
 
-export function PreviewModal({ artwork, open, onOpenChange }: PreviewModalProps) {
+export function PreviewModal({ artwork, open, onOpenChange, onEdit }: PreviewModalProps) {
   const [imageIndex, setImageIndex] = useState(0)
 
   useEffect(() => {
@@ -119,6 +120,14 @@ export function PreviewModal({ artwork, open, onOpenChange }: PreviewModalProps)
             <span className="ml-2">{artwork.dimensions}</span>
           </div>
         </div>
+
+        {onEdit && (
+          <DialogFooter>
+            <Button onClick={onEdit} className="flex items-center gap-2">
+              <Pencil className="h-4 w-4" /> Edit
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   )

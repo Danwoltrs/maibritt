@@ -171,11 +171,19 @@ export function ArtworksGrid({
             {/* Image */}
             <div className="aspect-square overflow-hidden rounded-t-lg">
               {artwork.images.length > 0 ? (
-                <img
-                  src={artwork.images[0].thumbnail || artwork.images[0].display}
-                  alt={artwork.title.en}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+                <button
+                  type="button"
+                  onClick={() => onOpenModal('preview', artwork)}
+                  className="block w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                  aria-label={`Preview ${artwork.title.en}`}
+                  title="Preview"
+                >
+                  <img
+                    src={artwork.images[0].thumbnail || artwork.images[0].display}
+                    alt={artwork.title.en}
+                    className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-300"
+                  />
+                </button>
               ) : (
                 <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                   <ImageIcon className="h-12 w-12 text-gray-400" />

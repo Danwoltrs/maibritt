@@ -365,6 +365,7 @@ export default function ArtworksPage() {
             artwork={modalArtwork}
             open={modalType === 'preview'}
             onOpenChange={(open) => !open && closeModal()}
+            onEdit={() => setModalType('edit')}
           />
           <EditArtworkModal
             artwork={modalArtwork}
