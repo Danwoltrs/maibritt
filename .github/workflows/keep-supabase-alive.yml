@@ -19,18 +19,28 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::error::Missing SUPABASE_URL or SUPABASE_ANON_KEY repo secrets."
+            echo "::error::Missing SUPABASE_URL / SUPABASE_ANON_KEY repo secrets - set them under Settings > Secrets and variables > Actions, or this workflow pings nothing and the project pauses anyway."
             exit 1
           fi
           # A real (tiny) DB read so it counts as project activity.
+          # `|| rc=$?` keeps the default `bash -e` from killing the step on a
+          # curl failure, so the diagnostics below actually get to run.
+          rc=0
           status=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            "$SUPABASE_URL/rest/v1/artworks?select=id&limit=1")
-          echo "Supabase responded with HTTP $status"
+            "$SUPABASE_URL/rest/v1/artworks?select=id&limit=1") || rc=$?
+          echo "Supabase responded with HTTP $status (curl exit $rc)"
+          # A paused project has its DNS withdrawn, so the host stops resolving
+          # (curl exit 6). That needs a manual restore from the dashboard - no
+          # amount of pinging brings it back.
+          if [ "$rc" = "6" ]; then
+            echo "::error::$SUPABASE_URL does not resolve. The project is almost certainly PAUSED - restore it at https://supabase.com/dashboard"
+            exit 1
+          fi
           # Any response (200/401/403/404) means the project received a request
           # and the inactivity timer is reset. Only fail on a total no-response.
           if [ "$status" = "000" ]; then
-            echo "::error::No response from Supabase (network failure)."
+            echo "::error::No response from Supabase (curl exit $rc)."
             exit 1
           fi
