@@ -30,6 +30,7 @@ export interface ArtworkCreateData {
   price?: number
   currency?: 'BRL' | 'USD' | 'EUR'
   featured?: boolean
+  showOnTimeline?: boolean
 }
 
 export interface ArtworkUpdateData {
@@ -429,6 +430,7 @@ export class ArtworkService {
           price: artworkData.price || null,
           currency: artworkData.currency || null,
           featured: artworkData.featured || false,
+          show_on_timeline: artworkData.showOnTimeline || false,
           display_order: nextDisplayOrder
         })
         .select()

@@ -23,8 +23,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ArtworkService } from '@/services/artwork.service'
-import EnhanceButton from '@/components/artwork/EnhanceButton'
-import { isEnhanceable } from '@/lib/framing/presets'
 import type { UploadedImage, ArtworkDetails, CommonApplied } from './types'
 import type { UploadState } from './useBackgroundUploads'
 import { parseDimensionsToCm, composeDimensions } from '@/lib/dimensions'
@@ -51,6 +49,7 @@ interface PerImageDetailsStepProps {
   onRetryIndex: (index: number) => void
   getUploadState: (index: number) => UploadState
   error: string | null
+  /** AI Stretch is parked pending a rework; these stay wired but are unused for now. */
   enhancedByIndex: Record<number, EnhancedResult>
   onFramed: (index: number, urls: EnhancedResult) => void
 }
@@ -66,17 +65,11 @@ export function PerImageDetailsStep({
   onRetryIndex,
   getUploadState,
   error,
-  enhancedByIndex,
-  onFramed,
 }: PerImageDetailsStepProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [imgView, setImgView] = useState<'original' | 'enhanced'>('original')
-
-  // Reset to the original photo when switching between artworks.
-  useEffect(() => { setImgView('original') }, [currentIndex])
+  const [isFullscreen, setIsFullscreen] = useState(true)
 
   // Medium/dimensions dropdowns
   const [knownMediums, setKnownMediums] = useState<{ ptBR: string; en: string }[]>([])
@@ -97,6 +90,7 @@ export function PerImageDetailsStep({
     titlePt: '', titleEn: '', mediumPt: '', mediumEn: '',
     dimensions: '', heightCm: '', widthCm: '',
     descriptionPt: '', descriptionEn: '', featured: false,
+    showOnTimeline: false,
   }
 
   const handlePrev = () => { if (currentIndex > 0) setCurrentIndex(currentIndex - 1) }
@@ -228,11 +222,8 @@ export function PerImageDetailsStep({
 
   const progressPercent = ((currentIndex + 1) / images.length) * 100
 
-  // The left preview shows the actual photo by default; once enhanced, the artist can
-  // toggle to the enhanced/framed result. `preview` is the raw photo's object URL.
-  const enh = enhancedByIndex[currentIndex]
-  const previewSrc = images[currentIndex]?.preview
-  const leftSrc = imgView === 'enhanced' && enh ? (enh.framed || enh.enhanced) : previewSrc
+  // The left preview shows the raw photo; `preview` is its object URL.
+  const leftSrc = images[currentIndex]?.preview
 
   // Determine the current medium select value
   const currentMediumValue = knownMediums.find(
@@ -301,25 +292,6 @@ export function PerImageDetailsStep({
               alt={`Artwork ${currentIndex + 1}`}
               className="w-full max-h-[20vh] md:max-h-[calc(100vh-220px)] object-contain rounded-lg border bg-gray-50"
             />
-            {/* Original ↔ enhanced toggle (only once enhanced) */}
-            {enh && (
-              <div className="absolute bottom-2 left-2 inline-flex rounded-md overflow-hidden text-[11px] shadow">
-                <button
-                  type="button"
-                  onClick={() => setImgView('original')}
-                  className={imgView === 'original' ? 'bg-gray-900 text-white px-2 py-1' : 'bg-white/90 text-gray-600 px-2 py-1 hover:bg-white'}
-                >
-                  Original
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImgView('enhanced')}
-                  className={imgView === 'enhanced' ? 'bg-gray-900 text-white px-2 py-1' : 'bg-white/90 text-gray-600 px-2 py-1 hover:bg-white'}
-                >
-                  AI Stretch
-                </button>
-              </div>
-            )}
             <Button
               variant="secondary"
               size="sm"
@@ -328,29 +300,6 @@ export function PerImageDetailsStep({
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </Button>
-            {/* Enhance with AI: taut-canvas correction + framed catalogue image.
-                Shown for flat media (the common case); hidden only when the category
-                is explicitly non-flat (sculpture / video / installations). */}
-            {images[currentIndex] && (() => {
-              const enhanceCategory = commonApplied.category ?? current.category ?? ''
-              if (enhanceCategory && !isEnhanceable(enhanceCategory)) return null
-              return (
-                <div className="mt-3 flex items-center gap-2">
-                  <EnhanceButton
-                    file={images[currentIndex].file}
-                    category={enhanceCategory || 'painting'}
-                    onFramed={(urls) => onFramed(currentIndex, urls)}
-                  />
-                  {enhancedByIndex[currentIndex] ? (
-                    <span className="text-[11px] text-emerald-600">Stretched ✓</span>
-                  ) : (
-                    <span className="text-[11px] text-muted-foreground">
-                      Flatten the canvas &amp; frame this painting
-                    </span>
-                  )}
-                </div>
-              )
-            })()}
           </div>
 
           {/* RIGHT column: form */}
@@ -419,7 +368,6 @@ export function PerImageDetailsStep({
 
             {/* Medium - Dropdown */}
             <div className="space-y-2">
-              <Label>Medium</Label>
               <div className="flex gap-2">
                 <Select value={currentMediumValue} onValueChange={handleSelectMedium}>
                   <SelectTrigger className="flex-1">
@@ -475,7 +423,6 @@ export function PerImageDetailsStep({
 
             {/* Dimensions - Dropdown */}
             <div className="space-y-2">
-              <Label>Dimensions</Label>
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
                   <Label className="text-xs">Height (cm) / Altura</Label>
@@ -567,6 +514,18 @@ export function PerImageDetailsStep({
               <Switch
                 checked={current.featured}
                 onCheckedChange={(checked) => onUpdateDetails(currentIndex, { featured: checked })}
+              />
+            </div>
+
+            {/* Timeline toggle */}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div>
+                <Label>Show on Timeline</Label>
+                <p className="text-sm text-gray-500">Include this work in the year timeline</p>
+              </div>
+              <Switch
+                checked={current.showOnTimeline ?? false}
+                onCheckedChange={(checked) => onUpdateDetails(currentIndex, { showOnTimeline: checked })}
               />
             </div>
           </div>

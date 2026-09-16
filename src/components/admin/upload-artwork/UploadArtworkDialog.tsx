@@ -34,6 +34,7 @@ import type { UploadedImage, ArtworkDetails, CommonMetadata, ApplyToAll } from '
 import { useBackgroundUploads } from './useBackgroundUploads'
 import { saveDraft, loadDraft, clearDraft, draftHasContent } from './draftStorage'
 import { filesToUploadedImages, MAX_IMAGE_COUNT } from './imageFiles'
+import { buildYearOptions, parseYearInput } from './yearOptions'
 import { SessionRecoveryDialog } from './SessionRecoveryDialog'
 import { composeDimensions } from '@/lib/dimensions'
 
@@ -47,13 +48,6 @@ const DEFAULT_CATEGORIES = [
   { value: 'installations', label: 'Installations / Instalações' },
   { value: 'mixed-media', label: 'Mixed Media / Mídia Mista' },
 ]
-
-const generateYearOptions = () => {
-  const currentYear = new Date().getFullYear()
-  const years = []
-  for (let y = currentYear; y >= 2012; y--) years.push(y)
-  return years
-}
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -77,6 +71,10 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
   const [showNewCategory, setShowNewCategory] = useState(false)
   const [newCategoryValue, setNewCategoryValue] = useState('')
   const [newCategoryLabel, setNewCategoryLabel] = useState('')
+  const [usedYears, setUsedYears] = useState<number[]>([])
+  const [showNewYear, setShowNewYear] = useState(false)
+  const [newYear, setNewYear] = useState('')
+  const [yearError, setYearError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Step 2 state
@@ -116,6 +114,7 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
         })
         setCategoryOptions(merged)
       }).catch(console.error)
+      ArtworkService.getYears().then(setUsedYears).catch(console.error)
     }
   }, [open])
 
@@ -191,6 +190,9 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
     setShowNewCategory(false)
     setNewCategoryValue('')
     setNewCategoryLabel('')
+    setShowNewYear(false)
+    setNewYear('')
+    setYearError(null)
     setArtworkDetails({})
     setEnhancedByIndex({})
     setError(null)
@@ -231,6 +233,7 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
         titlePt: '', titleEn: '', mediumPt: '', mediumEn: '',
         dimensions: '', heightCm: '', widthCm: '',
         descriptionPt: '', descriptionEn: '', featured: false,
+        showOnTimeline: false,
       }
     })
     setArtworkDetails(details)
@@ -250,8 +253,14 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
   const buildPayload = useCallback(
     (i: number) => {
       const d = artworkDetails[i]
-      const category = applyToAll.category ? commonMeta.category : d?.category
-      const year = applyToAll.year ? commonMeta.year : d?.year ?? new Date().getFullYear()
+      // "Same for all" is only offered for a batch — with one image the common
+      // values the artist picked in step 1 always apply.
+      const useCommon = images.length === 1
+      const category = applyToAll.category || useCommon ? commonMeta.category : d?.category
+      const year =
+        applyToAll.year || useCommon
+          ? commonMeta.year
+          : d?.year ?? new Date().getFullYear()
       const toNum = (s: string) => {
         const v = parseFloat((s || '').replace(',', '.'))
         return Number.isFinite(v) && v > 0 ? v : undefined
@@ -270,6 +279,7 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
         category: category as any,
         images: [images[i].file],
         featured: d.featured,
+        showOnTimeline: d.showOnTimeline,
         // Single-image payload → the enhanced result maps to image index 0
         enhancements: enhancedByIndex[i] ? { 0: enhancedByIndex[i] } : undefined,
       }
@@ -281,6 +291,29 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
   const handleSubmit = async () => {
     setError(null)
     setStep('finalizing')
+  }
+
+  // Years already used in the catalogue, plus the current and selected year, newest first
+  const yearOptions = buildYearOptions(usedYears, commonMeta.year, new Date().getFullYear())
+
+  // Add new year handler
+  const handleAddYear = () => {
+    const parsed = parseYearInput(newYear)
+    if (parsed === null) {
+      setYearError('Enter a four-digit year between 1900 and 2100')
+      return
+    }
+    setUsedYears(prev => (prev.includes(parsed) ? prev : [...prev, parsed]))
+    setCommonMeta(prev => ({ ...prev, year: parsed }))
+    setNewYear('')
+    setYearError(null)
+    setShowNewYear(false)
+  }
+
+  const handleCancelNewYear = () => {
+    setShowNewYear(false)
+    setNewYear('')
+    setYearError(null)
   }
 
   // Add new category handler
@@ -299,8 +332,8 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
 
   // Computed values for step 2
   const commonApplied = {
-    category: applyToAll.category ? commonMeta.category : undefined,
-    year: applyToAll.year ? commonMeta.year : undefined,
+    category: applyToAll.category || images.length === 1 ? commonMeta.category : undefined,
+    year: applyToAll.year || images.length === 1 ? commonMeta.year : undefined,
   }
 
   // ─── Step 2: Per-Image Details (fullscreen, rendered outside dialog) ────
@@ -600,17 +633,46 @@ export function UploadArtworkDialog({ open, onClose, initialFiles }: UploadArtwo
                   </div>
                   <Select
                     value={commonMeta.year?.toString()}
-                    onValueChange={(v) => setCommonMeta(prev => ({ ...prev, year: parseInt(v) }))}
+                    onValueChange={(v) => {
+                      if (v === '__new__') {
+                        setShowNewYear(true)
+                        return
+                      }
+                      setCommonMeta(prev => ({ ...prev, year: parseInt(v) }))
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select year" />
                     </SelectTrigger>
                     <SelectContent>
-                      {generateYearOptions().map(y => (
+                      {yearOptions.map(y => (
                         <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
                       ))}
+                      <SelectItem value="__new__">
+                        <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Add year</span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+                  {showNewYear && (
+                    <div className="space-y-1">
+                      <div className="flex gap-2">
+                        <Input
+                          inputMode="numeric"
+                          maxLength={4}
+                          value={newYear}
+                          onChange={(e) => { setNewYear(e.target.value); setYearError(null) }}
+                          placeholder="e.g. 1987"
+                          autoFocus
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddYear()}
+                        />
+                        <Button size="sm" onClick={handleAddYear}>Add</Button>
+                        <Button size="sm" variant="ghost" onClick={handleCancelNewYear}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      {yearError && <p className="text-xs text-red-600">{yearError}</p>}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -14,6 +14,7 @@ export interface ArtworkDetails {
   descriptionPt: string
   descriptionEn: string
   featured: boolean
+  showOnTimeline: boolean
   category?: string
   year?: number
 }

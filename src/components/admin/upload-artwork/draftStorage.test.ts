@@ -7,7 +7,7 @@ const sampleDetails: Record<number, ArtworkDetails> = {
     titlePt: 'Obra Um', titleEn: 'Work One',
     mediumPt: '', mediumEn: '', dimensions: '',
     heightCm: '', widthCm: '',
-    descriptionPt: '', descriptionEn: '', featured: false,
+    descriptionPt: '', descriptionEn: '', featured: false, showOnTimeline: false,
   },
 }
 const sampleCommon: CommonMetadata = { year: 2026, category: 'painting' }
@@ -28,6 +28,7 @@ describe('draftStorage', () => {
     const loaded = loadDraft()
     expect(loaded).not.toBeNull()
     expect(loaded?.artworkDetails[0].titleEn).toBe('Work One')
+    expect(loaded?.artworkDetails[0].showOnTimeline).toBe(false)
     expect(loaded?.fileHints[0].name).toBe('a.jpg')
   })
 
@@ -85,7 +86,7 @@ describe('draftHasContent', () => {
             titlePt: '', titleEn: 'Hello',
             mediumPt: '', mediumEn: '', dimensions: '',
             heightCm: '', widthCm: '',
-            descriptionPt: '', descriptionEn: '', featured: false,
+            descriptionPt: '', descriptionEn: '', featured: false, showOnTimeline: false,
           },
         },
         fileHints: [],
@@ -105,7 +106,7 @@ describe('draftHasContent', () => {
             titlePt: '', titleEn: '',
             mediumPt: '', mediumEn: '', dimensions: '',
             heightCm: '', widthCm: '',
-            descriptionPt: '', descriptionEn: '', featured: false,
+            descriptionPt: '', descriptionEn: '', featured: false, showOnTimeline: false,
           },
         },
         fileHints: [],
