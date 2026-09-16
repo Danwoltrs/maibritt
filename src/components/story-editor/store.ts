@@ -1,4 +1,5 @@
 import { createStore, useStore, type StoreApi } from 'zustand'
+import { StoryService } from '@/services/story.service'
 import type { StoryDocument } from '@/lib/story/types'
 
 export type StoreService = {
@@ -98,9 +99,8 @@ export function createEditorStore(service: StoreService, debounceMs: number): St
   return store
 }
 
-// The real StoryService (Supabase-backed) is injected by the editor when it
-// creates its store instance (Task 9) — this module stays free of that
-// import so it has no Supabase dependency at load time.
-export function useEditorStore<T>(store: StoreApi<EditorState>, selector: (state: EditorState) => T): T {
-  return useStore(store, selector)
+export const editorStore = createEditorStore(StoryService, 800)
+
+export function useEditorStore<T>(selector: (state: EditorState) => T): T {
+  return useStore(editorStore, selector)
 }
