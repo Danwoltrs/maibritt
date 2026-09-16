@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { speedToSeconds, secondsToSpeed, slideshowIntervalMs, slideIndexForTime } from './timing'
+import { speedToSeconds, secondsToSpeed, slideshowIntervalMs, slideIndexForTime, formatTime } from './timing'
 import type { SlideshowBlock, CaptionedImage } from './types'
 
 const img = (n: number): CaptionedImage => ({ url: `${n}`, thumbnailUrl: `${n}`, width: 1, height: 1, caption: '' })
@@ -35,5 +35,13 @@ describe('slideIndexForTime', () => {
     expect(slideIndexForTime(15, 60, 4)).toBe(1)
     expect(slideIndexForTime(60, 60, 4)).toBe(3)
     expect(slideIndexForTime(10, 0, 4)).toBe(0)
+  })
+})
+
+describe('formatTime', () => {
+  it('formats seconds as m:ss', () => {
+    expect(formatTime(0)).toBe('0:00')
+    expect(formatTime(65)).toBe('1:05')
+    expect(formatTime(600)).toBe('10:00')
   })
 })

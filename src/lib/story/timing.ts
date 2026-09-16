@@ -28,3 +28,8 @@ export function slideIndexForTime(timeSec: number, durationSec: number, count: n
   const per = durationSec / count
   return Math.max(0, Math.min(count - 1, Math.floor(timeSec / per)))
 }
+
+export function formatTime(sec: number): string {
+  const s = Math.max(0, Math.floor(sec))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}

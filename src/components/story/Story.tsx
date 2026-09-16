@@ -8,6 +8,8 @@ import { Opening } from './Opening'
 import { TextBlock } from './blocks/TextBlock'
 import { PhotoBlock } from './blocks/PhotoBlock'
 import { GalleryBlock } from './blocks/GalleryBlock'
+import { AudioBlock } from './blocks/AudioBlock'
+import { SlideshowBlock } from './blocks/SlideshowBlock'
 
 export function chapterLabel(index: number, title: string): string {
   const words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
@@ -15,7 +17,12 @@ export function chapterLabel(index: number, title: string): string {
   return title ? `Chapter ${n} · ${title}` : `Chapter ${n}`
 }
 
-function renderBlock(block: Block, label: string) {
+export function voiceLabel(name: string): string {
+  const first = name.trim().split(/\s+/)[0]
+  return first ? `${first}, in her own voice` : 'In her own voice'
+}
+
+function renderBlock(block: Block, label: string, voice: string) {
   switch (block.kind) {
     case 'text':
       return <TextBlock key={block.id} block={block} chapterLabel={label} />
@@ -23,6 +30,10 @@ function renderBlock(block: Block, label: string) {
       return <PhotoBlock key={block.id} block={block} chapterLabel={label} />
     case 'gallery':
       return <GalleryBlock key={block.id} block={block} />
+    case 'audio':
+      return <AudioBlock key={block.id} block={block} voiceLabel={voice} />
+    case 'slideshow':
+      return <SlideshowBlock key={block.id} block={block} chapterLabel={label} voiceLabel={voice} />
     default:
       return null
   }
@@ -31,6 +42,7 @@ function renderBlock(block: Block, label: string) {
 function StoryBody({ document }: { document: StoryDocument }) {
   const { begin } = useSound()
   const firstChapter = useRef<HTMLDivElement>(null)
+  const voice = voiceLabel(document.opening.name)
 
   const onBegin = useCallback(() => {
     begin()
@@ -43,7 +55,7 @@ function StoryBody({ document }: { document: StoryDocument }) {
       <Opening opening={document.opening} onBegin={onBegin} />
       {document.chapters.map((chapter, i) => (
         <div key={chapter.id} ref={i === 0 ? firstChapter : undefined}>
-          {chapter.blocks.map((block) => renderBlock(block, chapterLabel(i, chapter.title)))}
+          {chapter.blocks.map((block) => renderBlock(block, chapterLabel(i, chapter.title), voice))}
         </div>
       ))}
     </div>
