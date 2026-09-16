@@ -1,43 +1,57 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { useInView } from 'framer-motion'
 import type { AudioBlock as AudioBlockType } from '@/lib/story/types'
 import { AudioPlayer } from '../AudioPlayer'
+import { Arranged } from '../Arranged'
+
+export function SmallLine({ text }: { text: string }) {
+  if (!text) return null
+  return <span className="block text-[13px] uppercase tracking-[0.2em] md:text-[14px]" style={{ color: 'var(--accent)' }}>{text}</span>
+}
+
+export function VoiceHeading({ text }: { text: string }) {
+  if (!text) return null
+  return <h3 className="story-serif m-0 text-[40px] font-medium leading-[1.05] md:text-[56px]" style={{ color: 'var(--ink)' }}>{text}</h3>
+}
+
+export function Transcript({ text, readAlong }: { text: string; readAlong: string }) {
+  if (!text) return null
+  return (
+    <div className="flex flex-col gap-3 border-t pt-6" style={{ borderColor: 'var(--line)' }}>
+      {readAlong && <span className="text-[12px] uppercase tracking-[0.14em] md:text-[13px]" style={{ color: 'var(--ink-3)' }}>{readAlong}</span>}
+      <p className="story-serif m-0 whitespace-pre-line text-[20px] italic leading-[1.45] md:text-[25px]" style={{ color: 'var(--ink)' }}>{text}</p>
+    </div>
+  )
+}
+
+export function audioTiles(block: AudioBlockType, voiceLabel: string, ownWords: string, readAlong: string, active: boolean): Record<string, ReactNode> {
+  return {
+    label: <SmallLine text={ownWords} />,
+    heading: <VoiceHeading text={block.heading} />,
+    player: <AudioPlayer audio={block.audio} label={voiceLabel} active={active} />,
+    transcript: <Transcript text={block.audio.transcript} readAlong={readAlong} />,
+  }
+}
 
 export function AudioBlock({ block, voiceLabel, ownWords, readAlong }: { block: AudioBlockType; voiceLabel: string; ownWords: string; readAlong: string }) {
   const ref = useRef<HTMLElement>(null)
   const inView = useInView(ref, { amount: 0.5 })
+  const tiles = audioTiles(block, voiceLabel, ownWords, readAlong, inView)
 
   return (
-    <section ref={ref} className="flex min-h-[100svh] w-full items-center justify-center px-6 py-24 md:px-24" style={{ background: 'var(--paper)' }}>
-      <div className="flex w-full max-w-[600px] flex-col gap-8">
-        <div className="flex flex-col gap-3">
-          {ownWords && (
-            <span className="text-[13px] uppercase tracking-[0.2em] md:text-[14px]" style={{ color: 'var(--accent)' }}>
-              {ownWords}
-            </span>
-          )}
-          {block.heading && (
-            <h3 className="story-serif m-0 text-[40px] font-medium leading-[1.05] md:text-[56px]" style={{ color: 'var(--ink)' }}>
-              {block.heading}
-            </h3>
-          )}
-        </div>
-        <AudioPlayer audio={block.audio} label={voiceLabel} active={inView} />
-        {block.audio.transcript && (
-          <div className="flex flex-col gap-3 border-t pt-6" style={{ borderColor: 'var(--line)' }}>
-            {readAlong && (
-              <span className="text-[12px] uppercase tracking-[0.14em] md:text-[13px]" style={{ color: 'var(--ink-3)' }}>
-                {readAlong}
-              </span>
-            )}
-            <p className="story-serif m-0 whitespace-pre-line text-[20px] italic leading-[1.45] md:text-[25px]" style={{ color: 'var(--ink)' }}>
-              {block.audio.transcript}
-            </p>
+    <section ref={ref} className={`relative w-full ${block.layout ? 'min-h-[100svh]' : 'flex min-h-[100svh] items-center justify-center px-6 py-24 md:px-24'}`} style={{ background: 'var(--paper)' }}>
+      <Arranged layout={block.layout} tiles={tiles}>
+        <div className="flex w-full max-w-[600px] flex-col gap-8">
+          <div className="flex flex-col gap-3">
+            {tiles.label}
+            {tiles.heading}
           </div>
-        )}
-      </div>
+          {tiles.player}
+          {tiles.transcript}
+        </div>
+      </Arranged>
     </section>
   )
 }

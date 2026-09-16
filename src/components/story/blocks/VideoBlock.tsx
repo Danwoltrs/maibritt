@@ -1,10 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { VideoBlock as VideoBlockType } from '@/lib/story/types'
 import { embedUrl } from '@/lib/story/videoLinks'
 import { formatTime } from '@/lib/story/timing'
 import { useSound } from '../SoundProvider'
+import { Arranged } from '../Arranged'
+import { ChapterLabel } from './TextBlock'
+import { DarkCaption } from './PhotoBlock'
 
 function PlayButton({ onClick }: { onClick: () => void }) {
   return (
@@ -20,6 +23,18 @@ function PlayButton({ onClick }: { onClick: () => void }) {
   )
 }
 
+export function videoTiles(block: VideoBlockType, chapterLabel: string, timeLine?: ReactNode): Record<string, ReactNode> {
+  return {
+    label: <ChapterLabel text={chapterLabel} onDark />,
+    caption: (
+      <div className="flex flex-col gap-2">
+        <DarkCaption text={block.caption} size="small" />
+        {timeLine}
+      </div>
+    ),
+  }
+}
+
 export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; chapterLabel: string }) {
   const { register, play, begun, muted } = useSound()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -33,27 +48,28 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
     return register(el)
   }, [register])
 
-  const caption = (
-    <div className="absolute bottom-10 left-6 right-6 z-10 flex flex-col gap-2 md:bottom-[72px] md:left-24 md:right-24 md:flex-row md:items-end md:justify-between">
-      <div className="flex max-w-[720px] flex-col gap-2">
-        {block.caption && (
-          <p className="story-serif m-0 text-[22px] italic leading-tight md:text-[30px]" style={{ color: 'var(--on-backdrop)' }}>
-            {block.caption}
-          </p>
-        )}
-        {source.type === 'upload' && source.durationSec > 0 && (
-          <span className="story-tabular text-[14px] uppercase tracking-[0.1em] md:text-[15px]" style={{ color: 'rgba(251,249,245,0.72)' }}>
-            {formatTime(time)} / {formatTime(source.durationSec)}
-          </span>
-        )}
+  const timeLine =
+    source.type === 'upload' && source.durationSec > 0 ? (
+      <span className="story-tabular text-[14px] uppercase tracking-[0.1em] md:text-[15px]" style={{ color: 'rgba(251,249,245,0.72)' }}>
+        {formatTime(time)} / {formatTime(source.durationSec)}
+      </span>
+    ) : null
+  const tiles = videoTiles(block, chapterLabel, timeLine)
+
+  const overlay = (
+    <Arranged layout={block.layout} tiles={tiles} stackJustify="end">
+      <div className="absolute left-6 top-8 z-10 md:left-10">{tiles.label}</div>
+      <div className="absolute bottom-10 left-6 right-6 z-10 flex flex-col gap-2 md:bottom-[72px] md:left-24 md:right-24 md:flex-row md:items-end md:justify-between">
+        <div className="flex max-w-[720px] flex-col gap-2">{tiles.caption}</div>
       </div>
-    </div>
+    </Arranged>
   )
+
+  const sectionClass = block.layout ? 'min-h-[100svh]' : 'h-[100svh]'
 
   if (source.type === 'link') {
     return (
-      <section className="story-grain relative h-[100svh] w-full overflow-hidden" style={{ background: 'var(--backdrop)' }}>
-        <div className="absolute left-6 top-8 z-10 text-[12px] uppercase tracking-[0.16em] md:left-10 md:text-[13px]" style={{ color: 'rgba(251,249,245,0.72)' }}>{chapterLabel}</div>
+      <section className={`story-grain relative w-full overflow-hidden ${sectionClass}`} style={{ background: 'var(--backdrop)' }}>
         {started ? (
           <iframe
             src={embedUrl(source, true)}
@@ -64,9 +80,8 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
           />
         ) : (
           <>
-            <div className="absolute inset-0" style={{ background: 'var(--backdrop)' }} />
             <PlayButton onClick={() => setStarted(true)} />
-            {caption}
+            {overlay}
           </>
         )}
       </section>
@@ -74,7 +89,7 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
   }
 
   return (
-    <section className="story-grain story-vignette relative h-[100svh] w-full overflow-hidden" style={{ background: 'var(--backdrop)' }}>
+    <section className={`story-grain story-vignette relative w-full overflow-hidden ${sectionClass}`} style={{ background: 'var(--backdrop)' }}>
       <video
         ref={videoRef}
         src={source.url}
@@ -94,7 +109,6 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
         }}
       />
       {!started && <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,14,10,0.15) 0%, rgba(20,14,10,0) 40%, rgba(20,14,10,0.68) 100%)' }} />}
-      <div className="absolute left-6 top-8 z-10 text-[12px] uppercase tracking-[0.16em] md:left-10 md:text-[13px]" style={{ color: 'rgba(251,249,245,0.72)' }}>{chapterLabel}</div>
       {!started && (
         <PlayButton
           onClick={() => {
@@ -105,7 +119,7 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
           }}
         />
       )}
-      {!started && caption}
+      {!started && overlay}
     </section>
   )
 }

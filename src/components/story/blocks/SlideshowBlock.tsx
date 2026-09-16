@@ -5,6 +5,9 @@ import { useInView } from 'framer-motion'
 import type { SlideshowBlock as SlideshowBlockType } from '@/lib/story/types'
 import { slideIndexForTime, slideshowIntervalMs } from '@/lib/story/timing'
 import { AudioPlayer } from '../AudioPlayer'
+import { Arranged } from '../Arranged'
+import { ChapterLabel } from './TextBlock'
+import { DarkCaption } from './PhotoBlock'
 
 export function SlideshowBlock({ block, chapterLabel, voiceLabel }: { block: SlideshowBlockType; chapterLabel: string; voiceLabel: string }) {
   const ref = useRef<HTMLElement>(null)
@@ -24,51 +27,51 @@ export function SlideshowBlock({ block, chapterLabel, voiceLabel }: { block: Sli
   }, [block, count, followsAudio, voicePlaying, inView])
 
   if (count === 0) return null
-  const caption = block.images[active]?.caption
+  const caption = block.images[active]?.caption ?? ''
+
+  const dots = (
+    <div className="flex items-center gap-2.5">
+      {block.images.map((_, i) => (
+        <span key={i} className="rounded-full" style={{ width: i === active ? 8 : 6, height: i === active ? 8 : 6, background: i === active ? 'var(--on-backdrop)' : 'rgba(251,249,245,0.45)' }} />
+      ))}
+    </div>
+  )
+  const player = block.audio ? (
+    <AudioPlayer
+      audio={block.audio}
+      label={voiceLabel}
+      onDark
+      active={inView}
+      className="md:max-w-[460px]"
+      onTime={followsAudio ? (t) => setActive(slideIndexForTime(t, block.audio!.durationSec, count)) : undefined}
+      onPlayingChange={setVoicePlaying}
+    />
+  ) : null
+  const tiles = {
+    label: <ChapterLabel text={chapterLabel} onDark />,
+    player,
+    caption: (
+      <div className="flex flex-col gap-4">
+        <DarkCaption text={caption} size="small" />
+        {dots}
+      </div>
+    ),
+  }
 
   return (
-    <section ref={ref} className="story-grain story-vignette relative h-[100svh] w-full overflow-hidden" style={{ background: 'var(--backdrop)' }}>
+    <section ref={ref} className={`story-grain story-vignette relative w-full overflow-hidden ${block.layout ? 'min-h-[100svh]' : 'h-[100svh]'}`} style={{ background: 'var(--backdrop)' }}>
       {block.images.map((img, i) => (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={i}
-          src={img.url}
-          alt={img.caption}
-          className="story-photo absolute inset-0 h-full w-full object-cover transition-opacity duration-[1400ms] ease-in-out"
-          style={{ opacity: i === active ? 1 : 0 }}
-        />
+        <img key={i} src={img.url} alt={img.caption} className="story-photo absolute inset-0 h-full w-full object-cover transition-opacity duration-[1400ms] ease-in-out" style={{ opacity: i === active ? 1 : 0 }} />
       ))}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,14,10,0.1) 0%, rgba(20,14,10,0) 40%, rgba(20,14,10,0.7) 100%)' }} />
-      <div className="absolute left-6 top-8 z-10 text-[12px] uppercase tracking-[0.16em] md:left-10 md:text-[13px]" style={{ color: 'rgba(251,249,245,0.72)' }}>
-        {chapterLabel}
-      </div>
-      <div className="absolute bottom-10 left-6 right-6 z-10 flex flex-col gap-6 md:bottom-[72px] md:left-24 md:right-24 md:flex-row md:items-end md:justify-between md:gap-[60px]">
-        {block.audio ? (
-          <AudioPlayer
-            audio={block.audio}
-            label={voiceLabel}
-            onDark
-            active={inView}
-            className="md:max-w-[460px]"
-            onTime={followsAudio ? (t) => setActive(slideIndexForTime(t, block.audio!.durationSec, count)) : undefined}
-            onPlayingChange={setVoicePlaying}
-          />
-        ) : (
-          <span />
-        )}
-        <div className="flex flex-col gap-4 md:max-w-[520px] md:items-end md:text-right">
-          {caption && (
-            <p className="story-serif m-0 text-[22px] italic leading-tight md:text-[26px]" style={{ color: 'var(--on-backdrop)' }}>
-              {caption}
-            </p>
-          )}
-          <div className="flex items-center gap-2.5">
-            {block.images.map((_, i) => (
-              <span key={i} className="rounded-full" style={{ width: i === active ? 8 : 6, height: i === active ? 8 : 6, background: i === active ? 'var(--on-backdrop)' : 'rgba(251,249,245,0.45)' }} />
-            ))}
-          </div>
+      <Arranged layout={block.layout} tiles={tiles} stackJustify="end">
+        <div className="absolute left-6 top-8 z-10 md:left-10">{tiles.label}</div>
+        <div className="absolute bottom-10 left-6 right-6 z-10 flex flex-col gap-6 md:bottom-[72px] md:left-24 md:right-24 md:flex-row md:items-end md:justify-between md:gap-[60px]">
+          {player ?? <span />}
+          <div className="flex flex-col gap-4 md:max-w-[520px] md:items-end md:text-right">{tiles.caption}</div>
         </div>
-      </div>
+      </Arranged>
     </section>
   )
 }
