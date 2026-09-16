@@ -27,7 +27,7 @@ export class StorageService {
    */
   static async uploadImages(
     files: File[],
-    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes' | 'journal',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes' | 'journal' | 'story',
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResult[]> {
     const results: UploadResult[] = []
@@ -61,7 +61,7 @@ export class StorageService {
    */
   static async uploadSingleImage(
     file: File,
-    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes' | 'journal',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'quotes' | 'journal' | 'story',
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResult> {
     // Validate file type
@@ -155,7 +155,7 @@ export class StorageService {
    * Delete images from storage
    */
   static async deleteImages(
-    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal' | 'story',
     fileName: string
   ): Promise<void> {
     try {
@@ -186,7 +186,7 @@ export class StorageService {
    * List all files in a bucket
    */
   static async listFiles(
-    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal' | 'story',
     folder?: 'original' | 'display' | 'thumbnail'
   ) {
     try {
@@ -213,7 +213,7 @@ export class StorageService {
    * is only used as the write mechanism, not as an access gate.
    */
   static async uploadDerived(
-    bucket: 'artworks' | 'exhibitions' | 'series',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'story',
     baseFileName: string,
     kind: 'enhanced' | 'framed' | 'cropped',
     buf: Buffer | Blob,
@@ -251,7 +251,7 @@ export class StorageService {
    * Get public URL for a file
    */
   static getPublicUrl(
-    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal',
+    bucket: 'artworks' | 'exhibitions' | 'series' | 'journal' | 'story',
     path: string
   ): string {
     const { data } = supabase.storage.from(bucket).getPublicUrl(path)

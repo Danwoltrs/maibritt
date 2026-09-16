@@ -22,5 +22,6 @@ export function shouldShowQuickUploadFab({
   if (dialogOpen) return false
   if (suppressed) return false
   if (pathname === '/login') return false
+  if (pathname?.startsWith('/story')) return false
   return true
 }

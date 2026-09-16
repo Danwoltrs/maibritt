@@ -14,7 +14,10 @@ function isAdminRoute(pathname: string): boolean {
     (pathname.startsWith('/artworks') && !pathname.startsWith('/artworks/series')) ||
     (pathname.startsWith('/series/') && pathname !== '/series') ||
     pathname.startsWith('/api/scrape-press') ||
-    pathname.startsWith('/api/translate')
+    pathname.startsWith('/api/translate') ||
+    pathname.startsWith('/story/edit') ||
+    pathname.startsWith('/story/preview') ||
+    pathname.startsWith('/api/story')
   )
 }
 

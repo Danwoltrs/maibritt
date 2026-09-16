@@ -26,6 +26,10 @@ describe('shouldShowQuickUploadFab', () => {
     expect(shouldShowQuickUploadFab({ ...base, pathname: '/login' })).toBe(false)
   })
 
+  it('is hidden on story routes', () => {
+    expect(shouldShowQuickUploadFab({ ...base, pathname: '/story/edit' })).toBe(false)
+  })
+
   it('is hidden while the upload dialog is open', () => {
     expect(shouldShowQuickUploadFab({ ...base, dialogOpen: true })).toBe(false)
   })
