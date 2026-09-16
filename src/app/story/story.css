@@ -71,7 +71,7 @@
 .se-btn-secondary:hover:not(:disabled) { background: var(--paper-2); }
 .se-btn-quiet { background: transparent; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 .se-btn-danger { background: var(--ink); color: var(--white); border-color: var(--ink); }
-.se-btn-small { height: 48px; font-size: 18px; padding: 0 20px; }
+.se-btn-small { height: 56px; font-size: 18px; padding: 0 20px; }
 
 .se-field {
   width: 100%;
