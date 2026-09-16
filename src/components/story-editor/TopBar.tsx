@@ -28,7 +28,12 @@ export function TopBar({ onPublish }: { onPublish: () => void }) {
   }, [])
 
   const preview = async () => {
-    await flushSave()
+    try {
+      await flushSave()
+    } catch {
+      // The save did not land. Stay here: the message above and Retry are already showing.
+      return
+    }
     router.push('/story/preview')
   }
 

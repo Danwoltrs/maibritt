@@ -39,7 +39,11 @@ export function createEditorStore(service: StoreService, debounceMs: number): St
         return
       }
       const doc = get().document
-      if (!doc) return
+      if (!doc) {
+        // Nothing to save; drop the flag so flushSave's loop cannot spin forever.
+        dirty = false
+        return
+      }
       dirty = false
       inFlight = service
         .saveDraft(doc)
@@ -54,6 +58,10 @@ export function createEditorStore(service: StoreService, debounceMs: number): St
 
     const schedule = () => {
       set({ status: 'saving' })
+      // Mark the document dirty as soon as a save is scheduled. flush() clears
+      // the flag right before it starts saving, so anything edited after that
+      // point stays flagged and flushSave() can still catch it.
+      dirty = true
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => void flush(), debounceMs)
     }
@@ -115,6 +123,8 @@ export function createEditorStore(service: StoreService, debounceMs: number): St
           }
           await flush()
         }
+        // The caller (e.g. Preview) must not move on as if everything landed.
+        if (get().status === 'error') throw new Error('The last change could not be saved.')
       },
 
       selectChapter: (id) => set({ selectedChapterId: id }),

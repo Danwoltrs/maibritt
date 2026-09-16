@@ -10,14 +10,18 @@ export function SlideshowBlock({ block, chapterLabel, voiceLabel }: { block: Sli
   const ref = useRef<HTMLElement>(null)
   const inView = useInView(ref, { amount: 0.5 })
   const [active, setActive] = useState(0)
+  const [voicePlaying, setVoicePlaying] = useState(false)
   const count = block.images.length
-  const followsAudio = block.timing.mode === 'audio' && block.audio && block.audio.durationSec > 0
+  const followsAudio = block.timing.mode === 'audio' && !!block.audio && block.audio.durationSec > 0
 
   useEffect(() => {
-    if (followsAudio || !inView || count < 2) return
+    // The recording drives the photos only while it is actually playing. With
+    // the sound off, or before the visitor taps Begin, the timer keeps them
+    // moving at the same pace the recording would have set.
+    if ((followsAudio && voicePlaying) || !inView || count < 2) return
     const id = window.setInterval(() => setActive((a) => (a + 1) % count), slideshowIntervalMs(block))
     return () => window.clearInterval(id)
-  }, [block, count, followsAudio, inView])
+  }, [block, count, followsAudio, voicePlaying, inView])
 
   if (count === 0) return null
   const caption = block.images[active]?.caption
@@ -47,6 +51,7 @@ export function SlideshowBlock({ block, chapterLabel, voiceLabel }: { block: Sli
             active={inView}
             className="md:max-w-[460px]"
             onTime={followsAudio ? (t) => setActive(slideIndexForTime(t, block.audio!.durationSec, count)) : undefined}
+            onPlayingChange={setVoicePlaying}
           />
         ) : (
           <span />

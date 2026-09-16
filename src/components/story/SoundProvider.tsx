@@ -60,6 +60,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
         const ctx = new Ctx()
         const master = ctx.createGain()
+        // Honour a mute chosen before the story began, otherwise the graph
+        // would come up at full volume while the label still says "Sound off".
+        master.gain.value = mutedRef.current ? 0 : 1
         master.connect(ctx.destination)
         ctxRef.current = ctx
         masterRef.current = master
@@ -70,13 +73,22 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
     ctxRef.current?.resume().catch(() => {})
     // Inside the tap: touch every element once so browsers allow later playback.
+    // The flag marks this silent nudge so players (e.g. a video's poster and
+    // play button) can ignore the play event it produces.
     elements.current.forEach((_, el) => {
+      el.dataset.unlocking = '1'
       const p = el.play()
       if (p && typeof p.then === 'function') {
         p.then(() => {
           el.pause()
           el.currentTime = 0
-        }).catch(() => {})
+        })
+          .catch(() => {})
+          .finally(() => {
+            delete el.dataset.unlocking
+          })
+      } else {
+        delete el.dataset.unlocking
       }
     })
     setBegun(true)
@@ -148,8 +160,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     mutedRef.current = next
     setMuted(next)
     if (masterRef.current) masterRef.current.gain.value = next ? 0 : 1
-    elements.current.forEach((entry, el) => {
-      if (!entry.gain) el.muted = next
+    // Always mirror the choice onto the element itself. Harmless when the Web
+    // Audio gain is doing the work, and it is the only thing that can undo a
+    // mute chosen before the story began (when no gain nodes existed yet).
+    elements.current.forEach((_, el) => {
+      el.muted = next
     })
   }, [])
 

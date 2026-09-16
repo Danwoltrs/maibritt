@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createEditorStore, type StoreService } from './store'
 import { createEmptyDocument, addChapter } from '@/lib/story/document'
+import type { StoryDocument } from '@/lib/story/types'
 
 function fakeService() {
   const svc = {
@@ -93,6 +94,45 @@ describe('editor store', () => {
     await store.getState().load()
     await store.getState().flushSave()
     expect(svc.saves).toBe(0)
+  })
+
+  it('flushSave saves an edit that was made while an earlier save was still in flight', async () => {
+    const saved: StoryDocument[] = []
+    let releaseFirstSave: () => void = () => {}
+    const svc: StoreService = {
+      getDraft: async () => createEmptyDocument(),
+      saveDraft: async (doc) => {
+        saved.push(doc)
+        if (saved.length === 1) await new Promise<void>((resolve) => { releaseFirstSave = resolve })
+      },
+    }
+    const store = createEditorStore(svc, 800)
+    await store.getState().load()
+
+    // Edit A: let the debounce fire so its save is genuinely in flight.
+    store.getState().apply((d) => addChapter(d, 'A').doc)
+    await vi.advanceTimersByTimeAsync(800)
+    expect(saved).toHaveLength(1)
+
+    // Edit B lands while A is still saving, then the user asks for a preview.
+    store.getState().apply((d) => addChapter(d, 'B').doc)
+    const flushed = store.getState().flushSave()
+    releaseFirstSave()
+    await flushed
+
+    expect(saved).toHaveLength(2)
+    expect(saved[1].chapters.map((c) => c.title)).toEqual(['A', 'B'])
+    expect(store.getState().status).toBe('saved')
+  })
+
+  it('flushSave rejects when the save failed, so the caller does not navigate away', async () => {
+    const svc = fakeService()
+    const store = createEditorStore(svc, 800)
+    await store.getState().load()
+    svc.fail = true
+    store.getState().apply((d) => addChapter(d, 'A').doc)
+    await expect(store.getState().flushSave()).rejects.toThrow()
+    expect(store.getState().status).toBe('error')
   })
 
   it('keeps at most 50 undo steps', async () => {

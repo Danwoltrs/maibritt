@@ -86,7 +86,12 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
         muted={muted}
         className={`absolute inset-0 h-full w-full object-cover ${started ? '' : 'story-photo'}`}
         onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-        onPlay={() => setStarted(true)}
+        onPlay={(e) => {
+          // "Begin the story" nudges every element once to unlock playback.
+          // That is not the visitor pressing play, so keep the poster.
+          if (e.currentTarget.dataset.unlocking) return
+          setStarted(true)
+        }}
       />
       {!started && <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,14,10,0.15) 0%, rgba(20,14,10,0) 40%, rgba(20,14,10,0.68) 100%)' }} />}
       <div className="absolute left-6 top-8 z-10 text-[12px] uppercase tracking-[0.16em] md:left-10 md:text-[13px]" style={{ color: 'rgba(251,249,245,0.72)' }}>{chapterLabel}</div>

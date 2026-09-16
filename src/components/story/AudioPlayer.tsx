@@ -11,10 +11,11 @@ type Props = {
   onDark?: boolean
   active: boolean
   onTime?: (sec: number) => void
+  onPlayingChange?: (playing: boolean) => void
   className?: string
 }
 
-export function AudioPlayer({ audio, label, onDark = false, active, onTime, className }: Props) {
+export function AudioPlayer({ audio, label, onDark = false, active, onTime, onPlayingChange, className }: Props) {
   const ref = useRef<HTMLAudioElement>(null)
   const { register, play, stop, begun, muted } = useSound()
   const [playing, setPlaying] = useState(false)
@@ -27,6 +28,10 @@ export function AudioPlayer({ audio, label, onDark = false, active, onTime, clas
     if (!el) return
     return register(el)
   }, [register])
+
+  useEffect(() => {
+    onPlayingChange?.(playing)
+  }, [playing, onPlayingChange])
 
   useEffect(() => {
     const el = ref.current

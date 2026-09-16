@@ -20,6 +20,7 @@ export function useRecorder() {
   const timer = useRef<number | null>(null)
   const raf = useRef<number | null>(null)
   const ctxRef = useRef<AudioContext | null>(null)
+  const mounted = useRef(true)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')) setState('unsupported')
@@ -53,6 +54,14 @@ export function useRecorder() {
       void ctx.resume()
 
       const s = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // She can walk away while the browser is still asking for the microphone.
+      // If permission arrives after that, hand it straight back: starting a
+      // recorder now would leave the mic on with nothing on screen to stop it.
+      if (!mounted.current) {
+        s.getTracks().forEach((t) => t.stop())
+        cleanup()
+        return
+      }
       stream.current = s
       const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'].find((m) => MediaRecorder.isTypeSupported(m))
       const rec = new MediaRecorder(s, mime ? { mimeType: mime } : undefined)
@@ -107,7 +116,13 @@ export function useRecorder() {
     setState('idle')
   }, [cleanup, result])
 
-  useEffect(() => () => cleanup(), [cleanup])
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+      cleanup()
+    }
+  }, [cleanup])
 
   return { state, seconds, levels, result, start, stop, reset }
 }
