@@ -7,6 +7,7 @@ import { StoryOverview } from './StoryOverview'
 import { TextEditor } from './TextEditor'
 import { OpeningEditor } from './OpeningEditor'
 import { NameChapter } from './NameChapter'
+import { PhotosFlow } from './PhotosFlow'
 
 export function EditorApp() {
   const load = useEditorStore((s) => s.load)
@@ -36,6 +37,8 @@ export function EditorApp() {
       return <NameChapter chapterId={screen.chapterId} onBack={back} />
     case 'text':
       return <TextEditor screen={screen} onBack={back} />
+    case 'photos':
+      return <PhotosFlow screen={screen} onBack={back} />
     default:
       return null
   }
