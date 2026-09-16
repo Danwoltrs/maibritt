@@ -1,4 +1,6 @@
-import type { Block, Chapter, StoryDocument } from './types'
+import type { Block, Chapter, StoryDocument, StoryLook, WordKey } from './types'
+import { DEFAULT_LOOK, cloneLook } from './look'
+import { WORD_KEYS } from './words'
 
 export function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
@@ -6,7 +8,34 @@ export function newId(): string {
 }
 
 export function createEmptyDocument(): StoryDocument {
-  return { version: 1, opening: { name: '', title: '', portrait: null, cover: null }, chapters: [] }
+  return { version: 2, opening: { name: '', title: '', portrait: null, cover: null }, chapters: [], look: cloneLook(DEFAULT_LOOK) }
+}
+
+type Loose = {
+  opening?: Partial<StoryDocument['opening']>
+  chapters?: unknown
+  look?: { fonts?: Partial<StoryLook['fonts']>; colors?: Partial<StoryLook['colors']>; words?: Record<string, unknown> }
+}
+
+/** Accepts whatever the database holds (null, version 1, a partial version 2) and returns a complete version-2 document. */
+export function normalizeDocument(raw: unknown): StoryDocument {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Loose
+  const base = createEmptyDocument()
+  const words: Partial<Record<WordKey, string>> = {}
+  for (const key of WORD_KEYS) {
+    const value = r.look?.words?.[key]
+    if (typeof value === 'string') words[key] = value
+  }
+  return {
+    version: 2,
+    opening: { ...base.opening, ...(r.opening ?? {}) },
+    chapters: Array.isArray(r.chapters) ? (r.chapters as Chapter[]) : [],
+    look: {
+      fonts: { ...base.look.fonts, ...(r.look?.fonts ?? {}) },
+      colors: { ...base.look.colors, ...(r.look?.colors ?? {}) },
+      words,
+    },
+  }
 }
 
 function clone<T>(value: T): T {

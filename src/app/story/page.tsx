@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Story } from '@/components/story/Story'
 import { NotReady } from '@/components/story/NotReady'
 import type { StoryDocument } from '@/lib/story/types'
+import { normalizeDocument } from '@/lib/story/document'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ const loadPublished = cache(async (): Promise<StoryDocument | null> => {
     console.error('[story] failed to load published story', error)
     return null
   }
-  return (data?.published as StoryDocument | null) ?? null
+  return data?.published ? normalizeDocument(data.published) : null
 })
 
 export async function generateMetadata(): Promise<Metadata> {

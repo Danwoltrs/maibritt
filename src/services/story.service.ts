@@ -2,7 +2,7 @@ import * as tus from 'tus-js-client'
 import { supabase } from '@/lib/supabase'
 import { config } from '@/lib/config'
 import { StorageService } from './storage.service'
-import { createEmptyDocument } from '@/lib/story/document'
+import { createEmptyDocument, normalizeDocument } from '@/lib/story/document'
 import { readImageSize, readAudioDuration, captureVideoPoster } from '@/lib/story/media'
 import type { StoryDocument, ImageRef, AudioRef } from '@/lib/story/types'
 
@@ -29,13 +29,13 @@ export class StoryService {
   static async getPublished(): Promise<StoryDocument | null> {
     const { data, error } = await supabase.from('story').select('published').limit(1).maybeSingle()
     if (error) throw error
-    return (data?.published as StoryDocument | null) ?? null
+    return data?.published ? normalizeDocument(data.published) : null
   }
 
   static async getDraft(): Promise<StoryDocument> {
     const { data, error } = await supabase.from('story').select('draft').limit(1).maybeSingle()
     if (error) throw error
-    return (data?.draft as StoryDocument | null) ?? createEmptyDocument()
+    return data?.draft ? normalizeDocument(data.draft) : createEmptyDocument()
   }
 
   static async saveDraft(document: StoryDocument): Promise<void> {

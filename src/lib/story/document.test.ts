@@ -11,7 +11,9 @@ import {
   moveBlock,
   reorderBlocks,
   findBlock,
+  normalizeDocument,
 } from './document'
+import { DEFAULT_LOOK } from './look'
 import type { TextBlock, StoryDocument } from './types'
 
 const text = (id: string): TextBlock => ({ id, kind: 'text', heading: id, body: '' })
@@ -28,11 +30,49 @@ const ids = (doc: StoryDocument, chapterId: string) =>
   doc.chapters.find((c) => c.id === chapterId)!.blocks.map((b) => b.id)
 
 describe('createEmptyDocument', () => {
-  it('has no chapters and an empty opening', () => {
+  it('is version 2 with an empty opening, no chapters and the default look', () => {
     const doc = createEmptyDocument()
-    expect(doc.version).toBe(1)
+    expect(doc.version).toBe(2)
     expect(doc.chapters).toEqual([])
     expect(doc.opening).toEqual({ name: '', title: '', portrait: null, cover: null })
+    expect(doc.look).toEqual(DEFAULT_LOOK)
+    expect(doc.look).not.toBe(DEFAULT_LOOK)
+  })
+})
+
+describe('normalizeDocument', () => {
+  it('turns null into an empty version-2 document', () => {
+    expect(normalizeDocument(null)).toEqual(createEmptyDocument())
+  })
+
+  it('upgrades a version-1 document and keeps its content', () => {
+    const v1 = { version: 1, opening: { name: 'Mai', title: 'A life', portrait: null, cover: null }, chapters: [{ id: 'c', title: 'One', blocks: [] }] }
+    const doc = normalizeDocument(v1)
+    expect(doc.version).toBe(2)
+    expect(doc.opening.name).toBe('Mai')
+    expect(doc.chapters).toHaveLength(1)
+    expect(doc.look).toEqual(DEFAULT_LOOK)
+  })
+
+  it('fills a partial look and drops unknown word keys', () => {
+    const doc = normalizeDocument({ version: 2, opening: { name: 'M' }, chapters: [], look: { colors: { accent: '#123456' }, words: { begin: 'Começar', bogus: 'x' } } })
+    expect(doc.look.fonts).toEqual(DEFAULT_LOOK.fonts)
+    expect(doc.look.colors).toEqual({ ...DEFAULT_LOOK.colors, accent: '#123456' })
+    expect(doc.look.words).toEqual({ begin: 'Começar' })
+    expect(doc.opening).toEqual({ name: 'M', title: '', portrait: null, cover: null })
+  })
+
+  it('keeps section layouts as they are', () => {
+    const layout = { cols: 12, rows: 8, tiles: { name: { x: 0, y: 0, w: 6, h: 2 } } }
+    const doc = normalizeDocument({ version: 2, opening: { name: 'M', layout }, chapters: [], look: DEFAULT_LOOK })
+    expect(doc.opening.layout).toEqual(layout)
+  })
+
+  it('does not share the default look object between documents', () => {
+    const a = normalizeDocument(null)
+    const b = normalizeDocument(null)
+    a.look.colors.accent = '#000000'
+    expect(b.look.colors.accent).toBe(DEFAULT_LOOK.colors.accent)
   })
 })
 
