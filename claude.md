@@ -28,6 +28,7 @@ migrations/          # SQL migration files
 - `QuotesService` - Quotes (artist, press, testimonial, curator types)
 - `ExhibitionsService` - Exhibition management
 - `SeriesService` - Artwork series/collections
+- `StoryService` - Life story draft/published document, photo/audio/video uploads
 
 ## Conventions
 - Services use camelCase properties, transform from snake_case DB columns
@@ -40,6 +41,7 @@ migrations/          # SQL migration files
 - Homepage sections: Hero, FeaturedArtworks, ExhibitionsTimeline, FeaturedSeries, ArtistStatement, GalleryLocations, BlogPreview
 - Admin panel: artworks, exhibitions, series, galleries, quotes, sales
 - Quotes system supports press reviews with images
+- Life story at /story (public), /story/edit (her editor), /story/preview; spec in docs/superpowers/specs/2026-09-15-life-story-design.md
 
 Always ask questions prior to doing any big jobs.
 Never have a file larger than 2000 lines, when that happens inform and refactor
