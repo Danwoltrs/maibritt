@@ -40,7 +40,7 @@ export function LookPreview({ document, look }: { document: StoryDocument; look:
   const opening = document.opening.name ? document.opening : { ...document.opening, name: 'Your name' }
 
   return (
-    <div ref={box} className="w-full overflow-hidden rounded-[14px]" style={{ border: '2px solid var(--line)', height: SCREEN_HEIGHT * 2 * scale, pointerEvents: 'none' }} aria-hidden="true">
+    <div ref={box} className="max-h-[240px] w-full overflow-hidden rounded-[14px] md:max-h-none" style={{ border: '2px solid var(--line)', height: SCREEN_HEIGHT * 2 * scale, pointerEvents: 'none' }} aria-hidden="true">
       <div style={{ width: FRAME_WIDTH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
         <MotionConfig reducedMotion="always">
           <SoundProvider>

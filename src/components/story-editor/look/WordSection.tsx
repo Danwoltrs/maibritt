@@ -10,7 +10,12 @@ function WordField({ look, keyName, name, onCommit }: { look: StoryLook; keyName
   const [value, setValue] = useState(stored ?? '')
   useEffect(() => setValue(stored ?? ''), [stored])
   const info = WORD_INFO[keyName]
-  const placeholder = keyName === 'voiceLabel' ? `${name.trim().split(/\s+/)[0] || 'Mai-Britt'}, in her own voice` : WORD_DEFAULTS[keyName]
+  const placeholder =
+    keyName === 'voiceLabel'
+      ? `${name.trim().split(/\s+/)[0] || 'Mai-Britt'}, in her own voice`
+      : keyName === 'chapterWord' && stored === ''
+        ? 'No numbering — only your titles'
+        : WORD_DEFAULTS[keyName]
   const overridden = stored !== undefined
   const commit = () => {
     if (value === (stored ?? '')) return

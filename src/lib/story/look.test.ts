@@ -28,6 +28,15 @@ describe('themeVars', () => {
     expect(vars['--accent']).toBe('#b5623a')
     expect(vars['--on-backdrop']).toBe('#fbf9f5')
   })
+  it('returns the hand-tuned historical tones for the untouched palette', () => {
+    const vars = themeVars(DEFAULT_COLORS)
+    expect(vars['--line']).toBe('#d8cfc2')
+    expect(vars['--accent-soft']).toBe('#f3e4da')
+    expect(vars['--paper-2']).toBe('#ece5d9')
+    expect(vars['--ink-2']).toBe('#6e655c')
+    expect(vars['--white']).toBe('#fbf9f5')
+    expect(themeVars({ ...DEFAULT_COLORS, accent: '#B5623A' })).toEqual(vars)
+  })
   it('substitutes the default for a malformed colour', () => {
     expect(themeVars({ ...DEFAULT_COLORS, accent: 'red' })['--accent']).toBe('#b5623a')
   })

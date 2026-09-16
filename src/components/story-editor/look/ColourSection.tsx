@@ -28,7 +28,7 @@ function Swatch({ colors, selected, name, onClick }: { colors: StoryColors; sele
  * in Safari and Firefox. The swatch and the preview follow every tick through
  * `onPreview`; the store is written once, on blur, through `onCommit`.
  */
-function RoleRow({ label, hint, value, onPreview, onCommit }: { label: string; hint: string; value: string; onPreview: (hex: string) => void; onCommit: (hex: string) => void }) {
+function RoleRow({ label, hint, value, committed, onPreview, onCommit }: { label: string; hint: string; value: string; committed: string; onPreview: (hex: string) => void; onCommit: (hex: string) => void }) {
   const input = useRef<HTMLInputElement>(null)
   const [live, setLive] = useState(value)
   useEffect(() => setLive(value), [value])
@@ -48,7 +48,7 @@ function RoleRow({ label, hint, value, onPreview, onCommit }: { label: string; h
             setLive(e.target.value)
             onPreview(e.target.value)
           }}
-          onBlur={() => live !== value && onCommit(live)}
+          onBlur={() => live.toLowerCase() !== committed.toLowerCase() && onCommit(live)}
           aria-label={`Choose the ${label.toLowerCase()} colour`}
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
@@ -58,7 +58,7 @@ function RoleRow({ label, hint, value, onPreview, onCommit }: { label: string; h
   )
 }
 
-export function ColourSection({ colors, onPreview, onChange }: { colors: StoryColors; onPreview: (colors: StoryColors) => void; onChange: (colors: StoryColors) => void }) {
+export function ColourSection({ colors, committed, onPreview, onChange }: { colors: StoryColors; committed: StoryColors; onPreview: (colors: StoryColors) => void; onChange: (colors: StoryColors) => void }) {
   const note = readabilityNote(colors)
   return (
     <section className="flex flex-col gap-5">
@@ -70,7 +70,7 @@ export function ColourSection({ colors, onPreview, onChange }: { colors: StoryCo
       </div>
       <div className="flex flex-col gap-3">
         {ROLE_INFO.map((r) => (
-          <RoleRow key={r.key} label={r.label} hint={r.hint} value={colors[r.key]} onPreview={(hex) => onPreview({ ...colors, [r.key]: hex })} onCommit={(hex) => onChange({ ...colors, [r.key]: hex })} />
+          <RoleRow key={r.key} label={r.label} hint={r.hint} value={colors[r.key]} committed={committed[r.key]} onPreview={(hex) => onPreview({ ...colors, [r.key]: hex })} onCommit={(hex) => onChange({ ...colors, [r.key]: hex })} />
         ))}
       </div>
       {note && <p className="m-0 text-[18px]" style={{ color: 'var(--ink-2)' }}>{note}</p>}

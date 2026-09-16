@@ -11,8 +11,24 @@ import { SoundProvider } from '@/components/story/SoundProvider'
 
 const FRAME_WIDTH = 1280
 const ASPECT = 10 / 16
+// The page grid (Arranged.tsx) pads 40px/48px and gaps columns by 16px on a
+// 1280 × 800 screen. The canvas mirrors that, scaled, so a tile lands where
+// she put it.
+const PAD_X = 48
+const PAD_Y = 40
+const GAP = 16
+const SELECTION = '#b5623a'
 
-type Cell = { w: number; h: number }
+type Cell = { w: number; h: number; gap: number; padX: number; padY: number }
+
+function tileBox(rect: GridRect, cell: Cell) {
+  return {
+    left: cell.padX + rect.x * (cell.w + cell.gap),
+    top: cell.padY + rect.y * cell.h,
+    width: rect.w * cell.w + (rect.w - 1) * cell.gap,
+    height: rect.h * cell.h,
+  }
+}
 
 type Props = {
   look: StoryLook
@@ -28,9 +44,14 @@ function Tile({ id, rect, cell, scale, selected, onSelect, onResize, children }:
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id })
   const [grow, setGrow] = useState({ w: 0, h: 0 })
   const start = useRef<{ x: number; y: number } | null>(null)
-  const width = Math.max(cell.w, rect.w * cell.w + grow.w)
-  const height = Math.max(cell.h, rect.h * cell.h + grow.h)
+  const box = tileBox(rect, cell)
+  const width = Math.max(cell.w, box.width + grow.w)
+  const height = Math.max(cell.h, box.height + grow.h)
   const name = TILE_LABEL[id] ?? id
+  const endResize = () => {
+    start.current = null
+    setGrow({ w: 0, h: 0 })
+  }
 
   return (
     <div
@@ -40,13 +61,13 @@ function Tile({ id, rect, cell, scale, selected, onSelect, onResize, children }:
       onPointerDownCapture={onSelect}
       className="absolute cursor-grab select-none"
       style={{
-        left: rect.x * cell.w,
-        top: rect.y * cell.h,
+        left: box.left,
+        top: box.top,
         width,
         height,
         touchAction: 'none',
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-        outline: selected ? '2px solid var(--accent)' : '1px dashed rgba(181,98,58,0.55)',
+        outline: selected ? `2px solid ${SELECTION}` : '1px dashed rgba(181,98,58,0.55)',
         outlineOffset: -1,
         zIndex: isDragging || selected ? 3 : 2,
         opacity: isDragging ? 0.85 : 1,
@@ -56,12 +77,12 @@ function Tile({ id, rect, cell, scale, selected, onSelect, onResize, children }:
       <div className="pointer-events-none flex flex-col justify-center overflow-hidden" style={{ width: width / scale, height: height / scale, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
         {children}
       </div>
-      <span className="pointer-events-none absolute left-1 top-1 rounded px-1.5 py-0.5 text-[12px] font-semibold" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>{name}</span>
+      <span className="pointer-events-none absolute left-1 top-1 rounded px-1.5 py-0.5 text-[12px] font-semibold" style={{ background: SELECTION, color: '#fbf9f5' }}>{name}</span>
       <button
         type="button"
         aria-label={`Resize ${name}`}
         className="absolute bottom-0 right-0 h-7 w-7 cursor-nwse-resize rounded-tl-[8px]"
-        style={{ background: 'var(--accent)', touchAction: 'none' }}
+        style={{ background: SELECTION, touchAction: 'none' }}
         onPointerDown={(e) => {
           e.stopPropagation()
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -73,12 +94,12 @@ function Tile({ id, rect, cell, scale, selected, onSelect, onResize, children }:
         }}
         onPointerUp={(e) => {
           if (!start.current) return
-          const dw = Math.round((e.clientX - start.current.x) / cell.w)
+          const dw = Math.round((e.clientX - start.current.x) / (cell.w + cell.gap))
           const dh = Math.round((e.clientY - start.current.y) / cell.h)
-          start.current = null
-          setGrow({ w: 0, h: 0 })
+          endResize()
           if (dw || dh) onResize(dw, dh)
         }}
+        onPointerCancel={endResize}
       />
     </div>
   )
@@ -97,18 +118,22 @@ export function ArrangeCanvas({ look, layout, tiles, backdrop, selected, onSelec
     return () => ro.disconnect()
   }, [])
   const height = width * ASPECT
-  const cell: Cell = { w: width / GRID.cols, h: height / GRID.rows }
   const scale = width / FRAME_WIDTH
+  const padX = PAD_X * scale
+  const padY = PAD_Y * scale
+  const gap = GAP * scale
+  const cell: Cell = { w: (width - 2 * padX - (GRID.cols - 1) * gap) / GRID.cols, h: (height - 2 * padY) / GRID.rows, gap, padX, padY }
+  const pitchX = cell.w + cell.gap
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   const snap: Modifier = ({ transform }) => ({
     ...transform,
-    x: Math.round(transform.x / cell.w) * cell.w,
+    x: Math.round(transform.x / pitchX) * pitchX,
     y: Math.round(transform.y / cell.h) * cell.h,
   })
 
   const onDragEnd = (e: DragEndEvent) => {
-    const dx = Math.round(e.delta.x / cell.w)
+    const dx = Math.round(e.delta.x / pitchX)
     const dy = Math.round(e.delta.y / cell.h)
     if (dx || dy) onChange(moveTile(layout, String(e.active.id), dx, dy))
   }
@@ -126,10 +151,10 @@ export function ArrangeCanvas({ look, layout, tiles, backdrop, selected, onSelec
     onChange(moveTile(layout, selected, d[0], d[1]))
   }
 
-  const gridLines = `linear-gradient(to right, rgba(181,98,58,0.35) 1px, transparent 1px) 0 0 / ${cell.w}px ${cell.h}px, linear-gradient(to bottom, rgba(181,98,58,0.35) 1px, transparent 1px) 0 0 / ${cell.w}px ${cell.h}px`
+  const gridLines = `linear-gradient(to right, rgba(181,98,58,0.35) 1px, transparent 1px) 0 0 / ${pitchX}px ${cell.h}px, linear-gradient(to bottom, rgba(181,98,58,0.35) 1px, transparent 1px) 0 0 / ${pitchX}px ${cell.h}px`
 
   return (
-    <div ref={box} className="w-full outline-none" tabIndex={0} onKeyDown={onKeyDown} onPointerDown={(e) => e.target === e.currentTarget && onSelect(null)}>
+    <div ref={box} className="w-full outline-none" tabIndex={0} onKeyDown={onKeyDown}>
       <MotionConfig reducedMotion="always">
         <SoundProvider>
           <StoryTheme look={look} className="relative overflow-hidden rounded-[14px]" style={{ width, height, background: backdrop.dark ? 'var(--backdrop)' : 'var(--paper)', border: '2px solid var(--line)' }}>
@@ -137,7 +162,8 @@ export function ArrangeCanvas({ look, layout, tiles, backdrop, selected, onSelec
               // eslint-disable-next-line @next/next/no-img-element
               <img src={backdrop.image} alt="" className="story-photo absolute inset-0 h-full w-full object-cover" style={{ opacity: 0.55 }} />
             )}
-            <div className="absolute inset-0" style={{ background: gridLines, backgroundRepeat: 'repeat' }} aria-hidden="true" />
+            <div className="absolute" style={{ left: padX, top: padY, right: padX, bottom: padY, background: gridLines, backgroundRepeat: 'repeat' }} aria-hidden="true" />
+            <div className="absolute inset-0" onPointerDown={() => onSelect(null)} aria-hidden="true" />
             <DndContext sensors={sensors} modifiers={[snap, restrictToParentElement]} onDragEnd={onDragEnd}>
               {Object.entries(layout.tiles).map(([key, rect]) =>
                 tiles[key] ? (

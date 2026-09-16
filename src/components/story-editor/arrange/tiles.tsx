@@ -38,9 +38,9 @@ export function sectionTiles(doc: StoryDocument, target: ArrangeTarget): Section
       return {
         kind: 'slideshow',
         tiles: {
-          label: <ChapterLabel text={label} onDark />,
+          label: label ? <ChapterLabel text={label} onDark /> : null,
           player: block.audio ? <AudioPlayer audio={block.audio} label={voice} onDark active={false} /> : null,
-          caption: <DarkCaption text={block.images[0]?.caption ?? ''} size="small" />,
+          caption: block.images[0]?.caption ? <DarkCaption text={block.images[0].caption} size="small" /> : null,
         },
         backdrop: { image: block.images[0]?.url ?? null, dark: true },
       }

@@ -49,8 +49,8 @@ export function Body({ text }: { text: string }) {
 
 export function textTiles(block: TextBlockType, chapterLabel: string): Record<string, ReactNode> {
   return {
-    label: <Reveal><ChapterLabel text={chapterLabel} /></Reveal>,
-    heading: <Reveal><Heading text={block.heading} /></Reveal>,
+    label: chapterLabel ? <Reveal><ChapterLabel text={chapterLabel} /></Reveal> : null,
+    heading: block.heading ? <Reveal><Heading text={block.heading} /></Reveal> : null,
     body: <Reveal delay={0.3}><Body text={block.body} /></Reveal>,
   }
 }

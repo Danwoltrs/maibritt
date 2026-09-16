@@ -62,6 +62,13 @@ describe('normalizeDocument', () => {
     expect(doc.opening).toEqual({ name: 'M', title: '', portrait: null, cover: null })
   })
 
+  it('drops a malformed colour or font and keeps the default', () => {
+    const doc = normalizeDocument({ version: 2, opening: {}, chapters: [], look: { colors: { accent: 'red', page: '#ABCDEF' }, fonts: { heading: 7 } } })
+    expect(doc.look.colors.accent).toBe(DEFAULT_LOOK.colors.accent)
+    expect(doc.look.colors.page).toBe('#abcdef')
+    expect(doc.look.fonts.heading).toBe(DEFAULT_LOOK.fonts.heading)
+  })
+
   it('keeps section layouts as they are', () => {
     const layout = { cols: 12, rows: 8, tiles: { name: { x: 0, y: 0, w: 6, h: 2 } } }
     const doc = normalizeDocument({ version: 2, opening: { name: 'M', layout }, chapters: [], look: DEFAULT_LOOK })
@@ -104,6 +111,20 @@ describe('chapters', () => {
     expect(moveChapter(c.doc, c.chapterId, -1).chapters.map((x) => x.title)).toEqual(['A', 'C', 'B'])
     expect(moveChapter(c.doc, a.chapterId, -1).chapters.map((x) => x.title)).toEqual(['A', 'B', 'C'])
     expect(moveChapter(c.doc, c.chapterId, 1).chapters.map((x) => x.title)).toEqual(['A', 'B', 'C'])
+  })
+})
+
+describe('look and layouts survive the block helpers', () => {
+  it('insert, move and remove keep look and layouts', () => {
+    const { doc, chapterId } = docWithBlocks()
+    const layout = { cols: 12 as const, rows: 8 as const, tiles: { body: { x: 0, y: 0, w: 6, h: 2 } } }
+    const looked: StoryDocument = { ...doc, look: { ...doc.look, colors: { ...doc.look.colors, accent: '#123456' } }, opening: { ...doc.opening, layout } }
+    let d = insertBlock(looked, chapterId, 0, { ...text('x'), layout })
+    d = moveBlock(d, chapterId, 'x', 1)
+    d = removeBlock(d, chapterId, 'a')
+    expect(d.look.colors.accent).toBe('#123456')
+    expect(d.opening.layout).toEqual(layout)
+    expect(findBlock(d, 'x')?.block.layout).toEqual(layout)
   })
 })
 

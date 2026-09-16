@@ -13,6 +13,7 @@ import { WordSection } from './WordSection'
 export function LookScreen({ onBack }: { onBack: () => void }) {
   const document = useEditorStore((s) => s.document)!
   const apply = useEditorStore((s) => s.apply)
+  const committedColors = useEditorStore((s) => s.document!.look.colors)
   // Local copy so the preview follows every tap immediately; each discrete change is also committed to the store.
   const [look, setLocal] = useState<StoryLook>(document.look)
 
@@ -31,7 +32,7 @@ export function LookScreen({ onBack }: { onBack: () => void }) {
         </div>
         <div className="flex min-w-0 flex-grow flex-col gap-12 md:order-1">
           <FontSection look={look} name={document.opening.name} onChange={(fonts) => commit({ ...look, fonts })} />
-          <ColourSection colors={look.colors} onPreview={(colors) => setLocal({ ...look, colors })} onChange={(colors) => commit({ ...look, colors })} />
+          <ColourSection colors={look.colors} committed={committedColors} onPreview={(colors) => setLocal({ ...look, colors })} onChange={(colors) => commit({ ...look, colors })} />
           <WordSection look={look} name={document.opening.name} onCommit={commit} />
         </div>
       </div>

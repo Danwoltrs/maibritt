@@ -49,17 +49,17 @@ export function Begin({ words, onBegin }: { words: Words; onBegin: () => void })
 
 export function openingTiles(opening: StoryOpening, words: Words, onBegin: () => void): Record<string, ReactNode> {
   return {
-    portrait: <Portrait opening={opening} />,
-    eyebrow: <Eyebrow text={words.eyebrow} />,
+    portrait: opening.portrait ? <Portrait opening={opening} /> : null,
+    eyebrow: words.eyebrow ? <Eyebrow text={words.eyebrow} /> : null,
     name: <Name text={opening.name} />,
-    title: <Title text={opening.title} />,
+    title: opening.title ? <Title text={opening.title} /> : null,
     begin: <Begin words={words} onBegin={onBegin} />,
   }
 }
 
 export function Opening({ opening, words, onBegin }: { opening: StoryOpening; words: Words; onBegin: () => void }) {
   const tiles = openingTiles(opening, words, onBegin)
-  const risen = Object.fromEntries(Object.entries(tiles).map(([k, node], i) => [k, <Rise key={k} delay={0.15 * i}>{node}</Rise>]))
+  const risen = Object.fromEntries(Object.entries(tiles).map(([k, node], i) => [k, node ? <Rise key={k} delay={0.15 * i}>{node}</Rise> : null]))
   return (
     <section className={`story-grain relative w-full overflow-hidden ${opening.layout ? 'min-h-[100svh]' : 'flex h-[100svh] items-center justify-center'}`} style={{ background: 'var(--backdrop)' }}>
       {opening.cover && (

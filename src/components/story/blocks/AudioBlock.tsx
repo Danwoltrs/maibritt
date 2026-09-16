@@ -28,10 +28,10 @@ export function Transcript({ text, readAlong }: { text: string; readAlong: strin
 
 export function audioTiles(block: AudioBlockType, voiceLabel: string, ownWords: string, readAlong: string, active: boolean): Record<string, ReactNode> {
   return {
-    label: <SmallLine text={ownWords} />,
-    heading: <VoiceHeading text={block.heading} />,
+    label: ownWords ? <SmallLine text={ownWords} /> : null,
+    heading: block.heading ? <VoiceHeading text={block.heading} /> : null,
     player: <AudioPlayer audio={block.audio} label={voiceLabel} active={active} />,
-    transcript: <Transcript text={block.audio.transcript} readAlong={readAlong} />,
+    transcript: block.audio.transcript ? <Transcript text={block.audio.transcript} readAlong={readAlong} /> : null,
   }
 }
 

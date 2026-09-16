@@ -84,8 +84,33 @@ function safeColors(colors: StoryColors): StoryColors {
 
 const PAPER_WHITE = '#fbf9f5'
 
+// The hand-tuned tones the page shipped with. An untouched palette must render
+// exactly as before, so the default short-circuits the mixes below.
+const HISTORICAL_VARS: Record<string, string> = {
+  '--paper': '#f5f0e8',
+  '--paper-2': '#ece5d9',
+  '--paper-3': '#e2d9ca',
+  '--line': '#d8cfc2',
+  '--white': '#fbf9f5',
+  '--ink': '#2a2521',
+  '--ink-2': '#6e655c',
+  '--ink-3': '#9a9086',
+  '--accent': '#b5623a',
+  '--accent-2': '#8f4c2c',
+  '--accent-soft': '#f3e4da',
+  '--accent-text': '#fbf9f5',
+  '--backdrop': '#1e1712',
+  '--on-backdrop': '#fbf9f5',
+}
+
+export function isDefaultPalette(colors: StoryColors): boolean {
+  const c = safeColors(colors)
+  return (Object.keys(DEFAULT_COLORS) as (keyof StoryColors)[]).every((k) => c[k] === DEFAULT_COLORS[k])
+}
+
 export function themeVars(colors: StoryColors): Record<string, string> {
   const c = safeColors(colors)
+  if (isDefaultPalette(c)) return { ...HISTORICAL_VARS }
   const onBackdrop = contrastRatio(PAPER_WHITE, c.backdrop) >= contrastRatio(c.text, c.backdrop) ? PAPER_WHITE : c.text
   return {
     '--paper': c.page,

@@ -25,10 +25,10 @@ function PlayButton({ onClick }: { onClick: () => void }) {
 
 export function videoTiles(block: VideoBlockType, chapterLabel: string, timeLine?: ReactNode): Record<string, ReactNode> {
   return {
-    label: <ChapterLabel text={chapterLabel} onDark />,
+    label: chapterLabel ? <ChapterLabel text={chapterLabel} onDark /> : null,
     caption: (
       <div className="flex flex-col gap-2">
-        <DarkCaption text={block.caption} size="small" />
+        <DarkCaption text={block.caption} size="video" />
         {timeLine}
       </div>
     ),
@@ -66,6 +66,8 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
   )
 
   const sectionClass = block.layout ? 'min-h-[100svh]' : 'h-[100svh]'
+  // Once the video runs the caption steps aside but the chapter label stays, as it always did.
+  const labelOnly = <div className="absolute left-6 top-8 z-10 md:left-10">{tiles.label}</div>
 
   if (source.type === 'link') {
     return (
@@ -80,10 +82,12 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
           />
         ) : (
           <>
+            <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, color-mix(in srgb, var(--backdrop), white 12%) 0%, var(--backdrop) 70%)' }} />
             <PlayButton onClick={() => setStarted(true)} />
             {overlay}
           </>
         )}
+        {started && labelOnly}
       </section>
     )
   }
@@ -120,6 +124,7 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
         />
       )}
       {!started && overlay}
+      {started && labelOnly}
     </section>
   )
 }

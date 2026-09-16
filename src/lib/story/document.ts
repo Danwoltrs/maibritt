@@ -1,5 +1,5 @@
 import type { Block, Chapter, StoryDocument, StoryLook, WordKey } from './types'
-import { DEFAULT_LOOK, cloneLook } from './look'
+import { DEFAULT_LOOK, cloneLook, isHex } from './look'
 import { WORD_KEYS } from './words'
 
 export function newId(): string {
@@ -21,6 +21,14 @@ type Loose = {
 export function normalizeDocument(raw: unknown): StoryDocument {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Loose
   const base = createEmptyDocument()
+  const colors = { ...base.look.colors }
+  for (const key of Object.keys(colors) as (keyof typeof colors)[]) {
+    const value = r.look?.colors?.[key]
+    if (isHex(value)) colors[key] = value.toLowerCase()
+  }
+  const fonts = { ...base.look.fonts }
+  if (typeof r.look?.fonts?.heading === 'string') fonts.heading = r.look.fonts.heading
+  if (typeof r.look?.fonts?.body === 'string') fonts.body = r.look.fonts.body
   const words: Partial<Record<WordKey, string>> = {}
   for (const key of WORD_KEYS) {
     const value = r.look?.words?.[key]
@@ -30,11 +38,7 @@ export function normalizeDocument(raw: unknown): StoryDocument {
     version: 2,
     opening: { ...base.opening, ...(r.opening ?? {}) },
     chapters: Array.isArray(r.chapters) ? (r.chapters as Chapter[]) : [],
-    look: {
-      fonts: { ...base.look.fonts, ...(r.look?.fonts ?? {}) },
-      colors: { ...base.look.colors, ...(r.look?.colors ?? {}) },
-      words,
-    },
+    look: { fonts, colors, words },
   }
 }
 

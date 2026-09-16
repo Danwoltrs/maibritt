@@ -48,10 +48,10 @@ export function SlideshowBlock({ block, chapterLabel, voiceLabel }: { block: Sli
     />
   ) : null
   const tiles = {
-    label: <ChapterLabel text={chapterLabel} onDark />,
+    label: chapterLabel ? <ChapterLabel text={chapterLabel} onDark /> : null,
     player,
     caption: (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col items-[inherit] gap-4">
         <DarkCaption text={caption} size="small" />
         {dots}
       </div>

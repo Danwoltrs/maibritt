@@ -356,8 +356,9 @@ Manual pass (the finger drag is the main risk):
    Preview my story: fonts and colours match. Undo three times: the
    look steps back. Reload: the look persists.
 2. Words: set the chapter word blank, change "Begin the story" to
-   Portuguese, clear the eyebrow. Preview shows titles without numbers
-   and her phrases. "Use the original" restores one.
+   Portuguese. Preview shows titles without numbers and her phrase.
+   Clearing any other field means "use the original"; "Use the
+   original" does the same in one tap.
 3. Arrange the opening on an iPad with a finger: drag the name to the
    top-left, widen it, move the button under it. Done. Preview on the
    iPad: it matches; on an iPhone the pieces stack in the order the

@@ -3,11 +3,12 @@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { FONTS, FONT_KIND_LABEL, FONT_KIND_ORDER } from '@/lib/story/fonts'
 import { EButton, Icon } from '../ui'
+import { STORY_FONT_CLASSES } from '@/app/story/fonts'
 
 export function FontPicker({ open, title, sample, value, onChoose, onClose }: { open: boolean; title: string; sample: string; value: string; onChoose: (id: string) => void; onClose: () => void }) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="story-theme max-h-[92svh] max-w-[860px] overflow-y-auto rounded-[22px] border-0 p-8 [&>button]:hidden" style={{ background: 'var(--paper)' }}>
+      <DialogContent className={`${STORY_FONT_CLASSES} story-theme max-h-[92svh] max-w-[860px] overflow-y-auto rounded-[22px] border-0 p-8 [&>button]:hidden`} style={{ background: 'var(--paper)' }}>
         <DialogTitle className="story-serif text-[34px] font-medium md:text-[38px]" style={{ color: 'var(--ink)' }}>{title}</DialogTitle>
         {FONT_KIND_ORDER.map((kind) => (
           <div key={kind} className="flex flex-col gap-3">
