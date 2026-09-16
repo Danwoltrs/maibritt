@@ -43,10 +43,7 @@ export function TextArea({ className = '', ...rest }: TextareaHTMLAttributes<HTM
 export function PageTop({ title, backLabel = 'Back to my story', onBack, right }: { title: string; backLabel?: string; onBack: () => void; right?: ReactNode }) {
   return (
     <div className="flex h-24 items-center justify-between border-b px-6 md:px-12" style={{ borderColor: 'var(--line)', background: 'var(--white)' }}>
-      <button type="button" onClick={onBack} className="flex items-center gap-2 text-[19px]" style={{ color: 'var(--ink)' }}>
-        <Icon name="chevronLeft" />
-        <span>{backLabel}</span>
-      </button>
+      <EButton variant="quiet" icon={<Icon name="chevronLeft" />} onClick={onBack}>{backLabel}</EButton>
       <span className="story-serif text-[30px] font-medium" style={{ color: 'var(--ink)' }}>{title}</span>
       <div className="flex min-w-[120px] justify-end">{right}</div>
     </div>

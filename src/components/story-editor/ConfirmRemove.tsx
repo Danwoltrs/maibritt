@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription } from '@/components/ui/alert-dialog'
+import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog'
 import { EButton, Icon } from './ui'
 
 export function ConfirmRemove({ open, title, onCancel, onConfirm }: { open: boolean; title: string; onCancel: () => void; onConfirm: () => void }) {
@@ -12,8 +12,12 @@ export function ConfirmRemove({ open, title, onCancel, onConfirm }: { open: bool
           It will disappear from your story. If you change your mind, press Undo straight afterwards.
         </AlertDialogDescription>
         <div className="flex justify-end gap-3.5 pt-2">
-          <EButton onClick={onCancel}>Keep it</EButton>
-          <EButton variant="danger" icon={<Icon name="trash" />} onClick={onConfirm}>Yes, remove it</EButton>
+          <AlertDialogCancel asChild>
+            <EButton onClick={onCancel}>Keep it</EButton>
+          </AlertDialogCancel>
+          <AlertDialogAction asChild>
+            <EButton variant="danger" icon={<Icon name="trash" />} onClick={onConfirm}>Yes, remove it</EButton>
+          </AlertDialogAction>
         </div>
       </AlertDialogContent>
     </AlertDialog>

@@ -56,6 +56,45 @@ describe('editor store', () => {
     expect(svc.saves).toBe(1)
   })
 
+  it('undo falls back to the first remaining chapter when the selected one disappears', async () => {
+    const svc = fakeService()
+    const store = createEditorStore(svc, 800)
+    await store.getState().load()
+    store.getState().apply((d) => addChapter(d, 'One').doc)
+    const firstId = store.getState().document?.chapters[0].id
+    store.getState().selectChapter(firstId ?? null)
+    store.getState().apply((d) => addChapter(d, 'Two').doc)
+    const secondId = store.getState().document?.chapters[1].id
+    store.getState().selectChapter(secondId ?? null)
+    // Undo removes "Two", so the previously selected chapter no longer exists.
+    store.getState().undo()
+    expect(store.getState().document?.chapters.map((c) => c.title)).toEqual(['One'])
+    expect(store.getState().selectedChapterId).toBe(firstId)
+    // Undo again removes "One" too, leaving no chapters at all.
+    store.getState().undo()
+    expect(store.getState().document?.chapters).toEqual([])
+    expect(store.getState().selectedChapterId).toBeNull()
+  })
+
+  it('flushSave runs a pending debounced save immediately', async () => {
+    const svc = fakeService()
+    const store = createEditorStore(svc, 800)
+    await store.getState().load()
+    store.getState().apply((d) => addChapter(d, 'A').doc)
+    expect(svc.saves).toBe(0)
+    await store.getState().flushSave()
+    expect(svc.saves).toBe(1)
+    expect(store.getState().status).toBe('saved')
+  })
+
+  it('flushSave resolves immediately when nothing is pending', async () => {
+    const svc = fakeService()
+    const store = createEditorStore(svc, 800)
+    await store.getState().load()
+    await store.getState().flushSave()
+    expect(svc.saves).toBe(0)
+  })
+
   it('keeps at most 50 undo steps', async () => {
     const svc = fakeService()
     const store = createEditorStore(svc, 800)

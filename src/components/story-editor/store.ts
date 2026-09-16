@@ -20,6 +20,7 @@ export type EditorState = {
   undo: () => void
   canUndo: () => boolean
   retrySave: () => void
+  flushSave: () => Promise<void>
   selectChapter: (id: string | null) => void
 }
 
@@ -84,13 +85,37 @@ export function createEditorStore(service: StoreService, debounceMs: number): St
         const stack = get().undoStack
         if (stack.length === 0) return
         const previous = stack[stack.length - 1]
-        set({ document: previous, undoStack: stack.slice(0, -1) })
+        const selected = get().selectedChapterId
+        const stillThere = previous.chapters.some((c) => c.id === selected)
+        set({
+          document: previous,
+          undoStack: stack.slice(0, -1),
+          selectedChapterId: stillThere ? selected : previous.chapters[0]?.id ?? null,
+        })
         schedule()
       },
 
       canUndo: () => get().undoStack.length > 0,
 
       retrySave: () => schedule(),
+
+      flushSave: async () => {
+        // Keep clearing any scheduled timer and forcing an immediate save
+        // until nothing is scheduled, nothing is queued, and nothing is
+        // still saving — guarantees the latest edits are persisted before
+        // the caller navigates away (e.g. to preview the story).
+        while (timer || dirty || inFlight) {
+          if (timer) {
+            clearTimeout(timer)
+            timer = null
+          }
+          if (inFlight) {
+            await inFlight
+            continue
+          }
+          await flush()
+        }
+      },
 
       selectChapter: (id) => set({ selectedChapterId: id }),
     }

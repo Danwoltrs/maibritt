@@ -18,7 +18,7 @@ export function ChapterPills({ onNewChapter }: { onNewChapter: () => void }) {
             key={c.id}
             type="button"
             onClick={() => select(c.id)}
-            className="inline-flex h-[52px] items-center rounded-full px-5 text-[19px]"
+            className="inline-flex h-14 items-center rounded-full px-5 text-[19px]"
             style={{
               fontWeight: active ? 600 : 400,
               color: active ? 'var(--white)' : 'var(--ink)',
@@ -30,7 +30,7 @@ export function ChapterPills({ onNewChapter }: { onNewChapter: () => void }) {
           </button>
         )
       })}
-      <button type="button" onClick={onNewChapter} className="inline-flex h-[52px] items-center gap-2 rounded-full px-4 text-[19px]" style={{ color: 'var(--accent)', border: '2px dashed var(--accent)' }}>
+      <button type="button" onClick={onNewChapter} className="inline-flex h-14 items-center gap-2 rounded-full px-4 text-[19px]" style={{ color: 'var(--accent)', border: '2px dashed var(--accent)' }}>
         <Icon name="plus" size={18} />
         <span>New chapter</span>
       </button>

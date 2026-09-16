@@ -16,7 +16,7 @@ const CHOICES: { kind: BlockKind; icon: 'text' | 'photo' | 'gallery' | 'slides' 
 export function AddMenu({ open, onClose, onChoose }: { open: boolean; onClose: () => void; onChoose: (kind: BlockKind) => void }) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="story-theme max-w-[640px] rounded-[22px] border-0 p-8" style={{ background: 'var(--paper)' }}>
+      <DialogContent className="story-theme max-w-[640px] rounded-[22px] border-0 p-8 [&>button]:hidden" style={{ background: 'var(--paper)' }}>
         <DialogTitle className="story-serif text-[34px] font-medium md:text-[38px]" style={{ color: 'var(--ink)' }}>
           What would you like to add?
         </DialogTitle>

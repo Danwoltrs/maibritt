@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useEditorStore } from './store'
 import { EButton, Icon } from './ui'
 
@@ -18,11 +19,18 @@ export function TopBar({ onPublish }: { onPublish: () => void }) {
   const undo = useEditorStore((s) => s.undo)
   const canUndo = useEditorStore((s) => s.undoStack.length > 0)
   const retry = useEditorStore((s) => s.retrySave)
+  const flushSave = useEditorStore((s) => s.flushSave)
+  const router = useRouter()
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 30000)
     return () => window.clearInterval(id)
   }, [])
+
+  const preview = async () => {
+    await flushSave()
+    router.push('/story/preview')
+  }
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4 md:h-24 md:px-12 md:py-0" style={{ borderColor: 'var(--line)', background: 'var(--white)' }}>
@@ -30,8 +38,8 @@ export function TopBar({ onPublish }: { onPublish: () => void }) {
         <span className="story-serif text-[34px] font-medium" style={{ color: 'var(--ink)' }}>My story</span>
         {status === 'error' ? (
           <span className="flex items-center gap-3 text-[18px]" style={{ color: 'var(--red)' }}>
-            Could not save. Check your internet.
-            <button type="button" onClick={retry} className="underline underline-offset-4">Try again</button>
+            <span>Could not save. Check your internet and try again.</span>
+            <EButton variant="quiet" onClick={retry}>Retry</EButton>
           </span>
         ) : (
           <span className="flex items-center gap-2 text-[18px]" style={{ color: 'var(--ink-2)' }}>
@@ -48,7 +56,7 @@ export function TopBar({ onPublish }: { onPublish: () => void }) {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <EButton onClick={undo} disabled={!canUndo} icon={<Icon name="undo" />}>Undo</EButton>
-        <a href="/story/preview" className="se-btn se-btn-secondary"><Icon name="eye" /><span>Preview my story</span></a>
+        <EButton onClick={preview} icon={<Icon name="eye" />}>Preview my story</EButton>
         <EButton variant="primary" onClick={onPublish} icon={<Icon name="send" />}>Publish</EButton>
       </div>
     </div>

@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useEditorStore } from './store'
 import { moveBlock, removeBlock, removeChapter, reorderBlocks, moveChapter } from '@/lib/story/document'
 import type { Screen } from './screens'
@@ -37,7 +37,10 @@ export function StoryOverview({ go }: { go: (s: Screen) => void }) {
   const [addAt, setAddAt] = useState<number | null>(null)
   const [removing, setRemoving] = useState<{ kind: 'block'; id: string; label: string } | { kind: 'chapter' } | null>(null)
   const [publishing, setPublishing] = useState(false)
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   const onDragEnd = (e: DragEndEvent) => {
     if (!chapter || !e.over || e.active.id === e.over.id) return
