@@ -10,6 +10,7 @@ import { PhotoBlock } from './blocks/PhotoBlock'
 import { GalleryBlock } from './blocks/GalleryBlock'
 import { AudioBlock } from './blocks/AudioBlock'
 import { SlideshowBlock } from './blocks/SlideshowBlock'
+import { VideoBlock } from './blocks/VideoBlock'
 
 export function chapterLabel(index: number, title: string): string {
   const words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
@@ -34,6 +35,8 @@ function renderBlock(block: Block, label: string, voice: string) {
       return <AudioBlock key={block.id} block={block} voiceLabel={voice} />
     case 'slideshow':
       return <SlideshowBlock key={block.id} block={block} chapterLabel={label} voiceLabel={voice} />
+    case 'video':
+      return <VideoBlock key={block.id} block={block} chapterLabel={label} />
     default:
       return null
   }
@@ -62,9 +65,17 @@ function StoryBody({ document }: { document: StoryDocument }) {
   )
 }
 
-export function Story({ document }: { document: StoryDocument }) {
+export function Story({ document, preview = false }: { document: StoryDocument; preview?: boolean }) {
   return (
     <SoundProvider>
+      {preview && (
+        <div className="sticky top-0 z-[60] flex h-[72px] items-center justify-between px-6 md:px-12" style={{ background: 'var(--ink)', color: 'var(--white)' }}>
+          <span className="text-[18px] md:text-[20px]">This is exactly what visitors will see</span>
+          <a href="/story/edit" className="se-btn se-btn-secondary se-btn-small" style={{ background: 'transparent', color: 'var(--white)', borderColor: 'var(--white)' }}>
+            Back to editing
+          </a>
+        </div>
+      )}
       <StoryBody document={document} />
     </SoundProvider>
   )
