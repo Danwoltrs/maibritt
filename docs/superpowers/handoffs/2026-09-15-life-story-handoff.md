@@ -1,6 +1,15 @@
-# Handoff — Life Story: scrollable memoir + her editor (updated 2026-09-16)
+# Handoff — Life Story: scrollable memoir + her editor (updated 2026-09-16, post-merge)
 
-**Resume point:** The build is COMPLETE on branch `feat/life-story` (22 commits ahead of `main`, not pushed, not merged). Next actions, in order: (1) fix the local Supabase anon key so the dev server can reach the database (every read currently fails with "Invalid API key"); (2) run the manual pass below on desktop Chrome and iPhone Safari; (3) decide how to integrate — merge to `main` locally, or push the branch and open a PR. Pushing `main` deploys to Vercel Production.
+**Resume point:** The feature is LIVE — merged fast-forward into `main` and pushed on 2026-09-16 (`origin/main` = `6a8879b`, Vercel Production build "Ready"). `/story` shows the calm not-ready page until she publishes. Daniel requested a small follow-up; its design was presented in chat but he moved to a fresh session before saying go — **present the follow-up below in one short message, get his yes, then implement it** (bounded, no spec/plan needed). After that: he must fix the local Supabase anon key and run the manual pass.
+
+## Follow-up to implement next (designed 2026-09-16, awaiting his one-word go)
+Daniel's words: "no story on the main page yet… Add the buttons to page, and also one on the dashboard ?add story/chapter" and "also allow her to change this 'THE LIFE STORY OF' / BEGIN THE STORY BUTTON".
+1. **Public header nav** — add `{ name: 'Story', href: '/story', namePt: 'História' }` between About and Contact in `src/components/Header.tsx` (the `allNavigationItems` array near line 39). Header already hides on `/story*`. No homepage section yet (deliberate; revisit once a real cover photo exists).
+2. **Admin sidebar** — add "Life Story" → `/story/edit` (book icon) after Journal in `src/components/admin/Layout/AdminSidebar.tsx`.
+3. **Dashboard quick action** — add `{ title: 'Life Story', description: 'Write or edit her story', href: '/story/edit' }` to `quickActions` in `src/app/dashboard/page.tsx` (near line 21). Chapters are added inside the editor, so one button is enough.
+4. **Editable opening text** — `StoryOpening` in `src/lib/story/types.ts` gains optional `eyebrow?: string` and `beginLabel?: string` (optional so the existing row stays valid; `createEmptyDocument` sets them to `''` and `document.test.ts`'s empty-opening assertion must be updated). `src/components/story/Opening.tsx` renders `opening.eyebrow || 'The life story of'` and `opening.beginLabel || 'Begin the story'`. `src/components/story-editor/OpeningEditor.tsx` gets two fields under name/title: "Small line above your name" (placeholder "The life story of") and "Button text" (placeholder "Begin the story"), 18 px like the rest, saved through `apply`. Add one test that the fallbacks apply when the fields are empty/missing. "This story is told with sound" stays hardcoded unless he asks.
+5. Leave the logged-in avatar menu in the public header alone (its items open dialogs, not links).
+Verify: `npm run typecheck` (only the 8 pre-existing exhibitions-page errors), `npx vitest run` (226 + new), curl `/` shows the nav item. Commit on `main` (his workflow) and push — pushing deploys to Production; he asked for the build to be pushed, ask again before this one only if unsure.
 
 ## The work (one paragraph)
 A personal storytelling section of Mai-Britt's site. Visitors scroll through her life story at `/story` as a full-screen, cinematic sequence of chapters (text that fades in, full-bleed photos with soft parallax, a photo row that pins and slides sideways on desktop and turns page-by-page on phones, a fading slideshow timed to her voice, voice narration with a small player and optional "read along" transcript, video by upload or link, a persistent sound toggle and a thin progress bar). She builds it herself at `/story/edit`: 18 px minimum text, 56 px buttons with words, plain language, "+ Add" between items, a big red Record button that encodes MP3 in the browser, autosave with "Saved a moment ago", Undo, confirmation before removing anything, "Preview my story" and "Publish". Design was approved on a canvas first; the build follows the spec and plan.
@@ -10,10 +19,10 @@ A personal storytelling section of Mai-Britt's site. Visitors scroll through her
 - **Design canvas (approved):** https://claude.ai/artifact/3LKM4Zextn9zSUhbGsr39D
 
 ## Repo state right now
-- **Branch:** `feat/life-story`, forked from `main` at `a684e8e`. 22 commits, tip `ed8588f`. **Not pushed.** `main` itself is 3 docs commits ahead of `origin/main` (spec, plan, first handoff), also not pushed.
+- **Branch:** everything is on `main`; `feat/life-story` was fast-forwarded into `main` and deleted. `origin/main` = `6a8879b` (pushed 2026-09-16; Vercel Production deploy succeeded). Only this handoff edit is newer.
 - **Verification on the tip:** `npx vitest run` → 226 tests pass (baseline was 193). `npm run typecheck` → only the 8 pre-existing errors in the untracked `src/app/(admin)/exhibitions/page.tsx`; none in branch files.
 - **Working tree:** pre-existing, unrelated modifications (`.gitignore`, `.mcp.json`) and untracked files (`.claude/settings.json`, older handoffs/plans, `scripts/`, `src/app/(admin)/exhibitions/page.tsx`, `src/lib/migrations/`, `supabasemaibritt.rtf`). None are this work. Leave them.
-- **Migration:** `migrations/20260915_life_story.sql` is committed on the branch and was applied by Daniel on 2026-09-15.
+- **Migration:** `migrations/20260915_life_story.sql` is committed and was applied by Daniel on 2026-09-15.
 
 ## Environment problems found (not this branch's fault)
 1. **Local Supabase anon key is invalid.** The dev server logs `[story] failed to load published story { message: 'Invalid API key' }` on every request. All local end-to-end testing of `/story`, `/story/preview` and `/story/edit` is blocked until the key in the local env file is replaced. Vercel's env is separate and may be fine.
@@ -57,7 +66,7 @@ A personal storytelling section of Mai-Britt's site. Visitors scroll through her
 - Chapter "Earlier/Later" not disabled at the ends (each press costs a no-op undo slot).
 - Recorder: worker not terminated on encode error; `result.url` not revoked on cancel; 60 fps level updates.
 
-## Manual pass — do this before merging (from the plan's Task 13)
+## Manual pass — still to do (from the plan's Task 13)
 1. Fix the local anon key, `npm run dev`, log in, open `/story/edit`. New chapter "How it all began" → Add Text (heading + two paragraphs) → Add Photo (drop a JPEG, caption) → Add Photo gallery (3 photos, "Slide sideways") → Add Slideshow (4 photos, "Fade", "Match my voice recording", record 20 s) → Add Voice recording (record, Listen back, Keep it, write a transcript) → Add Video (paste `https://vimeo.com/76979871`, then upload a short mp4). Move one item up, remove one (confirm), Undo. Reload: everything persists; bar says "Saved a moment ago".
 2. Change the opening: name, title, portrait, background photo.
 3. "Preview my story": opening, Begin, scroll through all seven kinds; sound toggle mutes; progress bar fills. Also: toggle sound OFF before tapping Begin, then ON again — sound must return (was a bug, fixed in `ed8588f`).
