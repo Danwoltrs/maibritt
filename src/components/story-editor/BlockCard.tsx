@@ -92,9 +92,10 @@ type Props = {
   onChange: () => void
   onRemove: (label: string) => void
   onMove: (delta: -1 | 1) => void
+  onArrange?: () => void
 }
 
-export function BlockCard({ block, isFirst, isLast, onChange, onRemove, onMove }: Props) {
+export function BlockCard({ block, isFirst, isLast, onChange, onRemove, onMove, onArrange }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 }
 
@@ -107,10 +108,12 @@ export function BlockCard({ block, isFirst, isLast, onChange, onRemove, onMove }
         <div className="flex items-center gap-2.5" style={{ color: 'var(--ink-2)' }}>
           <Icon name={ICON[block.kind]} size={20} />
           <span className="text-[18px] uppercase tracking-[0.08em]">{kindDetail(block)}</span>
+          {block.layout && <span className="text-[18px]" style={{ color: 'var(--accent-2)' }}>· Arranged by you</span>}
         </div>
         <Preview block={block} />
         <div className="flex flex-wrap gap-3">
           <EButton small icon={<Icon name="pencil" size={20} />} onClick={onChange}>{CHANGE_LABEL[block.kind]}</EButton>
+          {onArrange && <EButton small icon={<Icon name="grid" size={20} />} onClick={onArrange}>Move things around</EButton>}
           <EButton small variant="quiet" icon={<Icon name="trash" size={20} />} onClick={() => onRemove(BLOCK_KIND_LABEL[block.kind])}>Remove</EButton>
         </div>
       </div>

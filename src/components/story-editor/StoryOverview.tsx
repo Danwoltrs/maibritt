@@ -57,15 +57,18 @@ export function StoryOverview({ go }: { go: (s: Screen) => void }) {
 
   return (
     <div className="min-h-[100svh]">
-      <TopBar onPublish={() => setPublishing(true)} />
+      <TopBar onPublish={() => setPublishing(true)} onLook={() => go({ kind: 'look' })} />
       <ChapterPills onNewChapter={() => go({ kind: 'name-chapter' })} />
       <div className="mx-auto flex w-full max-w-[880px] flex-col px-6 pb-16 pt-10 md:px-0">
         <div className="mb-8 flex flex-wrap items-center gap-4 rounded-2xl border p-5" style={{ borderColor: 'var(--line)', background: 'var(--white)' }}>
           <div className="flex flex-grow flex-col gap-1">
-            <span className="text-[18px] uppercase tracking-[0.08em]" style={{ color: 'var(--ink-2)' }}>Opening screen</span>
+            <span className="text-[18px] uppercase tracking-[0.08em]" style={{ color: 'var(--ink-2)' }}>Opening screen{document.opening.layout && <span className="normal-case tracking-normal" style={{ color: 'var(--accent-2)' }}> · Arranged by you</span>}</span>
             <span className="story-serif text-[28px]" style={{ color: 'var(--ink)' }}>{document.opening.name || 'Add your name and a title'}</span>
           </div>
-          <EButton small icon={<Icon name="pencil" size={20} />} onClick={() => go({ kind: 'opening' })}>Change the opening</EButton>
+          <div className="flex flex-wrap gap-3">
+            <EButton small icon={<Icon name="pencil" size={20} />} onClick={() => go({ kind: 'opening' })}>Change the opening</EButton>
+            <EButton small icon={<Icon name="grid" size={20} />} onClick={() => go({ kind: 'arrange', target: { type: 'opening' } })}>Move things around</EButton>
+          </div>
         </div>
 
         {!chapter ? (
@@ -105,6 +108,7 @@ export function StoryOverview({ go }: { go: (s: Screen) => void }) {
                         onChange={() => go(screenForKind(block.kind, chapter.id, i, block.id))}
                         onRemove={(label) => setRemoving({ kind: 'block', id: block.id, label })}
                         onMove={(delta) => apply((d) => moveBlock(d, chapter.id, block.id, delta))}
+                        onArrange={block.kind === 'gallery' ? undefined : () => go({ kind: 'arrange', target: { type: 'block', chapterId: chapter.id, blockId: block.id } })}
                       />
                       <AddBetween onClick={() => setAddAt(i + 1)} open={addAt === i + 1} />
                     </div>

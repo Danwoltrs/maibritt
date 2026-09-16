@@ -1,4 +1,5 @@
 import type { BlockKind } from '@/lib/story/types'
+import type { ArrangeTarget } from '@/lib/story/layout'
 
 export type Screen =
   | { kind: 'overview' }
@@ -8,6 +9,8 @@ export type Screen =
   | { kind: 'photos'; mode: 'photo' | 'gallery' | 'slideshow'; chapterId: string; insertIndex: number; blockId?: string }
   | { kind: 'record'; chapterId: string; insertIndex: number; blockId?: string }
   | { kind: 'video'; chapterId: string; insertIndex: number; blockId?: string }
+  | { kind: 'look' }
+  | { kind: 'arrange'; target: ArrangeTarget }
 
 export const BLOCK_KIND_LABEL: Record<BlockKind, string> = {
   text: 'Text',

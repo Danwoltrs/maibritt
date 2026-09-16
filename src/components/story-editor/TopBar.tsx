@@ -13,7 +13,7 @@ function relative(savedAt: number | null, now: number): string {
   return m === 1 ? 'Saved a minute ago' : `Saved ${m} minutes ago`
 }
 
-export function TopBar({ onPublish }: { onPublish: () => void }) {
+export function TopBar({ onPublish, onLook }: { onPublish: () => void; onLook: () => void }) {
   const status = useEditorStore((s) => s.status)
   const savedAt = useEditorStore((s) => s.savedAt)
   const undo = useEditorStore((s) => s.undo)
@@ -61,6 +61,7 @@ export function TopBar({ onPublish }: { onPublish: () => void }) {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <EButton onClick={undo} disabled={!canUndo} icon={<Icon name="undo" />}>Undo</EButton>
+        <EButton onClick={onLook} icon={<Icon name="palette" />}>Look</EButton>
         <EButton onClick={preview} icon={<Icon name="eye" />}>Preview my story</EButton>
         <EButton variant="primary" onClick={onPublish} icon={<Icon name="send" />}>Publish</EButton>
       </div>

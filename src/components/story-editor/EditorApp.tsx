@@ -10,6 +10,8 @@ import { NameChapter } from './NameChapter'
 import { PhotosFlow } from './PhotosFlow'
 import { RecordFlow } from './RecordFlow'
 import { VideoFlow } from './VideoFlow'
+import { LookScreen } from './look/LookScreen'
+import { ArrangeScreen } from './arrange/ArrangeScreen'
 
 export function EditorApp() {
   const load = useEditorStore((s) => s.load)
@@ -45,6 +47,10 @@ export function EditorApp() {
       return <RecordFlow screen={screen} onBack={back} />
     case 'video':
       return <VideoFlow screen={screen} onBack={back} />
+    case 'look':
+      return <LookScreen onBack={back} />
+    case 'arrange':
+      return <ArrangeScreen target={screen.target} onBack={back} />
     default:
       return null
   }
