@@ -1,100 +1,81 @@
-# Handoff — Life Story: scrollable memoir + her editor (2026-09-15)
+# Handoff — Life Story: scrollable memoir + her editor (updated 2026-09-16)
 
-**Resume point:** EXECUTE Tasks 1–13 in [`../plans/2026-09-15-life-story.md`](../plans/2026-09-15-life-story.md) with `superpowers:subagent-driven-development` (a fresh subagent per task, review between tasks). **No app code is written yet** — only the spec and plan are committed. Before Task 1's SQL matters (the editor, Task 9 onward), ask Daniel whether he has applied `migrations/20260915_life_story.sql`; the SQL was pasted to him in chat on 2026-09-15 and he applies migrations himself.
+**Resume point:** The build is COMPLETE on branch `feat/life-story` (22 commits ahead of `main`, not pushed, not merged). Next actions, in order: (1) fix the local Supabase anon key so the dev server can reach the database (every read currently fails with "Invalid API key"); (2) run the manual pass below on desktop Chrome and iPhone Safari; (3) decide how to integrate — merge to `main` locally, or push the branch and open a PR. Pushing `main` deploys to Vercel Production.
 
 ## The work (one paragraph)
-A personal storytelling section of Mai-Britt's site. Visitors scroll through her life story at `/story` as a full-screen, cinematic sequence of chapters (text that fades in, full-bleed photos with soft parallax, a photo row that pins and slides sideways, a fading slideshow timed to her voice, voice narration with a small player and optional "read along" transcript, video by upload or link, a persistent sound toggle and a thin progress bar). She builds it herself at `/story/edit` in a deliberately simple editor: 18 px minimum text, 56 px buttons with words, plain language, "+ Add" between items, a big red Record button, autosave with "Saved a moment ago", Undo, confirmation before removing anything, "Preview my story" and "Publish". Design was approved on a canvas first (link below); the build follows the spec and plan exactly.
+A personal storytelling section of Mai-Britt's site. Visitors scroll through her life story at `/story` as a full-screen, cinematic sequence of chapters (text that fades in, full-bleed photos with soft parallax, a photo row that pins and slides sideways on desktop and turns page-by-page on phones, a fading slideshow timed to her voice, voice narration with a small player and optional "read along" transcript, video by upload or link, a persistent sound toggle and a thin progress bar). She builds it herself at `/story/edit`: 18 px minimum text, 56 px buttons with words, plain language, "+ Add" between items, a big red Record button that encodes MP3 in the browser, autosave with "Saved a moment ago", Undo, confirmation before removing anything, "Preview my story" and "Publish". Design was approved on a canvas first; the build follows the spec and plan.
 
 - **Spec (approved):** [`../specs/2026-09-15-life-story-design.md`](../specs/2026-09-15-life-story-design.md)
-- **Plan (13 tasks, code included):** [`../plans/2026-09-15-life-story.md`](../plans/2026-09-15-life-story.md)
-- **Design canvas (approved, the visual reference):** https://claude.ai/artifact/3LKM4Zextn9zSUhbGsr39D — three pages: "The story" (7 desktop moments + 3 phone frames), "Her editor" (7 screens), "How she builds it" (10-step flow).
+- **Plan (13 tasks, executed):** [`../plans/2026-09-15-life-story.md`](../plans/2026-09-15-life-story.md)
+- **Design canvas (approved):** https://claude.ai/artifact/3LKM4Zextn9zSUhbGsr39D
 
 ## Repo state right now
-- **Repo:** `maibritt` — single repo, code + `docs/superpowers/` together. Branch `main`.
-- **Upstream:** `origin/main`; **`main` is 2 commits ahead, NOT pushed** (`76779bf` spec, `7a6bc9c` plan, plus this handoff once committed). Pushing `main` deploys to Vercel Production — docs-only, harmless, but push deliberately. Verify with `git status -sb`.
-- **Working tree:** pre-existing, unrelated modifications (`.gitignore`, `.mcp.json`) and untracked files (`.claude/settings.json`, older handoffs/plans, `scripts/`, `src/app/(admin)/exhibitions/page.tsx`, `src/lib/migrations/`, `supabasemaibritt.rtf`). None are this work. Stage story paths only.
-- **Stashes:** not checked this session (`git stash list` was blocked by permissions); a pre-existing "Login redirect fixes attempt" stash may exist — leave it.
+- **Branch:** `feat/life-story`, forked from `main` at `a684e8e`. 22 commits, tip `ed8588f`. **Not pushed.** `main` itself is 3 docs commits ahead of `origin/main` (spec, plan, first handoff), also not pushed.
+- **Verification on the tip:** `npx vitest run` → 226 tests pass (baseline was 193). `npm run typecheck` → only the 8 pre-existing errors in the untracked `src/app/(admin)/exhibitions/page.tsx`; none in branch files.
+- **Working tree:** pre-existing, unrelated modifications (`.gitignore`, `.mcp.json`) and untracked files (`.claude/settings.json`, older handoffs/plans, `scripts/`, `src/app/(admin)/exhibitions/page.tsx`, `src/lib/migrations/`, `supabasemaibritt.rtf`). None are this work. Leave them.
+- **Migration:** `migrations/20260915_life_story.sql` is committed on the branch and was applied by Daniel on 2026-09-15.
 
-## What's done
+## Environment problems found (not this branch's fault)
+1. **Local Supabase anon key is invalid.** The dev server logs `[story] failed to load published story { message: 'Invalid API key' }` on every request. All local end-to-end testing of `/story`, `/story/preview` and `/story/edit` is blocked until the key in the local env file is replaced. Vercel's env is separate and may be fine.
+2. **`next build` fails locally** because the untracked `src/app/(admin)/exhibitions/page.tsx` clashes with the tracked `src/app/exhibitions/page.tsx` (two pages resolving to `/exhibitions`). Not on the branch; the MP3 worker bundle was verified in a clean worktree. Vercel builds from git, so it is unaffected until that file is committed.
+3. git tracks the project notes file as `claude.md` (lowercase) while the disk has `CLAUDE.md`; macOS case-insensitivity hides this. Pre-existing.
+
+## What's done (commit table)
 | SHA | What |
 |---|---|
-| `76779bf` | `docs(story): life story design spec` — `docs/superpowers/specs/2026-09-15-life-story-design.md` |
-| `7a6bc9c` | `docs(story): life story implementation plan` — `docs/superpowers/plans/2026-09-15-life-story.md` (4,421 lines, every task carries its code, tests and a browser check) |
-
-Verification run this session: none on app code (there is none). Baseline before starting: `npx vitest run` and `npm run typecheck`; note the pre-existing tsc errors in `src/app/(admin)/exhibitions/page.tsx` and stale `.next/types` — not yours.
+| `55acb78` | migration, document types, pure helpers + tests |
+| `d8aeb0c` | timing + video-link helpers + tests |
+| `23be978` `18b657f` | deps (`tus-js-client`, `@breezystack/lamejs`), `StoryService`, media helpers, middleware + header/FAB hidden on `/story*`; video upload survives poster failure |
+| `1011d19` `d8b0825` | public shell: layout/theme/fonts, `SoundProvider`, chrome, opening, text block, not-ready page; page logs read errors + `cache()` |
+| `fec68db` | photo block (parallax) + gallery (sideways / page-turn / stacked) |
+| `bf27165` | audio player, voice block, slideshow block; `formatTime` in `timing.ts` |
+| `c65ddea` `80c04f5` | video block + preview page; sound toggle moved under the preview bar |
+| `9be2025` `9908513` | editor store (autosave 800 ms, undo ≤50, retry) + tests; bound to `StoryService` |
+| `9131249` `4019337` | editor shell (route, overview, cards, add menu, confirm, text/opening editors); 56 px controls, dialog focus, keyboard sensor, `flushSave()`, undo reconciles selection |
+| `230aea4` `79d2afd` | photo picker, style chooser, photos flow; single caption box, no overlapping uploads |
+| `7e6c88d` `f7521c3` `3c2b6d3` | recorder (MediaRecorder → decode → lamejs worker → MP3), voice flow, slideshow voice control; level meter resumes its context, duration read before upload, context always closed |
+| `c26e61e` | video flow (upload or link) |
+| `ff8eac8` | publish route + dialog, CLAUDE.md notes |
+| `ed8588f` | final whole-branch review fixes: flush never drops an edit, mute survives Begin, video posters and voice slideshows hold, recorder stops on leave, publish guards the opening |
 
 ## Locked decisions (do NOT relitigate)
-1. **Storage = one document, two copies.** A single `story` row with `draft` jsonb and `published` jsonb. Autosave writes the whole draft; publish copies draft → published on the server (`POST /api/story/publish`). Chosen over normalized tables for a single author; last-write-wins across tabs is accepted.
-2. **Lives in this site**: public `/story`, editor `/story/edit`, preview `/story/preview`, all behind the existing Supabase login via `middleware.ts` + `AuthGuard`. Not a separate app.
-3. **One story, one language.** Whatever she writes. No EN/PT-BR duplication, no story picker.
-4. **Video = upload AND link.** Upload via resumable `tus-js-client` into bucket `story` (500 MB cap), poster frame captured in the browser; or a pasted YouTube/Vimeo link rendered with the privacy embeds. Link videos don't obey the corner sound toggle (their own controls do) — accepted.
-5. **Phone gallery = "one at a time" (option C).** On phones the sideways gallery becomes a pinned section where each scroll step brings the next photo up full-bleed with its caption; previous photo dimmed behind. Reduced motion → plain vertical stack of fading photos (also the desktop reduced-motion fallback).
-6. **Recordings are MP3, encoded in the browser** (`MediaRecorder` → `decodeAudioData` → `@breezystack/lamejs` in a Web Worker) so they play on every device. Fades use a Web Audio `GainNode` (iOS ignores `volume`); "Begin the story" primes every media element inside the tap.
-7. **No sample copy ships.** Every string on the public page comes from the document; the editor's placeholders are examples only. All words are hers.
-8. **Editor rules:** ≥18 px text, 56 px buttons, 10 px radius, every control has a word label, no "block / embed / parallax / section settings" anywhere visible. Palette and fonts are fixed in the plan's Global Constraints (paper `#F5F0E8`, ink `#2A2521`, accent `#B5623A`; Cormorant Garamond headlines via existing `--font-serif`, Source Sans 3 body via `--font-story-sans`).
-9. **Migration applied by Daniel, by hand.** Never run SQL against the project; paste it.
-10. **Design is approved as-is.** Don't redesign screens; the canvas is the reference.
+1. Storage = one `story` row, `draft`/`published` jsonb; publish copies server-side via `POST /api/story/publish`.
+2. Lives in this site behind the existing login; one story, one language; no sample copy.
+3. Video = upload (tus, 500 MB) AND link (YouTube/Vimeo privacy embeds, rendered only after the tap).
+4. Phone gallery = "one at a time" page-turn; reduced motion = plain vertical fades everywhere.
+5. Recordings are MP3 encoded in the browser; fades via Web Audio `GainNode`; "Begin the story" unlocks every media element in the tap.
+6. Editor rules: ≥18 px text, 56 px buttons (the red Record button is 168 px), 10 px radius on controls (dialogs 14/22 px), word labels, no jargon.
+7. Decisions made during the build (all recorded, all reversible): work on a feature branch, not `main`; components never render `<main>` (root layout owns it); Tailwind 3.4 so spacing uses arbitrary px values; `formatTime` lives in `src/lib/story/timing.ts`; the sideways gallery ends with the same 96 px margin it starts with; the not-ready page also shows for an unnamed opening or zero chapters, and the publish dialog explains that before letting her publish; `flushSave()` rejects after a failed save so Preview stays on the page.
 
-## Files created / modified by the plan
-- **New** `migrations/20260915_life_story.sql` — `story` table + RLS + seed row + `story` bucket + 4 storage policies.
-- **New** `src/lib/story/{types,document,timing,videoLinks,media}.ts` (+ `.test.ts` for document, timing, videoLinks).
-- **New** `src/services/story.service.ts` — draft/published read+write, photo/audio/video/poster uploads.
-- **New** `src/app/story/{layout.tsx,story.css,page.tsx}`, `src/app/story/preview/page.tsx`, `src/app/story/edit/{layout,page}.tsx`, `src/app/api/story/publish/route.ts`.
-- **New** `src/components/story/*` — `Story`, `SoundProvider`, `StoryChrome`, `Opening`, `AudioPlayer`, `NotReady`, `useIsPhone`, `blocks/{Text,Photo,Gallery,Slideshow,Audio,Video}Block`.
-- **New** `src/components/story-editor/*` — `store.ts` (+test), `EditorApp`, `screens.ts`, `ui.tsx`, `TopBar`, `ChapterPills`, `StoryOverview`, `BlockCard`, `AddMenu`, `ConfirmRemove`, `TextEditor`, `NameChapter`, `OpeningEditor`, `PhotoPicker`, `PhotoStyleChooser`, `PhotosFlow`, `VoiceForSlideshow`, `Recorder`, `RecordFlow`, `recorder/{mp3.worker,encodeMp3,useRecorder}.ts`, `VideoFlow`, `PublishDialog`.
-- **New** `src/types/lamejs.d.ts`.
-- **Modify** [`src/middleware.ts:5-18`](../../../src/middleware.ts#L5-L18) `isAdminRoute` — add `/story/edit`, `/story/preview`, `/api/story`.
-- **Modify** [`src/components/ConditionalHeader.tsx`](../../../src/components/ConditionalHeader.tsx) — return null on `/story*` (currently always renders `<Header />`).
-- **Modify** [`src/services/storage.service.ts`](../../../src/services/storage.service.ts) — add `'story'` to the four bucket unions (`uploadImages`, `uploadSingleImage`, `deleteImages`, `listFiles`).
-- **Modify** `package.json` — `tus-js-client`, `@breezystack/lamejs`. **Modify** `CLAUDE.md` (Task 13) and possibly `vitest.setup.ts` (env defaults, Task 8).
+## Known small issues left in (triaged "can ship" by the final review)
+- Photo upload progress bar jumps 0 → 100 (StorageService reports only on completion); video progress is real.
+- Object names use `file.name.split('.').pop()` with no whitelist (a dotless filename gives an odd extension).
+- `ImageRef.width/height` are the original's dimensions, not the 1920 px display render's (nothing reads them yet).
+- Dialog portals fall back to Helvetica because `--font-story-sans` is on the `/story` layout div, not `<body>`.
+- Auto-advancing slideshows have no pause control; they resume cycling after the recording ends.
+- With sound off, tapping a video's play button does nothing visible.
+- Chapter "Earlier/Later" not disabled at the ends (each press costs a no-op undo slot).
+- Recorder: worker not terminated on encode error; `result.url` not revoked on cancel; 60 fps level updates.
 
-## Codebase anchors (saves re-exploring)
-- [`src/middleware.ts:5-18`](../../../src/middleware.ts#L5-L18) — `isAdminRoute()` prefix list; the cookie-based `createServerClient` pattern below it is what `api/story/publish` copies.
-- [`src/app/api/translate/route.ts:1-4`](../../../src/app/api/translate/route.ts#L1-L4) — existing route handler using `createServerClient` + `cookies()` (Next 15: `await cookies()`).
-- [`src/lib/supabase.ts`](../../../src/lib/supabase.ts) — `supabase` (browser client, cookies) and `supabaseAdmin`; `config.supabase.url` comes from `src/lib/config.ts`.
-- [`src/components/auth/AuthGuard.tsx`](../../../src/components/auth/AuthGuard.tsx) — `<AuthGuard redirectTo="/login">`, uses `useAuth()` from `src/contexts/AuthContext.tsx`.
-- [`src/app/(admin)/layout.tsx`](../../../src/app/(admin)/layout.tsx) — the admin sidebar layout the editor must NOT use (editor lives at `src/app/story/edit/` with its own layout).
-- [`src/services/storage.service.ts:26-35`](../../../src/services/storage.service.ts#L26-L35) — `uploadImages(files, bucket, onProgress)` returns `{ urls: { original, display, thumbnail } }`; no width/height, so `StoryService.uploadPhotos` measures with `readImageSize` first.
-- [`src/app/layout.tsx:8-19`](../../../src/app/layout.tsx#L8-L19) — `Cormorant_Garamond` exposed as `--font-serif` (weights 300/400/600 + italic); `Inter` is the site body font (do not use in the story).
-- [`migrations/20260227_journal_system.sql:54-75`](../../../migrations/20260227_journal_system.sql#L54-L75) — the bucket + storage-policy pattern the story migration mirrors.
-- [`src/components/ui/dialog.tsx`](../../../src/components/ui/dialog.tsx), [`alert-dialog.tsx`](../../../src/components/ui/alert-dialog.tsx) — radix primitives reused by `AddMenu`, `PublishDialog`, `ConfirmRemove`.
-- [`vitest.config.ts`](../../../vitest.config.ts) — jsdom, globals, `@` alias, `src/**/*.test.{ts,tsx}`.
-- Installed and relied on: `framer-motion ^12`, `zustand ^5`, `react-dropzone ^14`, `@dnd-kit/sortable ^10`, Next `15.5.9`, React 19.
+## Manual pass — do this before merging (from the plan's Task 13)
+1. Fix the local anon key, `npm run dev`, log in, open `/story/edit`. New chapter "How it all began" → Add Text (heading + two paragraphs) → Add Photo (drop a JPEG, caption) → Add Photo gallery (3 photos, "Slide sideways") → Add Slideshow (4 photos, "Fade", "Match my voice recording", record 20 s) → Add Voice recording (record, Listen back, Keep it, write a transcript) → Add Video (paste `https://vimeo.com/76979871`, then upload a short mp4). Move one item up, remove one (confirm), Undo. Reload: everything persists; bar says "Saved a moment ago".
+2. Change the opening: name, title, portrait, background photo.
+3. "Preview my story": opening, Begin, scroll through all seven kinds; sound toggle mutes; progress bar fills. Also: toggle sound OFF before tapping Begin, then ON again — sound must return (was a bug, fixed in `ed8588f`).
+4. "Publish" → "Your story is online"; open `/story` in a private window: identical. Try publishing with the opening name empty: the dialog must refuse with guidance.
+5. iPhone Safari on `/story`: tap Begin, scroll to the voice section — it plays without another tap; an uploaded video still shows its poster + play button after Begin; gallery turns page by page; toggle silences.
+6. macOS Reduce Motion on: no parallax/pinning, everything fades.
+7. Recorder on iPad: level bars move while recording; tap Cancel while the permission sheet is open, then allow — the mic indicator must NOT stay lit.
+8. Confirm Supabase Storage sends `Access-Control-Allow-Origin: *` for the `story` bucket (the Web Audio fades depend on it; without it media is silent).
+
+## Codebase anchors
+- Public story: `src/app/story/{layout.tsx,story.css,page.tsx}`, `src/app/story/preview/page.tsx`, `src/components/story/*` (`Story.tsx` `renderBlock` switch; `SoundProvider.tsx` `useSound()`).
+- Editor: `src/app/story/edit/*`, `src/components/story-editor/*` (`store.ts` — `editorStore`, `useEditorStore(selector)`, `apply/undo/flushSave/retrySave`; `EditorApp.tsx` switches on `screens.ts`).
+- Data: `src/lib/story/{types,document,timing,videoLinks,media}.ts` (+ tests), `src/services/story.service.ts`, `src/app/api/story/publish/route.ts`, `migrations/20260915_life_story.sql`.
+- Site wiring: `src/middleware.ts` (`/story/edit`, `/story/preview`, `/api/story` protected), `src/components/ConditionalHeader.tsx`, `src/components/admin/upload-artwork/quickUploadFab.logic.ts` (both hide on `/story*`), `src/services/storage.service.ts` (`'story'` bucket), `vitest.setup.ts` (Supabase env defaults for tests).
 
 ## Gotchas
-- **Single repo, zsh:** quote paths with brackets when staging (`git add 'src/app/(admin)/...'`). Stage story paths explicitly; the tree carries unrelated pre-existing changes.
-- **Migration by Daniel only.** Task 1's SQL is in the plan and was pasted in chat. If `/story/edit` shows "Could not load your story", the table probably isn't there yet — ask, don't run it.
-- **`/story` layout wraps `/story/edit` and `/story/preview` too** (`src/app/story/layout.tsx` sets the theme class + Source Sans 3). That's intended; don't add the site header back.
-- **`ConditionalHeader`** currently always renders the header; the story routes need it hidden (Task 3).
-- **Media elements that go through `SoundProvider.register` must set `crossOrigin="anonymous"`** or the Web Audio graph is silent. Supabase public storage serves CORS `*`.
-- **Task 9 references `PickOnePhoto` from Task 10** (`OpeningEditor`) and stubs for `PublishDialog` (Task 13) and `VoiceForSlideshow` (Task 11). Run 9 and 10 back to back, or use the stubs noted in the plan.
-- **`@breezystack/lamejs` types:** the plan adds `src/types/lamejs.d.ts`; worker is loaded with `new Worker(new URL('./mp3.worker.ts', import.meta.url))` (Next/webpack supports this).
-- **`tus-js-client` endpoint** is `${SUPABASE_URL}/storage/v1/upload/resumable` with the user's access token; chunk size must be 6 MiB.
-- **Pre-existing tsc errors** in `src/app/(admin)/exhibitions/page.tsx` and stale `.next/types/**` are not yours.
-- **Pushes to `main` deploy to Vercel Production.** No PR flow. Don't push mid-task without saying so.
-- **Supabase host NXDOMAIN** was seen on 2026-07-05 (memory `frame-mockup-phase1-state`); if fetches fail, check DNS before debugging code.
-- **File-size ceiling ~2000 lines** (Daniel's rule) — the plan keeps every file under ~400.
-
-## Next / suggested next-up
-1. Tasks 1–3 (helpers, service, route protection) — pure code + tests, no UI, unblocks everything.
-2. Tasks 4–7 (public story) — check each in the browser with the SQL snippet in Task 4 step 7.
-3. Tasks 8–13 (editor + publish) — needs the migration applied to test end to end.
-4. After the build: the Task 13 manual pass on iPhone Safari (audio unlock/fade, page-turn gallery) is the real acceptance test.
-5. Later, not now: orphaned-media cleanup, translation, trimming recordings (all out of scope per spec).
-
-## Things the user said that should shape future work
-- "Approved, and the text, all her own choice of words." — ship no sample copy; the sample paragraphs on the canvas are for size only.
-- Video: "include option to add videos as well" → answered as **Both** (upload + link).
-- Story location: this site at `/story`; one language; one story of chapters.
-- Phone gallery: chose **option C** ("one at a time" page-turn) over stacked or swipe.
-- Daniel applies migrations himself and wants the SQL pasted.
-- Always ask before big jobs (CLAUDE.md); the design and build were both approved explicitly. Don't relitigate.
-- Execution preference: **handoff to a fresh session that runs the plan with subagents** (this document).
-
-## Manual smoke test (after build)
-1. Log in, open `/story/edit`: New chapter "How it all began" → Add Text (heading + two paragraphs) → Add Photo (drop a JPEG, caption) → Add Photo gallery (3 photos, keep "Slide sideways") → Add Slideshow (4 photos, "Fade", "Match my voice recording", record 20 s) → Add Voice recording (record, Listen back, Keep it, write a transcript) → Add Video (paste `https://vimeo.com/76979871`, then also upload a short mp4). Move one item up, remove one (confirm), Undo. Reload: everything persists; bar says "Saved a moment ago".
-2. Change the opening: name, title, portrait, background photo.
-3. "Preview my story": opening, Begin, scroll through all seven kinds; sound toggle mutes; progress bar fills.
-4. "Publish" → "Your story is online"; open `/story` in a private window: identical.
-5. iPhone Safari on `/story`: tap Begin, scroll to the voice section — it plays without another tap; gallery turns page by page; toggle silences.
-6. macOS Reduce Motion on: no parallax/pinning, everything fades.
+- Media elements passed to `SoundProvider.register` must set `crossOrigin="anonymous"`.
+- `SoundProvider.begin()` marks elements with `dataset.unlocking` during the unlock; `VideoBlock` ignores `onPlay` while it is set.
+- The `/story` layout wraps the editor and preview too (theme + Source Sans 3). Intended.
+- Pushes to `main` deploy to Vercel Production. No PR flow historically, but a PR from `feat/life-story` is fine.
+- Never run SQL against the project; Daniel applies migrations. Never touch the untracked exhibitions page.
