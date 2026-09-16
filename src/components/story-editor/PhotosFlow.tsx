@@ -70,7 +70,7 @@ export function PhotosFlow({ screen, onBack }: { screen: Extract<Screen, { kind:
     <div className="min-h-[100svh]">
       <PageTop title={title} onBack={onBack} />
       <div className="mx-auto flex w-full max-w-[800px] flex-col gap-8 px-6 py-10 md:px-0">
-        <PhotoPicker multiple={!single} value={images} onChange={setImages} />
+        <PhotoPicker multiple={!single} withCaptions={!single} value={images} onChange={setImages} />
         {single && images[0] && (
           <Field label="A few words about it" hint="Optional">
             <TextInput value={images[0].caption} onChange={(e) => setImages([{ ...images[0], caption: e.target.value }])} />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { StoryService } from '@/services/story.service'
 import type { CaptionedImage, ImageRef } from '@/lib/story/types'
@@ -18,10 +18,12 @@ type Props = {
 export function PhotoPicker({ value, onChange, multiple, withCaptions = true }: Props) {
   const [progress, setProgress] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const uploading = useRef(false)
 
   const onDrop = useCallback(
     async (files: File[]) => {
-      if (files.length === 0) return
+      if (files.length === 0 || uploading.current) return
+      uploading.current = true
       setError(null)
       setProgress(0)
       try {
@@ -32,12 +34,13 @@ export function PhotoPicker({ value, onChange, multiple, withCaptions = true }: 
         setError('This photo could not be uploaded. Try again.')
       } finally {
         setProgress(null)
+        uploading.current = false
       }
     },
     [multiple, onChange, value]
   )
 
-  const { getRootProps, getInputProps, open, isDragActive } = useDropzone({ onDrop, accept: ACCEPT, multiple, noClick: true })
+  const { getRootProps, getInputProps, open, isDragActive } = useDropzone({ onDrop, accept: ACCEPT, multiple, noClick: true, disabled: progress !== null })
 
   return (
     <div className="flex w-full flex-col gap-7">
