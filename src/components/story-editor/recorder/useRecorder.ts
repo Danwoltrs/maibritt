@@ -19,7 +19,7 @@ export function useRecorder() {
   const chunks = useRef<Blob[]>([])
   const timer = useRef<number | null>(null)
   const raf = useRef<number | null>(null)
-  const analyser = useRef<{ ctx: AudioContext; node: AnalyserNode } | null>(null)
+  const ctxRef = useRef<AudioContext | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')) setState('unsupported')
@@ -32,8 +32,8 @@ export function useRecorder() {
     raf.current = null
     stream.current?.getTracks().forEach((t) => t.stop())
     stream.current = null
-    void analyser.current?.ctx.close()
-    analyser.current = null
+    if (ctxRef.current && ctxRef.current.state !== 'closed') void ctxRef.current.close()
+    ctxRef.current = null
   }, [])
 
   const start = useCallback(async () => {
@@ -41,13 +41,17 @@ export function useRecorder() {
     setResult(null)
     setSeconds(0)
     chunks.current = []
-    // Created synchronously, inside the click handler's user gesture, and resumed
-    // right away — Safari/iOS starts a new AudioContext 'suspended' otherwise, and
-    // the analyser would never pull from the mic source (silent, flat level bars).
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-    const ctx = new Ctx()
-    void ctx.resume()
     try {
+      // Created synchronously, inside the click handler's user gesture, and resumed
+      // right away — Safari/iOS starts a new AudioContext 'suspended' otherwise, and
+      // the analyser would never pull from the mic source (silent, flat level bars).
+      // Stashed in a ref immediately so an unmount or failure while getUserMedia is
+      // still pending can still find and close it (cleanup() is the one close path).
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      const ctx = new Ctx()
+      ctxRef.current = ctx
+      void ctx.resume()
+
       const s = await navigator.mediaDevices.getUserMedia({ audio: true })
       stream.current = s
       const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'].find((m) => MediaRecorder.isTypeSupported(m))
@@ -71,7 +75,6 @@ export function useRecorder() {
       const node = ctx.createAnalyser()
       node.fftSize = 256
       ctx.createMediaStreamSource(s).connect(node)
-      analyser.current = { ctx, node }
       const data = new Uint8Array(node.frequencyBinCount)
       const tick = () => {
         node.getByteTimeDomainData(data)
@@ -87,7 +90,6 @@ export function useRecorder() {
       setState('recording')
     } catch (err) {
       cleanup()
-      if (!analyser.current) void ctx.close()
       setState(err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'SecurityError') ? 'denied' : 'error')
     }
   }, [cleanup])
