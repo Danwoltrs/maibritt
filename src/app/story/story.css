@@ -11,14 +11,17 @@
   --accent-2: #8f4c2c;
   --accent-soft: #f3e4da;
   --red: #c43d33;
-  font-family: var(--font-story-sans), 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --accent-text: #fbf9f5;
+  --backdrop: #1e1712;
+  --on-backdrop: #fbf9f5;
+  font-family: var(--story-body-font, var(--font-source-sans)), 'Helvetica Neue', Helvetica, Arial, sans-serif;
   color: var(--ink);
   background: var(--paper);
   -webkit-font-smoothing: antialiased;
 }
 
 .story-serif {
-  font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--story-heading-font, var(--font-cormorant)), 'Cormorant Garamond', Georgia, serif;
 }
 
 .story-photo {

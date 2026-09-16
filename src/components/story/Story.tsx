@@ -5,6 +5,7 @@ import type { Block, StoryDocument, WordKey } from '@/lib/story/types'
 import { chapterLabel, voiceLabel, wordsFor } from '@/lib/story/words'
 import { SoundProvider, useSound } from './SoundProvider'
 import { StoryChrome } from './StoryChrome'
+import { StoryTheme } from './StoryTheme'
 import { Opening } from './Opening'
 import { TextBlock } from './blocks/TextBlock'
 import { PhotoBlock } from './blocks/PhotoBlock'
@@ -46,7 +47,7 @@ function StoryBody({ document, preview }: { document: StoryDocument; preview: bo
   }, [begin])
 
   return (
-    <div className="story-theme">
+    <StoryTheme look={document.look}>
       <StoryChrome onDark={false} preview={preview} soundOn={words.soundOn} soundOff={words.soundOff} />
       <Opening opening={document.opening} words={words} onBegin={onBegin} />
       {document.chapters.map((chapter, i) => (
@@ -54,7 +55,7 @@ function StoryBody({ document, preview }: { document: StoryDocument; preview: bo
           {chapter.blocks.map((block) => renderBlock(block, chapterLabel(i, chapter.title, words.chapterWord), voice, words))}
         </div>
       ))}
-    </div>
+    </StoryTheme>
   )
 }
 

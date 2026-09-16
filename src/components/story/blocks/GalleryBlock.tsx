@@ -10,7 +10,7 @@ const heights = [300, 360, 470, 380, 320]
 function Caption({ text, onDark }: { text: string; onDark?: boolean }) {
   if (!text) return null
   return (
-    <span className="story-serif text-[18px] italic md:text-[19px]" style={{ color: onDark ? 'var(--white)' : 'var(--ink-2)' }}>
+    <span className="story-serif text-[18px] italic md:text-[19px]" style={{ color: onDark ? 'var(--on-backdrop)' : 'var(--ink-2)' }}>
       {text}
     </span>
   )
@@ -116,7 +116,7 @@ function PageTurnGallery({ images }: { images: CaptionedImage[] }) {
   })
 
   return (
-    <section ref={ref} className="relative w-full" style={{ height: `${images.length * 100}vh`, background: '#1e1712' }}>
+    <section ref={ref} className="relative w-full" style={{ height: `${images.length * 100}vh`, background: 'var(--backdrop)' }}>
       <div className="story-grain story-vignette sticky top-0 h-[100svh] w-full overflow-hidden">
         {images.map((img, i) => {
           const state = i < active ? 'behind' : i === active ? 'front' : 'next'
@@ -137,7 +137,7 @@ function PageTurnGallery({ images }: { images: CaptionedImage[] }) {
         })}
         <div className="absolute inset-0 z-[3]" style={{ background: 'linear-gradient(180deg, rgba(20,14,10,0.35) 0%, rgba(20,14,10,0) 30%, rgba(20,14,10,0.75) 100%)' }} />
         <div className="absolute bottom-11 left-6 right-6 z-[4] flex flex-col gap-4">
-          <p className="story-serif m-0 text-[26px] italic leading-tight" style={{ color: 'var(--white)' }}>
+          <p className="story-serif m-0 text-[26px] italic leading-tight" style={{ color: 'var(--on-backdrop)' }}>
             {images[active]?.caption}
           </p>
           <div className="flex items-center justify-between">
@@ -146,7 +146,7 @@ function PageTurnGallery({ images }: { images: CaptionedImage[] }) {
             </span>
             <div className="flex items-center gap-2">
               {images.map((_, i) => (
-                <span key={i} className="rounded-full" style={{ width: i === active ? 8 : 6, height: i === active ? 8 : 6, background: i === active ? 'var(--white)' : 'rgba(251,249,245,0.45)' }} />
+                <span key={i} className="rounded-full" style={{ width: i === active ? 8 : 6, height: i === active ? 8 : 6, background: i === active ? 'var(--on-backdrop)' : 'rgba(251,249,245,0.45)' }} />
               ))}
             </div>
           </div>

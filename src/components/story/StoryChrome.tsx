@@ -46,7 +46,7 @@ export function StoryChrome({ onDark, preview = false, soundOn, soundOff }: { on
           style={{
             border: `1px solid ${onDark ? 'rgba(251,249,245,0.45)' : 'var(--line)'}`,
             background: onDark ? 'rgba(20,14,10,0.35)' : 'var(--white)',
-            color: onDark ? 'var(--white)' : 'var(--ink)',
+            color: onDark ? 'var(--on-backdrop)' : 'var(--ink)',
           }}
         >
           <SpeakerIcon off={muted || !begun} />

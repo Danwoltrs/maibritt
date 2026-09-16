@@ -27,7 +27,7 @@ export function SlideshowBlock({ block, chapterLabel, voiceLabel }: { block: Sli
   const caption = block.images[active]?.caption
 
   return (
-    <section ref={ref} className="story-grain story-vignette relative h-[100svh] w-full overflow-hidden" style={{ background: '#1e1712' }}>
+    <section ref={ref} className="story-grain story-vignette relative h-[100svh] w-full overflow-hidden" style={{ background: 'var(--backdrop)' }}>
       {block.images.map((img, i) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -58,13 +58,13 @@ export function SlideshowBlock({ block, chapterLabel, voiceLabel }: { block: Sli
         )}
         <div className="flex flex-col gap-4 md:max-w-[520px] md:items-end md:text-right">
           {caption && (
-            <p className="story-serif m-0 text-[22px] italic leading-tight md:text-[26px]" style={{ color: 'var(--white)' }}>
+            <p className="story-serif m-0 text-[22px] italic leading-tight md:text-[26px]" style={{ color: 'var(--on-backdrop)' }}>
               {caption}
             </p>
           )}
           <div className="flex items-center gap-2.5">
             {block.images.map((_, i) => (
-              <span key={i} className="rounded-full" style={{ width: i === active ? 8 : 6, height: i === active ? 8 : 6, background: i === active ? 'var(--white)' : 'rgba(251,249,245,0.45)' }} />
+              <span key={i} className="rounded-full" style={{ width: i === active ? 8 : 6, height: i === active ? 8 : 6, background: i === active ? 'var(--on-backdrop)' : 'rgba(251,249,245,0.45)' }} />
             ))}
           </div>
         </div>

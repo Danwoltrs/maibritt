@@ -12,7 +12,7 @@ export function Opening({ opening, words, onBegin }: { opening: StoryOpening; wo
   })
 
   return (
-    <section className="story-grain relative flex h-[100svh] w-full items-center justify-center overflow-hidden" style={{ background: '#1e1712' }}>
+    <section className="story-grain relative flex h-[100svh] w-full items-center justify-center overflow-hidden" style={{ background: 'var(--backdrop)' }}>
       {opening.cover && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={opening.cover.url} alt="" className="story-photo absolute inset-[-4%] h-[108%] w-[108%] object-cover opacity-55" />
@@ -31,7 +31,7 @@ export function Opening({ opening, words, onBegin }: { opening: StoryOpening; wo
               {words.eyebrow}
             </span>
           )}
-          <h1 className="story-serif m-0 text-[54px] font-medium leading-none md:text-[104px]" style={{ color: 'var(--white)', letterSpacing: '-0.01em' }}>
+          <h1 className="story-serif m-0 text-[54px] font-medium leading-none md:text-[104px]" style={{ color: 'var(--on-backdrop)', letterSpacing: '-0.01em' }}>
             {opening.name}
           </h1>
           {opening.title && (
@@ -45,7 +45,7 @@ export function Opening({ opening, words, onBegin }: { opening: StoryOpening; wo
             type="button"
             onClick={onBegin}
             className="flex h-[60px] items-center justify-center rounded-full px-9 text-[19px] font-semibold md:h-16 md:px-11 md:text-[21px]"
-            style={{ background: 'var(--accent)', color: 'var(--white)' }}
+            style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
           >
             {words.begin}
           </button>

@@ -37,7 +37,7 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
     <div className="absolute bottom-10 left-6 right-6 z-10 flex flex-col gap-2 md:bottom-[72px] md:left-24 md:right-24 md:flex-row md:items-end md:justify-between">
       <div className="flex max-w-[720px] flex-col gap-2">
         {block.caption && (
-          <p className="story-serif m-0 text-[22px] italic leading-tight md:text-[30px]" style={{ color: 'var(--white)' }}>
+          <p className="story-serif m-0 text-[22px] italic leading-tight md:text-[30px]" style={{ color: 'var(--on-backdrop)' }}>
             {block.caption}
           </p>
         )}
@@ -52,7 +52,7 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
 
   if (source.type === 'link') {
     return (
-      <section className="story-grain relative h-[100svh] w-full overflow-hidden" style={{ background: '#1e1712' }}>
+      <section className="story-grain relative h-[100svh] w-full overflow-hidden" style={{ background: 'var(--backdrop)' }}>
         <div className="absolute left-6 top-8 z-10 text-[12px] uppercase tracking-[0.16em] md:left-10 md:text-[13px]" style={{ color: 'rgba(251,249,245,0.72)' }}>{chapterLabel}</div>
         {started ? (
           <iframe
@@ -64,7 +64,7 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
           />
         ) : (
           <>
-            <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, #3a2e26 0%, #1e1712 70%)' }} />
+            <div className="absolute inset-0" style={{ background: 'var(--backdrop)' }} />
             <PlayButton onClick={() => setStarted(true)} />
             {caption}
           </>
@@ -74,7 +74,7 @@ export function VideoBlock({ block, chapterLabel }: { block: VideoBlockType; cha
   }
 
   return (
-    <section className="story-grain story-vignette relative h-[100svh] w-full overflow-hidden" style={{ background: '#1e1712' }}>
+    <section className="story-grain story-vignette relative h-[100svh] w-full overflow-hidden" style={{ background: 'var(--backdrop)' }}>
       <video
         ref={videoRef}
         src={source.url}

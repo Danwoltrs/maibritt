@@ -40,7 +40,7 @@ export function AudioPlayer({ audio, label, onDark = false, active, onTime, onPl
     else stop(el)
   }, [active, begun, muted, play, stop])
 
-  const fg = onDark ? 'var(--white)' : 'var(--ink)'
+  const fg = onDark ? 'var(--on-backdrop)' : 'var(--ink)'
   const sub = onDark ? 'rgba(251,249,245,0.72)' : 'var(--ink-2)'
   const track = onDark ? 'rgba(251,249,245,0.28)' : 'var(--line)'
 
@@ -74,7 +74,7 @@ export function AudioPlayer({ audio, label, onDark = false, active, onTime, onPl
             else void play(el)
           }}
           className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full"
-          style={{ background: onDark ? 'var(--white)' : 'var(--ink)', color: onDark ? 'var(--ink)' : 'var(--white)' }}
+          style={{ background: onDark ? 'var(--on-backdrop)' : 'var(--ink)', color: onDark ? 'var(--backdrop)' : 'var(--white)' }}
         >
           {playing ? (
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="5" width="3.5" height="14" rx="0.5" /><rect x="13.5" y="5" width="3.5" height="14" rx="0.5" /></svg>

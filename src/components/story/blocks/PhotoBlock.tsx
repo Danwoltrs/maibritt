@@ -11,7 +11,7 @@ export function PhotoBlock({ block, chapterLabel }: { block: PhotoBlockType; cha
   const y = useTransform(scrollYProgress, [0, 1], ['-6%', '6%'])
 
   return (
-    <section ref={ref} className="story-grain story-vignette relative h-[100svh] w-full overflow-hidden" style={{ background: '#1e1712' }}>
+    <section ref={ref} className="story-grain story-vignette relative h-[100svh] w-full overflow-hidden" style={{ background: 'var(--backdrop)' }}>
       <motion.img
         src={block.image.url}
         alt={block.caption}
@@ -30,7 +30,7 @@ export function PhotoBlock({ block, chapterLabel }: { block: PhotoBlockType; cha
           transition={{ duration: 1.2, ease: 'easeOut' }}
           className="absolute bottom-12 left-6 right-6 z-10 flex max-w-[720px] flex-col gap-2 md:bottom-[88px] md:left-24"
         >
-          <p className="story-serif m-0 text-[24px] italic leading-tight md:text-[34px]" style={{ color: 'var(--white)' }}>
+          <p className="story-serif m-0 text-[24px] italic leading-tight md:text-[34px]" style={{ color: 'var(--on-backdrop)' }}>
             {block.caption}
           </p>
         </motion.div>
