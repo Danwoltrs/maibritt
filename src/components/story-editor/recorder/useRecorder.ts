@@ -41,6 +41,12 @@ export function useRecorder() {
     setResult(null)
     setSeconds(0)
     chunks.current = []
+    // Created synchronously, inside the click handler's user gesture, and resumed
+    // right away — Safari/iOS starts a new AudioContext 'suspended' otherwise, and
+    // the analyser would never pull from the mic source (silent, flat level bars).
+    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const ctx = new Ctx()
+    void ctx.resume()
     try {
       const s = await navigator.mediaDevices.getUserMedia({ audio: true })
       stream.current = s
@@ -62,8 +68,6 @@ export function useRecorder() {
       recorder.current = rec
       rec.start(1000)
 
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-      const ctx = new Ctx()
       const node = ctx.createAnalyser()
       node.fftSize = 256
       ctx.createMediaStreamSource(s).connect(node)
@@ -83,6 +87,7 @@ export function useRecorder() {
       setState('recording')
     } catch (err) {
       cleanup()
+      if (!analyser.current) void ctx.close()
       setState(err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'SecurityError') ? 'denied' : 'error')
     }
   }, [cleanup])

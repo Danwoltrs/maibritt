@@ -42,9 +42,19 @@ export function Recorder({ onKeep, onCancel, initialTranscript = '' }: { onKeep:
   const useFile = async (file: File) => {
     setUploading(true)
     setError(null)
+    let duration: number
+    try {
+      duration = await readAudioDuration(file)
+    } catch {
+      duration = 0
+    }
+    if (!Number.isFinite(duration) || duration <= 0) {
+      setError('We could not read that file. Try an mp3, m4a or wav.')
+      setUploading(false)
+      return
+    }
     try {
       const ext = (file.name.split('.').pop() || 'mp3').toLowerCase()
-      const duration = await readAudioDuration(file).catch(() => 0)
       const audio = await StoryService.uploadAudio(file, ext, duration)
       onKeep({ ...audio, transcript: transcript.trim() })
     } catch {
