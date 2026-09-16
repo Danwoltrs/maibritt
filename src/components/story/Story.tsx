@@ -6,6 +6,8 @@ import { SoundProvider, useSound } from './SoundProvider'
 import { StoryChrome } from './StoryChrome'
 import { Opening } from './Opening'
 import { TextBlock } from './blocks/TextBlock'
+import { PhotoBlock } from './blocks/PhotoBlock'
+import { GalleryBlock } from './blocks/GalleryBlock'
 
 export function chapterLabel(index: number, title: string): string {
   const words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
@@ -17,6 +19,10 @@ function renderBlock(block: Block, label: string) {
   switch (block.kind) {
     case 'text':
       return <TextBlock key={block.id} block={block} chapterLabel={label} />
+    case 'photo':
+      return <PhotoBlock key={block.id} block={block} chapterLabel={label} />
+    case 'gallery':
+      return <GalleryBlock key={block.id} block={block} />
     default:
       return null
   }
