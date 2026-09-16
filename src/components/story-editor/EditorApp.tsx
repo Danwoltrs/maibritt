@@ -8,6 +8,7 @@ import { TextEditor } from './TextEditor'
 import { OpeningEditor } from './OpeningEditor'
 import { NameChapter } from './NameChapter'
 import { PhotosFlow } from './PhotosFlow'
+import { RecordFlow } from './RecordFlow'
 
 export function EditorApp() {
   const load = useEditorStore((s) => s.load)
@@ -39,6 +40,8 @@ export function EditorApp() {
       return <TextEditor screen={screen} onBack={back} />
     case 'photos':
       return <PhotosFlow screen={screen} onBack={back} />
+    case 'record':
+      return <RecordFlow screen={screen} onBack={back} />
     default:
       return null
   }
