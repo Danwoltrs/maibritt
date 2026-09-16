@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
-import type { Block, StoryDocument } from '@/lib/story/types'
+import type { Block, StoryDocument, WordKey } from '@/lib/story/types'
+import { chapterLabel, voiceLabel, wordsFor } from '@/lib/story/words'
 import { SoundProvider, useSound } from './SoundProvider'
 import { StoryChrome } from './StoryChrome'
 import { Opening } from './Opening'
@@ -12,18 +13,9 @@ import { AudioBlock } from './blocks/AudioBlock'
 import { SlideshowBlock } from './blocks/SlideshowBlock'
 import { VideoBlock } from './blocks/VideoBlock'
 
-export function chapterLabel(index: number, title: string): string {
-  const words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
-  const n = words[index] ?? String(index + 1)
-  return title ? `Chapter ${n} · ${title}` : `Chapter ${n}`
-}
+type Words = Record<WordKey, string>
 
-export function voiceLabel(name: string): string {
-  const first = name.trim().split(/\s+/)[0]
-  return first ? `${first}, in her own voice` : 'In her own voice'
-}
-
-function renderBlock(block: Block, label: string, voice: string) {
+function renderBlock(block: Block, label: string, voice: string, words: Words) {
   switch (block.kind) {
     case 'text':
       return <TextBlock key={block.id} block={block} chapterLabel={label} />
@@ -32,7 +24,7 @@ function renderBlock(block: Block, label: string, voice: string) {
     case 'gallery':
       return <GalleryBlock key={block.id} block={block} />
     case 'audio':
-      return <AudioBlock key={block.id} block={block} voiceLabel={voice} />
+      return <AudioBlock key={block.id} block={block} voiceLabel={voice} ownWords={words.ownWords} readAlong={words.readAlong} />
     case 'slideshow':
       return <SlideshowBlock key={block.id} block={block} chapterLabel={label} voiceLabel={voice} />
     case 'video':
@@ -45,7 +37,8 @@ function renderBlock(block: Block, label: string, voice: string) {
 function StoryBody({ document, preview }: { document: StoryDocument; preview: boolean }) {
   const { begin } = useSound()
   const firstChapter = useRef<HTMLDivElement>(null)
-  const voice = voiceLabel(document.opening.name)
+  const words = wordsFor(document.look)
+  const voice = voiceLabel(document.opening.name, words.voiceLabel)
 
   const onBegin = useCallback(() => {
     begin()
@@ -54,11 +47,11 @@ function StoryBody({ document, preview }: { document: StoryDocument; preview: bo
 
   return (
     <div className="story-theme">
-      <StoryChrome onDark={false} preview={preview} />
-      <Opening opening={document.opening} onBegin={onBegin} />
+      <StoryChrome onDark={false} preview={preview} soundOn={words.soundOn} soundOff={words.soundOff} />
+      <Opening opening={document.opening} words={words} onBegin={onBegin} />
       {document.chapters.map((chapter, i) => (
         <div key={chapter.id} ref={i === 0 ? firstChapter : undefined}>
-          {chapter.blocks.map((block) => renderBlock(block, chapterLabel(i, chapter.title), voice))}
+          {chapter.blocks.map((block) => renderBlock(block, chapterLabel(i, chapter.title, words.chapterWord), voice, words))}
         </div>
       ))}
     </div>

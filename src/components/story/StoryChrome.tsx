@@ -22,10 +22,10 @@ function SpeakerIcon({ off }: { off: boolean }) {
   )
 }
 
-export function StoryChrome({ onDark, preview = false }: { onDark: boolean; preview?: boolean }) {
+export function StoryChrome({ onDark, preview = false, soundOn, soundOff }: { onDark: boolean; preview?: boolean; soundOn: string; soundOff: string }) {
   const { scrollYProgress } = useScroll()
   const { muted, toggleMuted, begun } = useSound()
-  const label = begun ? (muted ? 'Sound off' : 'Sound on') : 'Sound off'
+  const label = begun ? (muted ? soundOff : soundOn) : soundOff
 
   return (
     <>

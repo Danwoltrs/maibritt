@@ -1,9 +1,9 @@
 'use client'
 
 import { motion, useReducedMotion } from 'framer-motion'
-import type { StoryOpening } from '@/lib/story/types'
+import type { StoryOpening, WordKey } from '@/lib/story/types'
 
-export function Opening({ opening, onBegin }: { opening: StoryOpening; onBegin: () => void }) {
+export function Opening({ opening, words, onBegin }: { opening: StoryOpening; words: Record<WordKey, string>; onBegin: () => void }) {
   const reduce = useReducedMotion()
   const rise = (delay: number) => ({
     initial: reduce ? { opacity: 0 } : { opacity: 0, y: 16 },
@@ -26,9 +26,11 @@ export function Opening({ opening, onBegin }: { opening: StoryOpening; onBegin: 
           </motion.div>
         )}
         <motion.div {...rise(0.35)} className="flex flex-col items-center gap-4">
-          <span className="text-[12px] uppercase tracking-[0.22em] md:text-[14px]" style={{ color: 'rgba(251,249,245,0.78)' }}>
-            The life story of
-          </span>
+          {words.eyebrow && (
+            <span className="text-[12px] uppercase tracking-[0.22em] md:text-[14px]" style={{ color: 'rgba(251,249,245,0.78)' }}>
+              {words.eyebrow}
+            </span>
+          )}
           <h1 className="story-serif m-0 text-[54px] font-medium leading-none md:text-[104px]" style={{ color: 'var(--white)', letterSpacing: '-0.01em' }}>
             {opening.name}
           </h1>
@@ -45,11 +47,13 @@ export function Opening({ opening, onBegin }: { opening: StoryOpening; onBegin: 
             className="flex h-[60px] items-center justify-center rounded-full px-9 text-[19px] font-semibold md:h-16 md:px-11 md:text-[21px]"
             style={{ background: 'var(--accent)', color: 'var(--white)' }}
           >
-            Begin the story
+            {words.begin}
           </button>
-          <span className="text-[14px] md:text-[15px]" style={{ color: 'rgba(251,249,245,0.7)' }}>
-            This story is told with sound
-          </span>
+          {words.soundNote && (
+            <span className="text-[14px] md:text-[15px]" style={{ color: 'rgba(251,249,245,0.7)' }}>
+              {words.soundNote}
+            </span>
+          )}
         </motion.div>
       </div>
     </section>

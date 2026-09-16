@@ -5,6 +5,7 @@ import { Story } from '@/components/story/Story'
 import { NotReady } from '@/components/story/NotReady'
 import type { StoryDocument } from '@/lib/story/types'
 import { normalizeDocument } from '@/lib/story/document'
+import { wordsFor } from '@/lib/story/words'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function StoryPage() {
   const doc = await loadPublished()
-  if (!doc || !doc.opening.name || doc.chapters.length === 0) return <NotReady />
+  if (!doc || !doc.opening.name || doc.chapters.length === 0) return <NotReady text={doc ? wordsFor(doc.look).notReady : undefined} />
   return <Story document={doc} />
 }
