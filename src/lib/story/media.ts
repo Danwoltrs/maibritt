@@ -40,12 +40,19 @@ export async function captureVideoPoster(file: File): Promise<{ poster: Blob | n
   video.playsInline = true
   video.preload = 'auto'
   try {
-    await new Promise<void>((resolve, reject) => {
-      video.onloadedmetadata = () => resolve()
-      video.onerror = () => reject(new Error('Could not read this video'))
-      video.src = url
-    })
-    const durationSec = Number.isFinite(video.duration) ? video.duration : 0
+    let durationSec = 0
+    try {
+      await new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => resolve()
+        video.onerror = () => reject(new Error('Could not read this video'))
+        video.src = url
+      })
+      durationSec = Number.isFinite(video.duration) ? video.duration : 0
+    } catch {
+      // Corrupt/unsupported video on this device — a poster isn't essential,
+      // don't let it fail the (already-uploaded) video.
+      return { poster: null, durationSec: 0 }
+    }
     try {
       await new Promise<void>((resolve, reject) => {
         video.onseeked = () => resolve()

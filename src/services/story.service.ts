@@ -116,8 +116,19 @@ export class StoryService {
     })
 
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(objectName)
-    const { poster, durationSec } = await captureVideoPoster(file)
-    const posterRef = poster ? await this.uploadPosterBlob(poster) : null
+
+    // The video is already durably stored at this point — a poster is a nice
+    // extra, not a reason to report the whole upload as failed.
+    let durationSec = 0
+    let posterRef: ImageRef | null = null
+    try {
+      const captured = await captureVideoPoster(file)
+      durationSec = captured.durationSec
+      if (captured.poster) posterRef = await this.uploadPosterBlob(captured.poster)
+    } catch {
+      // Leave durationSec/posterRef at their defaults.
+    }
+
     return { url: data.publicUrl, durationSec: Math.round(durationSec), poster: posterRef }
   }
 }
