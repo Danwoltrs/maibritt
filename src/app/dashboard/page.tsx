@@ -43,7 +43,12 @@ const quickActions = [
     title: 'New Journal Entry',
     description: 'Document your creative process',
     href: '/journal/manage/new',
-  }
+  },
+  {
+    title: 'Life Story',
+    description: 'Write or edit her story',
+    href: '/story/edit',
+  },
 ]
 
 function formatBRL(value: number): string {

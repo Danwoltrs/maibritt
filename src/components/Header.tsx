@@ -40,6 +40,7 @@ export default function Header() {
     { name: 'Portfolio', href: '/#hero', namePt: 'Portfolio' },
     { name: 'Exhibitions', href: '/#exhibitions', namePt: 'Exposicoes' },
     { name: 'About', href: '/#statement', namePt: 'Sobre' },
+    { name: 'Story', href: '/story', namePt: 'História' },
     { name: 'Available Works', href: '/#availability', namePt: 'Trabalhos Disponíveis' },
     { name: 'Contact', href: '/#blog', namePt: 'Contato' },
   ]

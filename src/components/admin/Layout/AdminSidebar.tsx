@@ -13,6 +13,7 @@ import {
   MapPin,
   BarChart3,
   PenTool,
+  BookOpen,
   LogOut,
   ChevronRight,
   ChevronDown,
@@ -102,6 +103,12 @@ const navigationItems = [
     href: '/journal/manage',
     icon: PenTool,
     description: 'Entries & blog',
+  },
+  {
+    name: 'Life Story',
+    href: '/story/edit',
+    icon: BookOpen,
+    description: 'Her story, in her words',
   },
 ]
 
