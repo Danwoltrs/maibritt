@@ -22,7 +22,7 @@ function SpeakerIcon({ off }: { off: boolean }) {
   )
 }
 
-export function StoryChrome({ onDark }: { onDark: boolean }) {
+export function StoryChrome({ onDark, preview = false }: { onDark: boolean; preview?: boolean }) {
   const { scrollYProgress } = useScroll()
   const { muted, toggleMuted, begun } = useSound()
   const label = begun ? (muted ? 'Sound off' : 'Sound on') : 'Sound off'
@@ -36,7 +36,7 @@ export function StoryChrome({ onDark }: { onDark: boolean }) {
         type="button"
         onClick={toggleMuted}
         aria-label={label}
-        className="fixed z-50 flex items-center gap-3 top-6 right-5 md:top-7 md:right-8"
+        className={`fixed z-50 flex items-center gap-3 right-5 md:right-8 ${preview ? 'top-[96px] md:top-[100px]' : 'top-6 md:top-7'}`}
       >
         <span className="hidden md:inline text-[13px] tracking-[0.14em] uppercase" style={{ color: onDark ? 'rgba(251,249,245,0.78)' : 'var(--ink-2)' }}>
           {label}

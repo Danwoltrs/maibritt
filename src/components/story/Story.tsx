@@ -42,7 +42,7 @@ function renderBlock(block: Block, label: string, voice: string) {
   }
 }
 
-function StoryBody({ document }: { document: StoryDocument }) {
+function StoryBody({ document, preview }: { document: StoryDocument; preview: boolean }) {
   const { begin } = useSound()
   const firstChapter = useRef<HTMLDivElement>(null)
   const voice = voiceLabel(document.opening.name)
@@ -54,7 +54,7 @@ function StoryBody({ document }: { document: StoryDocument }) {
 
   return (
     <div className="story-theme">
-      <StoryChrome onDark={false} />
+      <StoryChrome onDark={false} preview={preview} />
       <Opening opening={document.opening} onBegin={onBegin} />
       {document.chapters.map((chapter, i) => (
         <div key={chapter.id} ref={i === 0 ? firstChapter : undefined}>
@@ -76,7 +76,7 @@ export function Story({ document, preview = false }: { document: StoryDocument; 
           </a>
         </div>
       )}
-      <StoryBody document={document} />
+      <StoryBody document={document} preview={preview} />
     </SoundProvider>
   )
 }
