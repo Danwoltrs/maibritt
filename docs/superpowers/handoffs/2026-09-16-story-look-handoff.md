@@ -2,7 +2,9 @@
 
 Supersedes [`2026-09-15-life-story-handoff.md`](2026-09-15-life-story-handoff.md) for what happens next; that file still holds the original build's commit table, gotchas and manual pass, all of which remain true.
 
-**Resume point:** MERGED fast-forward into `main` and pushed on 2026-09-17 (`origin/main` = `72e1f86`; pushing `main` deploys to Vercel Production). `feat/story-look` deleted. The stored draft is still version 1 with her name and no chapters, nothing published; the normaliser upgrades it on first load. Next: Daniel runs the device pass below on the live site (iPad finger drag on `/story/edit` → Move things around, iPhone Safari on `/story` after she publishes). Then Mai-Britt writes.
+**Resume point:** MERGED into `main` and pushed on 2026-09-17 (`origin/main` = `a10f24e`; pushing `main` deploys to Vercel Production). `feat/story-look` deleted. The stored draft is still version 1 with her name and no chapters, nothing published; the normaliser upgrades it on first load. Next: Daniel runs the device pass below on the live site (iPad finger drag on `/story/edit` → Move things around, iPhone Safari on `/story` after she publishes). Then Mai-Britt writes.
+
+**First Vercel build failed and was fixed.** The review-fix commit `0d2aa6a` was staged with `git add -A src`, which swept in the two deliberately untracked local files `src/app/(admin)/exhibitions/page.tsx` and `src/lib/migrations/add_exhibitions_visibility.sql`. The exhibitions page then clashed with the tracked `/exhibitions` route and Production failed to compile. `a10f24e` untracks both (they stay on disk untouched) and a clean-worktree build of that commit succeeds.
 
 ## Browser smoke test done (headless Chrome, 2026-09-16)
 Run against a temporary uncommitted harness route that rendered `EditorApp` without the auth guard (saves fail unauthenticated, so nothing was written) and a synthetic arranged document through `<Story>`. Deleted afterwards. Verified:
@@ -79,5 +81,5 @@ Left as-is, knowingly: `useIsPhone` starts `false`, so an arranged section may f
 - `themeVars` returns the historical map for the exact default palette; if you retune a default colour, update `HISTORICAL_VARS`, `story.css` and the test together.
 - The Arrange canvas assumes a 1280 × 800 screen; the page grid uses `100svh`. Rows match at that height and grow with content elsewhere.
 - Colour inputs commit on blur, not on change (Chrome fires `change` per tick). The preview follows `onPreview`.
-- Never run SQL against the project. Never touch the untracked exhibitions page. Pushing `main` deploys to Production.
+- Never run SQL against the project. Never touch the untracked exhibitions page, and **never stage with `git add -A`/`git add src` in this repo** — several deliberately untracked files live under `src/`, and committing the exhibitions page breaks the Production build. Stage named paths only. Pushing `main` deploys to Production.
 - The local anon key is valid again as of 2026-09-16; the `next build` clash with the untracked exhibitions page is still there (build in a worktree, as Task 12 of the plan does).
