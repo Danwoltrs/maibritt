@@ -2,7 +2,7 @@
 
 Supersedes [`2026-09-15-life-story-handoff.md`](2026-09-15-life-story-handoff.md) for what happens next; that file still holds the original build's commit table, gotchas and manual pass, all of which remain true.
 
-**Resume point:** The feature is BUILT, REVIEWED and BROWSER-SMOKE-TESTED on branch `feat/story-look` (15 commits on top of `main` = `88754a9`), typecheck clean, 262 tests green, `next build` succeeds in a clean worktree. It is NOT merged and NOT pushed. Daniel fixed the local Supabase anon key on 2026-09-16 (the dev server now reads the story row; the stored draft is version 1 with her name and no chapters, nothing published). Next: (1) Daniel runs the device pass below (iPad finger drag, iPhone Safari), (2) merges `feat/story-look` into `main` and pushes (pushing `main` deploys to Vercel Production). For a Vercel preview to test on the iPad first, push the branch as-is: `git push -u origin feat/story-look`.
+**Resume point:** MERGED fast-forward into `main` and pushed on 2026-09-17 (`origin/main` = `72e1f86`; pushing `main` deploys to Vercel Production). `feat/story-look` deleted. The stored draft is still version 1 with her name and no chapters, nothing published; the normaliser upgrades it on first load. Next: Daniel runs the device pass below on the live site (iPad finger drag on `/story/edit` → Move things around, iPhone Safari on `/story` after she publishes). Then Mai-Britt writes.
 
 ## Browser smoke test done (headless Chrome, 2026-09-16)
 Run against a temporary uncommitted harness route that rendered `EditorApp` without the auth guard (saves fail unauthenticated, so nothing was written) and a synthetic arranged document through `<Story>`. Deleted afterwards. Verified:
@@ -19,7 +19,7 @@ Mai-Britt can now choose every word the page used to hardcode ("The life story o
 - **Plan (12 tasks, all executed):** [`../plans/2026-09-16-story-look-and-arrange.md`](../plans/2026-09-16-story-look-and-arrange.md)
 
 ## Repo state right now
-- **Branch:** `feat/story-look`; tip = the last `fix(story-editor): grid-lines layer…` commit after `928c2ec` (handoff). `main` is still `88754a9` = `origin/main`. Nothing on this branch is pushed.
+- **Branch:** everything is on `main` = `origin/main` = `72e1f86` (16 commits since `88754a9`), pushed 2026-09-17; `feat/story-look` deleted.
 - **Verification on the tip:** `npx vitest run` → 262 pass (baseline 226). `npm run typecheck` → only the 8 pre-existing errors in the untracked `src/app/(admin)/exhibitions/page.tsx`. `npx next build` in a clean worktree with placeholder env → success; the only warning is the pre-existing Supabase realtime/Edge one.
 - **New dependency:** `@dnd-kit/modifiers@^9` (committed in `package.json` / lock).
 - **No SQL, no migration.** The document version moved to 2 inside the existing jsonb; `normalizeDocument` upgrades on read.
