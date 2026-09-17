@@ -2,7 +2,15 @@
 
 Supersedes [`2026-09-15-life-story-handoff.md`](2026-09-15-life-story-handoff.md) for what happens next; that file still holds the original build's commit table, gotchas and manual pass, all of which remain true.
 
-**Resume point:** The feature is BUILT and REVIEWED on branch `feat/story-look` (13 commits on top of `main` = `88754a9`), typecheck clean, 262 tests green, `next build` succeeds in a clean worktree. It is NOT merged and NOT pushed. Daniel must: (1) fix the local Supabase anon key (still invalid — every local page logs `Invalid API key`), (2) run the manual pass below on desktop, iPad and iPhone, (3) merge `feat/story-look` into `main` and push (pushing `main` deploys to Vercel Production). If he wants a Vercel preview to test on the iPad first, push the branch as-is: `git push -u origin feat/story-look`.
+**Resume point:** The feature is BUILT, REVIEWED and BROWSER-SMOKE-TESTED on branch `feat/story-look` (15 commits on top of `main` = `88754a9`), typecheck clean, 262 tests green, `next build` succeeds in a clean worktree. It is NOT merged and NOT pushed. Daniel fixed the local Supabase anon key on 2026-09-16 (the dev server now reads the story row; the stored draft is version 1 with her name and no chapters, nothing published). Next: (1) Daniel runs the device pass below (iPad finger drag, iPhone Safari), (2) merges `feat/story-look` into `main` and pushes (pushing `main` deploys to Vercel Production). For a Vercel preview to test on the iPad first, push the branch as-is: `git push -u origin feat/story-look`.
+
+## Browser smoke test done (headless Chrome, 2026-09-16)
+Run against a temporary uncommitted harness route that rendered `EditorApp` without the auth guard (saves fail unauthenticated, so nothing was written) and a synthetic arranged document through `<Story>`. Deleted afterwards. Verified:
+- Look screen: all sixteen font cards compute to their real families (the portal fix works); choosing Caveat and the Night palette updates the live preview (`--paper` = `#171a1f`, h1 in Caveat); the chapter-word field commits on Enter.
+- Arrange screen (opening): real content on the grid with labels and corner handles; mouse drag moves the name tile and snaps; corner handle resizes; ArrowRight nudges; the phone-order strip updates; "Put it back as it was" restores the default tiles; Done stores the layout and the overview card shows "Arranged by you".
+- Public renderer with stored layouts: desktop shows 12-column grids (name centred, heading right-aligned when moved into the right third), Night palette and Caveat applied, chapter label shows only the title with numbering off, "Começar" on the button; at 390 px every arranged section stacks in reading order, no horizontal scroll; the block without a layout renders its original markup.
+- No console errors other than the expected "Get current user" from the unauthenticated harness.
+Not covered: finger drag on a real iPad, iPhone Safari, the publish flow, Undo after Look changes (needs an authenticated save).
 
 ## What this branch adds (one paragraph)
 Mai-Britt can now choose every word the page used to hardcode ("The life story of", "Begin the story", the word "Chapter", "in her own voice", "Sound on/off", "Read along", the not-ready line), pick a heading font and a reading font from a curated menu of sixteen, set five colour roles (page, text, accent, button text, backdrop) with six ready-made palettes and a gentle readability note, and drag the pieces of the opening and of every block (except galleries) on a 12 × 8 grid with snap, resize, arrow keys and a phone-order strip. Everything goes through the existing autosave, Undo and Publish. Old documents render pixel-identically until she changes something.
@@ -11,7 +19,7 @@ Mai-Britt can now choose every word the page used to hardcode ("The life story o
 - **Plan (12 tasks, all executed):** [`../plans/2026-09-16-story-look-and-arrange.md`](../plans/2026-09-16-story-look-and-arrange.md)
 
 ## Repo state right now
-- **Branch:** `feat/story-look`, tip `0d2aa6a` (plus this handoff commit). `main` is still `88754a9` = `origin/main`. Nothing on this branch is pushed.
+- **Branch:** `feat/story-look`; tip = the last `fix(story-editor): grid-lines layer…` commit after `928c2ec` (handoff). `main` is still `88754a9` = `origin/main`. Nothing on this branch is pushed.
 - **Verification on the tip:** `npx vitest run` → 262 pass (baseline 226). `npm run typecheck` → only the 8 pre-existing errors in the untracked `src/app/(admin)/exhibitions/page.tsx`. `npx next build` in a clean worktree with placeholder env → success; the only warning is the pre-existing Supabase realtime/Edge one.
 - **New dependency:** `@dnd-kit/modifiers@^9` (committed in `package.json` / lock).
 - **No SQL, no migration.** The document version moved to 2 inside the existing jsonb; `normalizeDocument` upgrades on read.
@@ -51,7 +59,7 @@ Left as-is, knowingly: `useIsPhone` starts `false`, so an arranged section may f
 5. No layout stored ⇒ the block renders its original hand-tuned markup. `Done` on the Arrange screen always stores a layout (the default one if she changed nothing); "Put it back as it was" + Done removes it.
 6. The editor's own chrome is never wrapped in `StoryTheme`; only the story, preview, Look preview and Arrange canvas are.
 
-## Manual pass — to do (from the spec's Testing section)
+## Device pass — to do (from the spec's Testing section; desktop Chrome already covered above)
 1. Look: pick Playfair for headings and Caveat for reading, the Night palette, then change Accent by hand and click away. Preview follows each tap. Back → Preview my story matches. Undo three times steps the look back. Reload keeps it.
 2. Words: chapter word blank; "Begin the story" in Portuguese. Preview shows titles without numbers and her phrase. "Use the original" restores one.
 3. Arrange the opening on an iPad with a finger: drag the name top-left, widen it, move the button under it, Done. Preview on the iPad matches; on an iPhone the pieces stack in the order the strip showed. "Put it back as it was" + Done restores the design and the card loses "Arranged by you".
@@ -72,3 +80,4 @@ Left as-is, knowingly: `useIsPhone` starts `false`, so an arranged section may f
 - The Arrange canvas assumes a 1280 × 800 screen; the page grid uses `100svh`. Rows match at that height and grow with content elsewhere.
 - Colour inputs commit on blur, not on change (Chrome fires `change` per tick). The preview follows `onPreview`.
 - Never run SQL against the project. Never touch the untracked exhibitions page. Pushing `main` deploys to Production.
+- The local anon key is valid again as of 2026-09-16; the `next build` clash with the untracked exhibitions page is still there (build in a worktree, as Task 12 of the plan does).
