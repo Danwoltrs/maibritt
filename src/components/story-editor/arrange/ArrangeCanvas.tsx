@@ -162,7 +162,7 @@ export function ArrangeCanvas({ look, layout, tiles, backdrop, selected, onSelec
               // eslint-disable-next-line @next/next/no-img-element
               <img src={backdrop.image} alt="" className="story-photo absolute inset-0 h-full w-full object-cover" style={{ opacity: 0.55 }} />
             )}
-            <div className="absolute" style={{ left: padX, top: padY, right: padX, bottom: padY, background: gridLines, backgroundRepeat: 'repeat' }} aria-hidden="true" />
+            <div className="absolute" style={{ left: padX, top: padY, right: padX, bottom: padY, background: gridLines }} aria-hidden="true" />
             <div className="absolute inset-0" onPointerDown={() => onSelect(null)} aria-hidden="true" />
             <DndContext sensors={sensors} modifiers={[snap, restrictToParentElement]} onDragEnd={onDragEnd}>
               {Object.entries(layout.tiles).map(([key, rect]) =>
