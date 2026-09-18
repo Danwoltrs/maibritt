@@ -90,3 +90,45 @@
 }
 .se-field:focus { outline: none; border-color: var(--accent); }
 .se-field-big { font-size: 40px; line-height: 1.15; padding: 22px 24px; }
+
+/* Text sizes live here rather than in Tailwind classes so one piece of a
+   section can be scaled by setting --piece-scale on its tile. Bases match the
+   sizes the story shipped with, exactly. */
+.piece {
+  font-size: calc(var(--piece-base) * var(--piece-scale, 1));
+}
+.piece-name { --piece-base: 54px; }
+.piece-title { --piece-base: 24px; }
+.piece-eyebrow { --piece-base: 12px; }
+.piece-begin { --piece-base: 19px; }
+.piece-sound-note { --piece-base: 14px; }
+.piece-label-dark { --piece-base: 12px; }
+.piece-label { --piece-base: 13px; }
+.piece-heading { --piece-base: 44px; }
+.piece-body { --piece-base: 19px; }
+.piece-caption { --piece-base: 24px; }
+.piece-caption-video { --piece-base: 22px; }
+.piece-caption-small { --piece-base: 22px; }
+.piece-voice-heading { --piece-base: 40px; }
+.piece-voice-line { --piece-base: 13px; }
+.piece-read-along { --piece-base: 12px; }
+.piece-transcript { --piece-base: 20px; }
+
+@media (min-width: 768px) {
+  .piece-name { --piece-base: 104px; }
+  .piece-title { --piece-base: 36px; }
+  .piece-eyebrow { --piece-base: 14px; }
+  .piece-begin { --piece-base: 21px; }
+  .piece-sound-note { --piece-base: 15px; }
+  .piece-label-dark { --piece-base: 13px; }
+  .piece-label { --piece-base: 14px; }
+  .piece-heading { --piece-base: 76px; }
+  .piece-body { --piece-base: 21px; }
+  .piece-caption { --piece-base: 34px; }
+  .piece-caption-video { --piece-base: 30px; }
+  .piece-caption-small { --piece-base: 26px; }
+  .piece-voice-heading { --piece-base: 56px; }
+  .piece-voice-line { --piece-base: 14px; }
+  .piece-read-along { --piece-base: 13px; }
+  .piece-transcript { --piece-base: 25px; }
+}

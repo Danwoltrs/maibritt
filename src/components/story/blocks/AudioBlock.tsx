@@ -8,20 +8,20 @@ import { Arranged } from '../Arranged'
 
 export function SmallLine({ text }: { text: string }) {
   if (!text) return null
-  return <span className="block text-[13px] uppercase tracking-[0.2em] md:text-[14px]" style={{ color: 'var(--accent)' }}>{text}</span>
+  return <span className="piece piece-voice-line block uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>{text}</span>
 }
 
 export function VoiceHeading({ text }: { text: string }) {
   if (!text) return null
-  return <h3 className="story-serif m-0 text-[40px] font-medium leading-[1.05] md:text-[56px]" style={{ color: 'var(--ink)' }}>{text}</h3>
+  return <h3 className="piece piece-voice-heading story-serif m-0 font-medium leading-[1.05]" style={{ color: 'var(--ink)' }}>{text}</h3>
 }
 
 export function Transcript({ text, readAlong }: { text: string; readAlong: string }) {
   if (!text) return null
   return (
     <div className="flex flex-col gap-3 border-t pt-6" style={{ borderColor: 'var(--line)' }}>
-      {readAlong && <span className="text-[12px] uppercase tracking-[0.14em] md:text-[13px]" style={{ color: 'var(--ink-3)' }}>{readAlong}</span>}
-      <p className="story-serif m-0 whitespace-pre-line text-[20px] italic leading-[1.45] md:text-[25px]" style={{ color: 'var(--ink)' }}>{text}</p>
+      {readAlong && <span className="piece piece-read-along uppercase tracking-[0.14em]" style={{ color: 'var(--ink-3)' }}>{readAlong}</span>}
+      <p className="piece piece-transcript story-serif m-0 whitespace-pre-line italic leading-[1.45]" style={{ color: 'var(--ink)' }}>{text}</p>
     </div>
   )
 }

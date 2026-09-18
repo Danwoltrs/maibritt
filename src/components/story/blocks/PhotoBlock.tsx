@@ -6,12 +6,12 @@ import type { PhotoBlock as PhotoBlockType } from '@/lib/story/types'
 import { Arranged } from '../Arranged'
 import { ChapterLabel } from './TextBlock'
 
-const CAPTION_SIZE = { large: 'text-[24px] md:text-[34px]', video: 'text-[22px] md:text-[30px]', small: 'text-[22px] md:text-[26px]' }
+const CAPTION_SIZE = { large: 'piece-caption', video: 'piece-caption-video', small: 'piece-caption-small' }
 
 export function DarkCaption({ text, size = 'large' }: { text: string; size?: keyof typeof CAPTION_SIZE }) {
   if (!text) return null
   const cls = CAPTION_SIZE[size]
-  return <p className={`story-serif m-0 italic leading-tight ${cls}`} style={{ color: 'var(--on-backdrop)' }}>{text}</p>
+  return <p className={`piece ${cls} story-serif m-0 italic leading-tight`} style={{ color: 'var(--on-backdrop)' }}>{text}</p>
 }
 
 export function photoTiles(block: PhotoBlockType, chapterLabel: string): Record<string, ReactNode> {

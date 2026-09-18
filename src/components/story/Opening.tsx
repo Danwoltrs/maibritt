@@ -24,25 +24,25 @@ export function Portrait({ opening }: { opening: StoryOpening }) {
 
 export function Eyebrow({ text }: { text: string }) {
   if (!text) return null
-  return <span className="block text-[12px] uppercase tracking-[0.22em] md:text-[14px]" style={{ color: 'rgba(251,249,245,0.78)' }}>{text}</span>
+  return <span className="piece piece-eyebrow block uppercase tracking-[0.22em]" style={{ color: 'rgba(251,249,245,0.78)' }}>{text}</span>
 }
 
 export function Name({ text }: { text: string }) {
-  return <h1 className="story-serif m-0 text-[54px] font-medium leading-none md:text-[104px]" style={{ color: 'var(--on-backdrop)', letterSpacing: '-0.01em' }}>{text}</h1>
+  return <h1 className="piece piece-name story-serif m-0 font-medium leading-none" style={{ color: 'var(--on-backdrop)', letterSpacing: '-0.01em' }}>{text}</h1>
 }
 
 export function Title({ text }: { text: string }) {
   if (!text) return null
-  return <p className="story-serif m-0 text-[24px] italic leading-tight md:text-[36px]" style={{ color: 'rgba(251,249,245,0.9)' }}>{text}</p>
+  return <p className="piece piece-title story-serif m-0 italic leading-tight" style={{ color: 'rgba(251,249,245,0.9)' }}>{text}</p>
 }
 
 export function Begin({ words, onBegin }: { words: Words; onBegin: () => void }) {
   return (
     <div className="flex flex-col items-center gap-4">
-      <button type="button" onClick={onBegin} className="flex h-[60px] items-center justify-center rounded-full px-9 text-[19px] font-semibold md:h-16 md:px-11 md:text-[21px]" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>
+      <button type="button" onClick={onBegin} className="piece piece-begin flex h-[60px] items-center justify-center rounded-full px-9 font-semibold md:h-16 md:px-11" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>
         {words.begin}
       </button>
-      {words.soundNote && <span className="text-[14px] md:text-[15px]" style={{ color: 'rgba(251,249,245,0.7)' }}>{words.soundNote}</span>}
+      {words.soundNote && <span className="piece piece-sound-note" style={{ color: 'rgba(251,249,245,0.7)' }}>{words.soundNote}</span>}
     </div>
   )
 }
