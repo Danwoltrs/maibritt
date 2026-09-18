@@ -46,6 +46,7 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
   const [editing, setEditing] = useState<string | null>(null)
   const [grid, setGrid] = useState(true)
   const surface = useRef<HTMLDivElement>(null)
+  const tileEl = (key: string): HTMLElement | null => surface.current?.querySelector<HTMLElement>(`[data-tile="${key}"]`) ?? null
   const shown = layout ?? (kind ? defaultLayout(kind) : null)
   const { rects, geometry } = useTileRects(surface, shown)
 
@@ -111,7 +112,7 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
 
               {grid && (
                 <div
-                  className="pointer-events-none absolute"
+                  className="pointer-events-none absolute z-[45]"
                   style={{
                     left: geometry.padX,
                     top: geometry.padY,
@@ -142,8 +143,9 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
                 ) : null
               )}
 
-              {editing && editable && rects[editing] && (
+              {editing && editable && rects[editing] && tileEl(editing) && (
                 <TextEditing
+                  tile={tileEl(editing)!}
                   rect={rects[editing]}
                   html={editable.html}
                   marks={editable.marks}

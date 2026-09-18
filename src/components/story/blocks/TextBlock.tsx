@@ -24,18 +24,18 @@ function Reveal({ delay = 0, children }: { delay?: number; children: ReactNode }
 
 export function ChapterLabel({ text, onDark = false }: { text: string; onDark?: boolean }) {
   if (!text) return null
-  if (onDark) return <span className="piece piece-label-dark block uppercase tracking-[0.16em]" style={{ color: 'rgba(251,249,245,0.72)' }}>{text}</span>
+  if (onDark) return <span className="piece piece-label-dark block uppercase tracking-[0.16em]" style={{ color: 'var(--piece-color, rgba(251,249,245,0.72))' }}>{text}</span>
   return (
     <span className="inline-flex items-center gap-4">
       <span className="h-px w-10" style={{ background: 'var(--accent)' }} />
-      <span className="piece piece-label uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>{text}</span>
+      <span className="piece piece-label uppercase tracking-[0.2em]" style={{ color: 'var(--piece-color, var(--accent))' }}>{text}</span>
     </span>
   )
 }
 
 export function Heading({ text }: { text: string }) {
   if (!text) return null
-  return <h2 className="piece piece-heading story-serif m-0 font-medium leading-[1.02]" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>{text}</h2>
+  return <h2 className="piece piece-heading story-serif m-0 font-medium leading-[1.02]" style={{ color: 'var(--piece-color, var(--ink))', letterSpacing: '-0.01em' }}>{text}</h2>
 }
 
 function Marked({ run }: { run: RichText[number]['runs'][number] }) {
@@ -51,7 +51,7 @@ function Marked({ run }: { run: RichText[number]['runs'][number] }) {
 export function Body({ text, rich }: { text: string; rich?: RichText }) {
   const paras: RichText = rich ?? paragraphs(text).map((p) => ({ runs: [{ text: p }] }))
   return (
-    <div className="piece piece-body flex flex-col gap-5 leading-[1.65]" style={{ color: 'var(--ink)' }}>
+    <div className="piece piece-body flex flex-col gap-5 leading-[1.65]" style={{ color: 'var(--piece-color, var(--ink))' }}>
       {paras.map((p, i) => (
         <p key={i} className="m-0" style={{ textAlign: p.align, paddingLeft: p.indent ? p.indent * INDENT_STEP : undefined }}>
           {p.runs.map((run, j) => (

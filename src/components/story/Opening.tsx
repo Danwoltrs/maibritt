@@ -24,16 +24,16 @@ export function Portrait({ opening }: { opening: StoryOpening }) {
 
 export function Eyebrow({ text }: { text: string }) {
   if (!text) return null
-  return <span className="piece piece-eyebrow block uppercase tracking-[0.22em]" style={{ color: 'rgba(251,249,245,0.78)' }}>{text}</span>
+  return <span className="piece piece-eyebrow block uppercase tracking-[0.22em]" style={{ color: 'var(--piece-color, rgba(251,249,245,0.78))' }}>{text}</span>
 }
 
 export function Name({ text }: { text: string }) {
-  return <h1 className="piece piece-name story-serif m-0 font-medium leading-none" style={{ color: 'var(--on-backdrop)', letterSpacing: '-0.01em' }}>{text}</h1>
+  return <h1 className="piece piece-name story-serif m-0 font-medium leading-none" style={{ color: 'var(--piece-color, var(--on-backdrop))', letterSpacing: '-0.01em' }}>{text}</h1>
 }
 
 export function Title({ text }: { text: string }) {
   if (!text) return null
-  return <p className="piece piece-title story-serif m-0 italic leading-tight" style={{ color: 'rgba(251,249,245,0.9)' }}>{text}</p>
+  return <p className="piece piece-title story-serif m-0 italic leading-tight" style={{ color: 'var(--piece-color, rgba(251,249,245,0.9))' }}>{text}</p>
 }
 
 export function Begin({ words, onBegin }: { words: Words; onBegin: () => void }) {
@@ -42,7 +42,7 @@ export function Begin({ words, onBegin }: { words: Words; onBegin: () => void })
       <button type="button" onClick={onBegin} className="piece piece-begin flex h-[60px] items-center justify-center px-9 font-semibold md:h-16 md:px-11" style={{ background: 'var(--accent)', color: 'var(--accent-text)', borderRadius: 'var(--begin-radius, 999px)' }}>
         {words.begin}
       </button>
-      {words.soundNote && <span className="piece piece-sound-note" style={{ color: 'rgba(251,249,245,0.7)' }}>{words.soundNote}</span>}
+      {words.soundNote && <span className="piece piece-sound-note" style={{ color: 'var(--piece-color, rgba(251,249,245,0.7))' }}>{words.soundNote}</span>}
     </div>
   )
 }

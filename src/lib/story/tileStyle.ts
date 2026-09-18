@@ -115,7 +115,9 @@ export function tileCss(style: TileStyle, role: TileRole): { css: CSSProperties;
     ;(css as Record<string, unknown>)['--story-heading-font'] = family
     ;(css as Record<string, unknown>)['--story-body-font'] = family
   }
-  if (style.color && role !== 'button') css.color = style.color
+  // Pieces paint themselves, so a per-piece colour arrives as the variable
+  // each of them falls back to rather than as an inherited colour.
+  if (style.color && role !== 'button') (css as Record<string, unknown>)['--piece-color'] = style.color
   if (style.align) {
     css.textAlign = style.align
     css.alignItems = ALIGN_ITEMS[style.align]

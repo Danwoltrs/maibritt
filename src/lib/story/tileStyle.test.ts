@@ -90,8 +90,8 @@ describe('tileCss', () => {
     expect(l.styles).toBeUndefined()
   })
   it('puts colour on text but not on a button', () => {
-    expect(tileCss({ color: '#abcdef' }, 'text').css.color).toBe('#abcdef')
-    expect(tileCss({ button: { background: '#abcdef' } }, 'button').css.color).toBeUndefined()
+    expect((tileCss({ color: '#abcdef' }, 'text').css as unknown as Record<string, string>)['--piece-color']).toBe('#abcdef')
+    expect((tileCss({ color: '#abcdef' }, 'button').css as unknown as Record<string, string>)['--piece-color']).toBeUndefined()
   })
 })
 

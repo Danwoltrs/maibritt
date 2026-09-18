@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { RichText } from '@/lib/story/types'
 import { richFromElement, richToHtml, setParagraphAlign, setParagraphIndent } from '@/lib/story/rich'
 import type { Rect } from './useTileRects'
@@ -8,11 +8,32 @@ import type { Rect } from './useTileRects'
 export type EditResult = { rich: RichText; plain: string }
 
 type Props = {
+  tile: HTMLElement
   rect: Rect
   html: string
   marks: boolean
   onCommit: (el: HTMLElement) => void
   onClose: () => void
+}
+
+/**
+ * Copies the look of the piece being edited onto the editable, so what she
+ * types is set in the same face, size and colour it will be published in.
+ */
+function typographyOf(tile: HTMLElement): CSSProperties {
+  const piece = tile.querySelector<HTMLElement>('.piece') ?? tile
+  const s = window.getComputedStyle(piece)
+  return {
+    fontFamily: s.fontFamily,
+    fontSize: s.fontSize,
+    fontWeight: s.fontWeight,
+    fontStyle: s.fontStyle,
+    lineHeight: s.lineHeight,
+    letterSpacing: s.letterSpacing,
+    color: s.color,
+    textTransform: s.textTransform as CSSProperties['textTransform'],
+    textAlign: window.getComputedStyle(tile).textAlign as CSSProperties['textAlign'],
+  }
 }
 
 function Key({ label, title, onClick, active = false }: { label: string; title: string; onClick: () => void; active?: boolean }) {
@@ -37,9 +58,19 @@ function Key({ label, title, onClick, active = false }: { label: string; title: 
  * supports still honours; the result is read back through richFromElement, so
  * nothing but the four tags we understand can survive.
  */
-export function TextEditing({ rect, html, marks, onCommit, onClose }: Props) {
+export function TextEditing({ tile, rect, html, marks, onCommit, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const [, force] = useState(0)
+  const typography = useMemo(() => typographyOf(tile), [tile])
+
+  // The real piece steps aside while she types, so she never sees the words twice.
+  useEffect(() => {
+    const previous = tile.style.visibility
+    tile.style.visibility = 'hidden'
+    return () => {
+      tile.style.visibility = previous
+    }
+  }, [tile])
 
   useEffect(() => {
     const el = ref.current
@@ -135,15 +166,15 @@ export function TextEditing({ rect, html, marks, onCommit, onClose }: Props) {
         suppressContentEditableWarning
         role="textbox"
         aria-multiline={marks}
-        className="absolute z-[75] outline-none"
+        className="absolute z-[75] flex flex-col justify-center outline-none"
         style={{
+          ...typography,
           left: rect.left,
           top: rect.top,
           width: rect.width,
           minHeight: rect.height,
           boxShadow: '0 0 0 2px var(--accent)',
           borderRadius: 4,
-          background: 'rgba(251,249,245,0.06)',
         }}
         onPointerDown={(e) => e.stopPropagation()}
         onKeyUp={() => force((n) => n + 1)}

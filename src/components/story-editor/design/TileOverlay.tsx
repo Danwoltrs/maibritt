@@ -76,7 +76,7 @@ export function TileOverlay({ name, rect, cell, geometry, layout, selected, edit
   return (
     <div
       className="absolute"
-      style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height, zIndex: selected ? 3 : 2 }}
+      style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height, zIndex: selected ? 52 : 50 }}
     >
       <div
         role="button"

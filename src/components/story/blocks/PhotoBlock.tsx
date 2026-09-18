@@ -11,7 +11,7 @@ const CAPTION_SIZE = { large: 'piece-caption', video: 'piece-caption-video', sma
 export function DarkCaption({ text, size = 'large' }: { text: string; size?: keyof typeof CAPTION_SIZE }) {
   if (!text) return null
   const cls = CAPTION_SIZE[size]
-  return <p className={`piece ${cls} story-serif m-0 italic leading-tight`} style={{ color: 'var(--on-backdrop)' }}>{text}</p>
+  return <p className={`piece ${cls} story-serif m-0 italic leading-tight`} style={{ color: 'var(--piece-color, var(--on-backdrop))' }}>{text}</p>
 }
 
 export function photoTiles(block: PhotoBlockType, chapterLabel: string): Record<string, ReactNode> {
