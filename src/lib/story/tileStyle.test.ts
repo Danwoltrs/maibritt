@@ -79,6 +79,16 @@ describe('tileCss', () => {
     const { css } = tileCss({ font: 'not-a-font' }, 'text') as unknown as { css: Record<string, string> }
     expect(css['--story-heading-font']).toBe('var(--font-cormorant)')
   })
+  it('repaints just this button through the accent variables', () => {
+    const { css } = tileCss({ button: { background: '#112233', label: '#ffffff', corners: 'square' } }, 'button') as unknown as { css: Record<string, string> }
+    expect(css['--accent']).toBe('#112233')
+    expect(css['--accent-text']).toBe('#ffffff')
+    expect(css['--begin-radius']).toBe('4px')
+  })
+  it('drops the default round corners rather than storing them', () => {
+    const l = setTileStyle(defaultLayout('opening'), 'begin', { button: { corners: 'round' } })
+    expect(l.styles).toBeUndefined()
+  })
   it('puts colour on text but not on a button', () => {
     expect(tileCss({ color: '#abcdef' }, 'text').css.color).toBe('#abcdef')
     expect(tileCss({ button: { background: '#abcdef' } }, 'button').css.color).toBeUndefined()

@@ -66,6 +66,7 @@ function pruned(style: TileStyle): TileStyle | null {
     const button: NonNullable<TileStyle['button']> = {}
     if (style.button.background) button.background = style.button.background
     if (style.button.label) button.label = style.button.label
+    if (style.button.corners && style.button.corners !== 'round') button.corners = style.button.corners
     if (Object.keys(button).length) out.button = button
   }
   return Object.keys(out).length ? out : null
@@ -100,6 +101,7 @@ export function clearTileStyle(layout: SectionLayout, key: string): SectionLayou
 }
 
 const ALIGN_ITEMS = { left: 'flex-start', center: 'center', right: 'flex-end' } as const
+export const BUTTON_RADIUS = { round: '999px', soft: '18px', square: '4px' } as const
 
 /** The inline styles a tile wrapper and its optional box need. */
 export function tileCss(style: TileStyle, role: TileRole): { css: CSSProperties; boxCss: CSSProperties | null } {
@@ -119,6 +121,14 @@ export function tileCss(style: TileStyle, role: TileRole): { css: CSSProperties;
     css.alignItems = ALIGN_ITEMS[style.align]
   }
   if (style.indent) css.paddingLeft = style.indent * INDENT_STEP
+
+  if (role === 'button' && style.button) {
+    // The Begin button paints itself from the story's accent, so overriding
+    // those two variables on the tile repaints just this button.
+    if (style.button.background) (css as Record<string, unknown>)['--accent'] = style.button.background
+    if (style.button.label) (css as Record<string, unknown>)['--accent-text'] = style.button.label
+    if (style.button.corners) (css as Record<string, unknown>)['--begin-radius'] = BUTTON_RADIUS[style.button.corners]
+  }
 
   const box = style.box
   if (!box) return { css, boxCss: null }

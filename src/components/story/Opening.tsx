@@ -39,7 +39,7 @@ export function Title({ text }: { text: string }) {
 export function Begin({ words, onBegin }: { words: Words; onBegin: () => void }) {
   return (
     <div className="flex flex-col items-center gap-4">
-      <button type="button" onClick={onBegin} className="piece piece-begin flex h-[60px] items-center justify-center rounded-full px-9 font-semibold md:h-16 md:px-11" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>
+      <button type="button" onClick={onBegin} className="piece piece-begin flex h-[60px] items-center justify-center px-9 font-semibold md:h-16 md:px-11" style={{ background: 'var(--accent)', color: 'var(--accent-text)', borderRadius: 'var(--begin-radius, 999px)' }}>
         {words.begin}
       </button>
       {words.soundNote && <span className="piece piece-sound-note" style={{ color: 'rgba(251,249,245,0.7)' }}>{words.soundNote}</span>}

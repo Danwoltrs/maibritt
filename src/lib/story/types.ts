@@ -30,7 +30,7 @@ export type TileStyle = {
   align?: 'left' | 'center' | 'right'
   indent?: number
   box?: { background?: string; padding?: number; radius?: number }
-  button?: { background?: string; label?: string }
+  button?: { background?: string; label?: string; corners?: 'round' | 'soft' | 'square' }
 }
 
 export type SectionLayout = {

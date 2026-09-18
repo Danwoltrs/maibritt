@@ -2,7 +2,8 @@
 
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import type { TextBlock as TextBlockType } from '@/lib/story/types'
+import type { RichText, TextBlock as TextBlockType } from '@/lib/story/types'
+import { INDENT_STEP } from '@/lib/story/rich'
 import { Arranged } from '../Arranged'
 
 export function paragraphs(body: string): string[] {
@@ -37,11 +38,26 @@ export function Heading({ text }: { text: string }) {
   return <h2 className="piece piece-heading story-serif m-0 font-medium leading-[1.02]" style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}>{text}</h2>
 }
 
-export function Body({ text }: { text: string }) {
+function Marked({ run }: { run: RichText[number]['runs'][number] }) {
+  let node: ReactNode = run.text
+  // Nested so the marks compose; the order matches richToHtml.
+  if (run.marks?.includes('underline')) node = <u>{node}</u>
+  if (run.marks?.includes('italic')) node = <em>{node}</em>
+  if (run.marks?.includes('bold')) node = <strong>{node}</strong>
+  return <>{node}</>
+}
+
+/** Rich text is rendered as React elements, never as raw html. */
+export function Body({ text, rich }: { text: string; rich?: RichText }) {
+  const paras: RichText = rich ?? paragraphs(text).map((p) => ({ runs: [{ text: p }] }))
   return (
     <div className="piece piece-body flex flex-col gap-5 leading-[1.65]" style={{ color: 'var(--ink)' }}>
-      {paragraphs(text).map((p, i) => (
-        <p key={i} className="m-0">{p}</p>
+      {paras.map((p, i) => (
+        <p key={i} className="m-0" style={{ textAlign: p.align, paddingLeft: p.indent ? p.indent * INDENT_STEP : undefined }}>
+          {p.runs.map((run, j) => (
+            <Marked key={j} run={run} />
+          ))}
+        </p>
       ))}
     </div>
   )
@@ -51,7 +67,7 @@ export function textTiles(block: TextBlockType, chapterLabel: string): Record<st
   return {
     label: chapterLabel ? <Reveal><ChapterLabel text={chapterLabel} /></Reveal> : null,
     heading: block.heading ? <Reveal><Heading text={block.heading} /></Reveal> : null,
-    body: <Reveal delay={0.3}><Body text={block.body} /></Reveal>,
+    body: <Reveal delay={0.3}><Body text={block.body} rich={block.rich} /></Reveal>,
   }
 }
 
