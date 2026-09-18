@@ -25,7 +25,13 @@ export type GridRect = { x: number; y: number; w: number; h: number }
 export type SectionLayout = { cols: 12; rows: 8; tiles: Record<string, GridRect> }
 type WithLayout = { layout?: SectionLayout }
 
-export type TextBlock = WithLayout & { id: string; kind: 'text'; heading: string; body: string }
+export type Mark = 'bold' | 'italic' | 'underline'
+export type Run = { text: string; marks?: Mark[] }
+export type Paragraph = { runs: Run[]; align?: 'left' | 'center' | 'right'; indent?: number }
+export type RichText = Paragraph[]
+
+/** `body` stays the plain-text form of the same words, kept in sync with `rich`. */
+export type TextBlock = WithLayout & { id: string; kind: 'text'; heading: string; body: string; rich?: RichText }
 export type PhotoBlock = WithLayout & { id: string; kind: 'photo'; image: ImageRef; caption: string }
 export type GalleryBlock = WithLayout & { id: string; kind: 'gallery'; images: CaptionedImage[] }
 export type SlideshowBlock = WithLayout & {
