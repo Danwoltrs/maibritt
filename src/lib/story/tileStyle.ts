@@ -106,14 +106,28 @@ export const BUTTON_RADIUS = { round: '999px', soft: '18px', square: '4px' } as 
 /** The inline styles a tile wrapper and its optional box need. */
 export function tileCss(style: TileStyle, role: TileRole): { css: CSSProperties; boxCss: CSSProperties | null } {
   const css: CSSProperties = {}
-  if (style.scale && style.scale !== 1) (css as Record<string, unknown>)['--piece-scale'] = style.scale
+  if (style.scale && style.scale !== 1) {
+    // Text scales through its font size; a portrait or a player has no font to
+    // scale, so those are scaled as a whole.
+    if (role === 'image' || role === 'player') {
+      css.transform = `scale(${style.scale})`
+      css.transformOrigin = style.align === 'right' ? 'right center' : style.align === 'left' ? 'left center' : 'center'
+    } else {
+      ;(css as Record<string, unknown>)['--piece-scale'] = style.scale
+    }
+  }
   if (style.font) {
     // The piece may be a heading or body text, so set both: whichever variable
     // it reads, it gets her choice. The variable name comes from the catalogue —
     // it is not always "--font-<id>" (Inter and Jost differ).
+    // The two variables are resolved where font-family is declared, high above
+    // this tile, so setting them alone reaches only pieces that re-declare it
+    // (.story-serif). Declaring the family here as well covers the rest by
+    // ordinary inheritance.
     const family = `var(${fontById(style.font).cssVar})`
     ;(css as Record<string, unknown>)['--story-heading-font'] = family
     ;(css as Record<string, unknown>)['--story-body-font'] = family
+    css.fontFamily = family
   }
   // Pieces paint themselves, so a per-piece colour arrives as the variable
   // each of them falls back to rather than as an inherited colour.

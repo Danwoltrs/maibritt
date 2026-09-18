@@ -75,7 +75,10 @@ export function TextEditing({ tile, rect, html, marks, onCommit, onClose }: Prop
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    el.innerHTML = html
+    // Only the rich path is html we generated ourselves; a plain field is text
+    // and must never be parsed as markup.
+    if (marks) el.innerHTML = html
+    else el.textContent = html
     el.focus()
     const range = document.createRange()
     range.selectNodeContents(el)
@@ -83,7 +86,7 @@ export function TextEditing({ tile, rect, html, marks, onCommit, onClose }: Prop
     const sel = window.getSelection()
     sel?.removeAllRanges()
     sel?.addRange(range)
-  }, [html])
+  }, [html, marks])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -98,6 +101,13 @@ export function TextEditing({ tile, rect, html, marks, onCommit, onClose }: Prop
   }, [onCommit, onClose])
 
   const command = (name: string) => {
+    // Ask for tags rather than inline styles; richFromElement reads both, but
+    // tags survive a round trip more predictably.
+    try {
+      document.execCommand('styleWithCSS', false, 'false')
+    } catch {
+      // Some browsers refuse; the style reader covers us.
+    }
     document.execCommand(name)
     ref.current?.focus()
     force((n) => n + 1)
@@ -112,13 +122,48 @@ export function TextEditing({ tile, rect, html, marks, onCommit, onClose }: Prop
     return node ? Array.prototype.indexOf.call(el.childNodes, node) : -1
   }
 
+  /** Where the caret sits, counted in characters from the start of its paragraph. */
+  const caretOffset = (index: number): number => {
+    const el = ref.current
+    const sel = window.getSelection()
+    if (!el || !sel || sel.rangeCount === 0) return 0
+    const paragraph = el.childNodes[index]
+    if (!paragraph) return 0
+    const range = sel.getRangeAt(0).cloneRange()
+    range.selectNodeContents(paragraph)
+    range.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset)
+    return range.toString().length
+  }
+
+  const putCaret = (index: number, offset: number) => {
+    const el = ref.current
+    const paragraph = el?.childNodes[index]
+    if (!el || !paragraph) return
+    const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT)
+    let left = offset
+    let node = walker.nextNode()
+    while (node && left > (node.textContent?.length ?? 0)) {
+      left -= node.textContent?.length ?? 0
+      node = walker.nextNode()
+    }
+    const range = document.createRange()
+    if (node) range.setStart(node, Math.min(left, node.textContent?.length ?? 0))
+    else range.selectNodeContents(paragraph)
+    range.collapse(true)
+    const sel = window.getSelection()
+    sel?.removeAllRanges()
+    sel?.addRange(range)
+  }
+
   const applyParagraph = (fn: (rich: RichText, index: number) => RichText) => {
     const el = ref.current
     if (!el) return
     const index = paragraphIndex()
     if (index < 0) return
+    const offset = caretOffset(index)
     el.innerHTML = richToHtml(fn(richFromElement(el), index))
     el.focus()
+    putCaret(index, offset)
     force((n) => n + 1)
   }
 
@@ -133,7 +178,7 @@ export function TextEditing({ tile, rect, html, marks, onCommit, onClose }: Prop
   return (
     <>
       <div
-        className="fixed inset-0 z-[70]"
+        className="fixed inset-0 z-[62]"
         onPointerDown={() => {
           const el = ref.current
           if (el) onCommit(el)

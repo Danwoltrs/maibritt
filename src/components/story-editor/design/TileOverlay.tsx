@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import type { GridRect, SectionLayout } from '@/lib/story/types'
 import { TILE_LABEL, moveTile, resizeTile } from '@/lib/story/layout'
 import type { Geometry, Rect } from './useTileRects'
@@ -32,8 +32,15 @@ export function TileOverlay({ name, rect, cell, geometry, layout, selected, edit
     longPress.current = null
   }
 
+  useEffect(() => () => {
+    if (longPress.current) clearTimeout(longPress.current)
+  }, [])
+
   const begin = (e: ReactPointerEvent, mode: 'move' | 'resize') => {
     if (editing) return
+    // A right-click must not drag: on Windows and Linux the context menu only
+    // arrives on button-up, so the piece would move before the menu opened.
+    if (e.pointerType === 'mouse' && e.button !== 0) return
     e.stopPropagation()
     e.currentTarget.setPointerCapture(e.pointerId)
     drag.current = { x: e.clientX, y: e.clientY, from: { ...cell }, mode }
@@ -73,6 +80,25 @@ export function TileOverlay({ name, rect, cell, geometry, layout, selected, edit
     drag.current = null
   }
 
+  const onKeyDown = (e: ReactKeyboardEvent) => {
+    const step: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onWrite()
+      return
+    }
+    if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+      e.preventDefault()
+      onMenu(rect.left + 24, rect.top + 24)
+      return
+    }
+    const d = step[e.key]
+    if (!d) return
+    e.preventDefault()
+    onSelect()
+    onChange(moveTile(layout, name, d[0], d[1]))
+  }
+
   return (
     <div
       className="absolute"
@@ -89,6 +115,8 @@ export function TileOverlay({ name, rect, cell, geometry, layout, selected, edit
           outlineOffset: 2,
           pointerEvents: editing ? 'none' : 'auto',
         }}
+        onKeyDown={onKeyDown}
+        onFocus={onSelect}
         onPointerDown={(e) => begin(e, 'move')}
         onPointerMove={move}
         onPointerUp={end}
@@ -105,7 +133,7 @@ export function TileOverlay({ name, rect, cell, geometry, layout, selected, edit
       {!editing && (
         <>
           <span
-            className="pointer-events-none absolute -top-1 left-0 -translate-y-full rounded px-2 py-0.5 text-[12px] font-semibold"
+            className="pointer-events-none absolute left-0 top-0 rounded-br-[6px] px-2 py-0.5 text-[14px] font-semibold"
             style={{ background: SELECTION, color: '#fbf9f5' }}
           >
             {label}

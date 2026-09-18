@@ -9,6 +9,20 @@ const TAG_MARK: Record<string, Mark> = { B: 'bold', STRONG: 'bold', I: 'italic',
 const BLOCK_TAGS = new Set(['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'BLOCKQUOTE', 'SECTION', 'ARTICLE'])
 const DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'TEMPLATE'])
 
+/**
+ * Some browsers (Safari especially, and Chrome once styleWithCSS has been
+ * flipped) express bold and friends as inline styles rather than tags. Read
+ * both, or her formatting would vanish the moment she stops typing.
+ */
+function marksFromStyle(element: HTMLElement): Mark[] {
+  const out: Mark[] = []
+  const weight = element.style.fontWeight
+  if (weight === 'bold' || weight === 'bolder' || (weight !== '' && Number(weight) >= 600)) out.push('bold')
+  if (element.style.fontStyle === 'italic' || element.style.fontStyle === 'oblique') out.push('italic')
+  if ((element.style.textDecorationLine || element.style.textDecoration || '').includes('underline')) out.push('underline')
+  return out
+}
+
 function sortMarks(marks: Mark[]): Mark[] {
   return MARK_ORDER.filter((m) => marks.includes(m))
 }
@@ -54,7 +68,9 @@ function escapeHtml(text: string): string {
 export function richToHtml(rich: RichText): string {
   return rich
     .map((p) => {
-      const style = [p.align ? `text-align:${p.align}` : '', p.indent ? `padding-left:${p.indent * INDENT_STEP}px` : '']
+      const align = p.align === 'center' || p.align === 'right' || p.align === 'left' ? p.align : undefined
+      const indent = Math.max(0, Math.min(MAX_INDENT, Number(p.indent) || 0))
+      const style = [align ? `text-align:${align}` : '', indent ? `padding-left:${indent * INDENT_STEP}px` : '']
         .filter(Boolean)
         .join(';')
       const attr = style ? ` style="${style}"` : ''
@@ -82,7 +98,7 @@ function readBlockStyle(node: HTMLElement): { align?: Paragraph['align']; indent
 }
 
 function trimParagraph(p: Paragraph): Paragraph {
-  const runs = p.runs.filter((r) => r.text !== '')
+  const runs = p.runs.filter((r) => r.text.trim() !== '')
   const out: Paragraph = { runs }
   if (p.align) out.align = p.align
   if (p.indent) out.indent = p.indent
@@ -107,6 +123,9 @@ export function richFromElement(root: HTMLElement): RichText {
     current = { runs: [] }
   }
 
+  // The style of the block currently being walked, so a <br> inside it keeps it.
+  let blockStyle: { align?: Paragraph['align']; indent?: number } | undefined
+
   const walk = (node: Node, marks: Mark[]) => {
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent ?? ''
@@ -122,27 +141,34 @@ export function richFromElement(root: HTMLElement): RichText {
     if (DROP_TAGS.has(tag)) return
     if (tag === 'BR') {
       touched = true
-      flush()
+      flush(blockStyle)
       return
     }
     if (BLOCK_TAGS.has(tag)) {
-      if (current.runs.length) flush()
+      if (current.runs.length) flush(blockStyle)
+      const outer = blockStyle
       const style = readBlockStyle(element)
+      blockStyle = style
       touched = true
       element.childNodes.forEach((child) => walk(child, marks))
       flush(style)
+      blockStyle = outer
       return
     }
-    const mark = TAG_MARK[tag]
-    const next = mark && !marks.includes(mark) ? [...marks, mark] : marks
+    const fromTag = TAG_MARK[tag]
+    const next = [...marks]
+    for (const mark of [...(fromTag ? [fromTag] : []), ...marksFromStyle(element)]) {
+      if (!next.includes(mark)) next.push(mark)
+    }
     element.childNodes.forEach((child) => walk(child, next))
   }
 
   root.childNodes.forEach((child) => walk(child, []))
-  if (current.runs.length || !touched) flush()
+  if (current.runs.length || !touched) flush(blockStyle)
 
-  const cleaned = paragraphs.filter((p, i) => p.runs.length > 0 || paragraphs.length === 1 || i < paragraphs.length - 1)
-  const kept = cleaned.filter((p) => p.runs.length > 0)
+  // Blank paragraphs are dropped, exactly as richFromPlain drops blank lines,
+  // so `rich` and the plain `body` always agree.
+  const kept = paragraphs.filter((p) => p.runs.length > 0)
   return kept.length ? kept : [{ runs: [] }]
 }
 

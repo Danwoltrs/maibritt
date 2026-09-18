@@ -66,6 +66,23 @@ describe('richFromElement', () => {
   it('merges neighbouring runs with the same marks', () => {
     expect(richFromElement(el('<p><b>a</b><b>b</b></p>'))).toEqual([{ runs: [{ text: 'ab', marks: ['bold'] }] }])
   })
+  it('reads marks expressed as inline styles, as Safari writes them', () => {
+    expect(richFromElement(el('<p><span style="font-weight:bold">a</span><span style="font-style:italic">b</span></p>'))).toEqual([
+      { runs: [{ text: 'a', marks: ['bold'] }, { text: 'b', marks: ['italic'] }] },
+    ])
+    expect(richFromElement(el('<p><span style="font-weight:700;text-decoration:underline">x</span></p>'))).toEqual([
+      { runs: [{ text: 'x', marks: ['bold', 'underline'] }] },
+    ])
+  })
+  it('keeps a paragraph style across a line break inside it', () => {
+    expect(richFromElement(el('<p style="text-align:center">A<br>B</p>'))).toEqual([
+      { runs: [{ text: 'A' }], align: 'center' },
+      { runs: [{ text: 'B' }], align: 'center' },
+    ])
+  })
+  it('drops a whitespace-only paragraph so rich and body agree', () => {
+    expect(richFromElement(el('<p>a</p><p>   </p><p>b</p>'))).toEqual([{ runs: [{ text: 'a' }] }, { runs: [{ text: 'b' }] }])
+  })
   it('gives one empty paragraph for an empty element', () => {
     expect(richFromElement(el(''))).toEqual([{ runs: [] }])
     expect(richFromElement(el('<p><br></p>'))).toEqual([{ runs: [] }])

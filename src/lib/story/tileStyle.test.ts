@@ -58,6 +58,16 @@ describe('tileCss', () => {
     expect(css).toEqual({})
     expect(boxCss).toBeNull()
   })
+  it('scales a portrait as a whole rather than by font size', () => {
+    const { css } = tileCss({ scale: 1.6 }, 'image')
+    expect(css.transform).toBe('scale(1.6)')
+    expect((css as unknown as Record<string, unknown>)['--piece-scale']).toBeUndefined()
+    expect(tileCss({ scale: 1.6 }, 'player').css.transform).toBe('scale(1.6)')
+  })
+  it('declares the family as well as the variables so any piece follows', () => {
+    const { css } = tileCss({ font: 'inter' }, 'text')
+    expect(css.fontFamily).toBe('var(--font-inter-story)')
+  })
   it('maps scale, align and indent', () => {
     const { css } = tileCss({ scale: 1.35, align: 'right', indent: 2 }, 'text')
     expect(css['--piece-scale' as keyof typeof css]).toBe(1.35)

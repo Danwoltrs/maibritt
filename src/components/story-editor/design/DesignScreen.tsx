@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
+import { useIsPhone } from '@/components/story/useIsPhone'
 import { MotionConfig } from 'framer-motion'
 import { useEditorStore } from '../store'
 import { defaultLayout, readingOrder, sectionLayoutOf, setBlockLayout, setOpeningLayout, TILE_LABEL, type ArrangeTarget } from '@/lib/story/layout'
@@ -29,15 +30,17 @@ function textOf(doc: StoryDocument, section: Section, key: string): { html: stri
   if (block.kind === 'text' && key === 'heading') return { html: block.heading, marks: false }
   if (block.kind === 'text' && key === 'body') return { html: richToHtml(block.rich ?? richFromPlain(block.body)), marks: true }
   if (block.kind === 'audio' && key === 'heading') return { html: block.heading, marks: false }
+  if (block.kind === 'audio' && key === 'transcript') return { html: block.audio.transcript, marks: false }
   if ((block.kind === 'photo' || block.kind === 'video') && key === 'caption') return { html: block.caption, marks: false }
   return null
 }
 
 export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack: () => void }) {
-  const document = useEditorStore((s) => s.document)!
+  const doc = useEditorStore((s) => s.document)!
+  const isPhone = useIsPhone()
   const apply = useEditorStore((s) => s.apply)
-  const section = useMemo(() => findSection(document, target), [document, target])
-  const stored = sectionLayoutOf(document, target)
+  const section = useMemo(() => findSection(doc, target), [doc, target])
+  const stored = sectionLayoutOf(doc, target)
   const kind = section?.kind === 'opening' ? 'opening' : section?.block.kind
 
   const [layout, setLayout] = useState<SectionLayout | null>(stored ?? (kind ? defaultLayout(kind) : null))
@@ -47,8 +50,21 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
   const [grid, setGrid] = useState(true)
   const surface = useRef<HTMLDivElement>(null)
   const tileEl = (key: string): HTMLElement | null => surface.current?.querySelector<HTMLElement>(`[data-tile="${key}"]`) ?? null
-  const shown = layout ?? (kind ? defaultLayout(kind) : null)
+  // Memoised: defaultLayout builds a new object, and a fresh identity every
+  // render would re-run the measuring effect for ever.
+  const shown = useMemo(() => layout ?? (kind ? defaultLayout(kind) : null), [layout, kind])
   const { rects, geometry } = useTileRects(surface, shown)
+
+  if (isPhone) {
+    return (
+      <div className="min-h-[100svh]">
+        <PageTop title="Move things around" onBack={onBack} />
+        <p className="px-6 py-10 text-[20px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+          Moving things around needs a bigger screen. Open your story on your iPad or a computer and this will be here.
+        </p>
+      </div>
+    )
+  }
 
   if (!section || !kind || !shown) {
     return (
@@ -76,8 +92,10 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
   const commitText = (key: string, el: HTMLElement) => {
     const rich = richFromElement(el)
     const plain = plainFromRich(rich)
+    const oneLine = plain.replace(/\n+/g, ' ').trim()
     if (section.kind === 'opening') {
-      apply((d) => ({ ...d, opening: { ...d.opening, [key === 'name' ? 'name' : 'title']: plain.replace(/\n+/g, ' ').trim() } }))
+      if (key !== 'name' && key !== 'title') return
+      apply((d) => ({ ...d, opening: { ...d.opening, [key]: oneLine } }))
       return
     }
     const block = section.block
@@ -87,28 +105,30 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
       apply((d) => updateBlock(d, target.chapterId, block.id, next))
       return
     }
-    const flat = plain.replace(/\n+/g, ' ').trim()
-    if (block.kind === 'text' && key === 'heading') apply((d) => updateBlock(d, target.chapterId, block.id, { ...block, heading: flat }))
-    else if (block.kind === 'audio' && key === 'heading') apply((d) => updateBlock(d, target.chapterId, block.id, { ...block, heading: flat }))
-    else if ((block.kind === 'photo' || block.kind === 'video') && key === 'caption') apply((d) => updateBlock(d, target.chapterId, block.id, { ...block, caption: flat }))
+    if (block.kind === 'text' && key === 'heading') apply((d) => updateBlock(d, target.chapterId, block.id, { ...block, heading: oneLine }))
+    else if (block.kind === 'audio' && key === 'heading') apply((d) => updateBlock(d, target.chapterId, block.id, { ...block, heading: oneLine }))
+    else if (block.kind === 'audio' && key === 'transcript') apply((d) => updateBlock(d, target.chapterId, block.id, { ...block, audio: { ...block.audio, transcript: plain } }))
+    else if ((block.kind === 'photo' || block.kind === 'video') && key === 'caption') apply((d) => updateBlock(d, target.chapterId, block.id, { ...block, caption: oneLine }))
   }
 
+  const canWrite = (key: string) => textOf(doc, section, key) !== null
+
   const startWriting = (key: string) => {
-    if (!textOf(document, section, key)) return
+    if (!canWrite(key)) return
     setMenu(null)
     setEditing(key)
   }
 
-  const editable = editing ? textOf(document, section, editing) : null
+  const editable = editing ? textOf(doc, section, editing) : null
   const order = readingOrder(shown).filter((k) => rects[k])
 
   return (
     <div className="relative h-[100svh] w-full overflow-hidden">
       <MotionConfig reducedMotion="always">
         <SoundProvider>
-          <StoryTheme look={document.look} className="relative h-[100svh] w-full" >
+          <StoryTheme look={doc.look} className="relative h-[100svh] w-full" >
             <div ref={surface} className="relative h-[100svh] w-full">
-              <SectionRender doc={document} section={section} layout={shown} />
+              <SectionRender doc={doc} section={section} layout={layout ?? undefined} />
 
               {grid && (
                 <div
@@ -124,7 +144,7 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
                 />
               )}
 
-              {Object.entries(shown.tiles).map(([key, cell]) =>
+              {layout !== null && Object.entries(shown.tiles).map(([key, cell]) =>
                 rects[key] ? (
                   <TileOverlay
                     key={key}
@@ -141,6 +161,17 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
                     onWrite={() => startWriting(key)}
                   />
                 ) : null
+              )}
+
+              {layout === null && (
+                <div className="absolute inset-x-0 bottom-24 z-[60] flex justify-center">
+                  <div className="flex flex-col items-center gap-4 rounded-[18px] px-7 py-6" style={{ background: 'var(--white)', border: '2px solid var(--line)' }}>
+                    <span className="max-w-[420px] text-center text-[19px]" style={{ color: 'var(--ink-2)' }}>
+                      This part is back to the way the story lays it out. That is what Done will keep.
+                    </span>
+                    <EButton small icon={<Icon name="grid" size={20} />} onClick={() => setLayout(defaultLayout(kind))}>Move things around again</EButton>
+                  </div>
+                </div>
               )}
 
               {editing && editable && rects[editing] && tileEl(editing) && (
@@ -163,21 +194,21 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
         grid={grid}
         onGrid={() => setGrid((g) => !g)}
         onBack={onBack}
-        onReset={() => { setLayout(null); setSelected(null); setMenu(null) }}
+        onReset={() => { setLayout(null); setSelected(null); setMenu(null); setEditing(null) }}
         onDone={done}
         canReset={layout !== null}
       />
 
-      <div className="absolute bottom-0 left-0 right-0 z-[65] flex flex-wrap items-center gap-2 px-4 py-2 backdrop-blur-sm" style={{ background: 'rgba(251,249,245,0.92)', borderTop: '1px solid var(--line)' }}>
-        <span className="text-[17px]" style={{ color: 'var(--ink-2)' }}>Right-click or hold a piece to change it. On a phone things stack in this order:</span>
+      <div className="absolute bottom-0 left-0 right-0 z-[60] flex items-center gap-2 overflow-x-auto px-4 py-2 backdrop-blur-sm" style={{ background: 'rgba(251,249,245,0.92)', borderTop: '1px solid var(--line)' }}>
+        <span className="text-[18px]" style={{ color: 'var(--ink-2)' }}>Right-click or hold a piece to change it. On a phone things stack in this order:</span>
         {order.map((k, i) => (
-          <span key={k} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[16px]" style={{ background: 'var(--white)', border: '1px solid var(--line)', color: 'var(--ink)' }}>
+          <span key={k} className="inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-[18px]" style={{ background: 'var(--white)', border: '1px solid var(--line)', color: 'var(--ink)' }}>
             <span className="font-semibold" style={{ color: 'var(--accent)' }}>{i + 1}</span>
             {TILE_LABEL[k] ?? k}
           </span>
         ))}
         {selected && TILE_ROLE[selected] && (
-          <EButton variant="quiet" small icon={<Icon name="pencil" size={18} />} onClick={(e) => { const r = (e.target as HTMLElement).getBoundingClientRect(); setMenu({ key: selected, x: r.left, y: Math.max(12, r.top - 360) }) }}>
+          <EButton variant="quiet" small icon={<Icon name="pencil" size={18} />} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu({ key: selected, x: r.left, y: Math.max(12, r.top - 360) }) }}>
             Change {TILE_LABEL[selected] ?? selected}
           </EButton>
         )}
@@ -189,6 +220,7 @@ export function DesignScreen({ target, onBack }: { target: ArrangeTarget; onBack
           at={{ x: menu.x, y: menu.y }}
           layout={shown}
           onChange={setLayout}
+          canWrite={canWrite(menu.key)}
           onWrite={() => startWriting(menu.key)}
           onClose={() => setMenu(null)}
         />

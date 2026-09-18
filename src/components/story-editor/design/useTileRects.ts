@@ -30,7 +30,7 @@ export function useTileRects(container: RefObject<HTMLElement | null>, dependenc
     const root = container.current
     if (!root) return
     const base = root.getBoundingClientRect()
-    setSize({ width: base.width, height: base.height })
+    setSize((prev) => (prev.width === base.width && prev.height === base.height ? prev : { width: base.width, height: base.height }))
     const next: Record<string, Rect> = {}
     root.querySelectorAll<HTMLElement>('[data-tile]').forEach((el) => {
       const key = el.dataset.tile
@@ -38,20 +38,33 @@ export function useTileRects(container: RefObject<HTMLElement | null>, dependenc
       const r = el.getBoundingClientRect()
       next[key] = { left: r.left - base.left, top: r.top - base.top, width: r.width, height: r.height }
     })
-    setRects(next)
+    // Bail out when nothing moved: measure runs on every observer tick, and a
+    // fresh object each time would re-render for ever.
+    setRects((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
   }, [container])
 
   useEffect(() => {
+    let frame = 0
+    const schedule = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(measure)
+    }
     measure()
     const root = container.current
     if (!root) return
-    const ro = new ResizeObserver(measure)
+    const ro = new ResizeObserver(schedule)
     ro.observe(root)
     root.querySelectorAll<HTMLElement>('[data-tile]').forEach((el) => ro.observe(el))
-    window.addEventListener('resize', measure)
+    // Tiles come and go as she writes (an emptied heading stops rendering), so
+    // watch the tree as well as the sizes.
+    const mo = new MutationObserver(schedule)
+    mo.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] })
+    window.addEventListener('resize', schedule)
     return () => {
+      cancelAnimationFrame(frame)
       ro.disconnect()
-      window.removeEventListener('resize', measure)
+      mo.disconnect()
+      window.removeEventListener('resize', schedule)
     }
   }, [measure, container, dependency])
 
