@@ -2,7 +2,7 @@
 
 Follows [`2026-09-16-story-look-handoff.md`](2026-09-16-story-look-handoff.md), which is merged and live.
 
-**Resume point:** BUILT, REVIEWED and BROWSER-TESTED on branch `feat/story-design-mode` (9 commits on top of `main` = `b7190d1`), 310 tests green, typecheck clean, `next build` succeeds in a clean worktree. NOT merged, NOT pushed — Daniel decides. Next: the device pass below on an iPad (long-press, finger drag, writing with the on-screen keyboard) and in Safari (where `execCommand` writes inline styles), then merge and push.
+**Resume point:** MERGED into `main` and pushed on 2026-09-17 (`origin/main` = `e55115d`; pushing `main` deploys to Vercel Production). `feat/story-design-mode` deleted. 310 tests green, typecheck clean, and a clean-worktree `next build` passed on the code tip `6ff82c6` (the only later commit is this document). Next: the device pass below on an iPad (long-press, finger drag, on-screen keyboard) and in Safari, where `execCommand` writes inline styles rather than tags.
 
 ## What this branch adds
 "Move things around" is no longer a scaled miniature. It renders the **real published section at full size**, measures where each piece actually landed and floats handles on those rectangles. Right-clicking (or holding) a piece opens a menu offering only what fits it: font, colour, bigger/smaller, alignment, indent, a box behind it, and on the Begin button its colour, label colour and corners — always ending in "Back to the story's look". Double-clicking a piece of text edits it where it sits, in the published typeface, with bold / italic / underline (body text) and align / indent.
@@ -11,7 +11,7 @@ Follows [`2026-09-16-story-look-handoff.md`](2026-09-16-story-look-handoff.md), 
 - **Plan:** [`../plans/2026-09-17-story-design-mode.md`](../plans/2026-09-17-story-design-mode.md)
 
 ## Repo state
-- **Branch:** `feat/story-design-mode`, tip `6ff82c6`. `main` = `origin/main` = `b7190d1`.
+- **Branch:** everything is on `main` = `origin/main` = `e55115d` (9 commits since `b7190d1`), pushed 2026-09-17; the branch is deleted.
 - **Verification on the tip:** `npx vitest run` → 310 (baseline 267). `npm run typecheck` → only the 8 pre-existing exhibitions errors. `npx next build` in a clean worktree → success.
 - **No SQL, no migration.** Document stays version 2; `styles` and `rich` are optional, so an untouched story renders identically.
 - Working tree carries only the usual unrelated `.gitignore` / `.mcp.json` edits.
