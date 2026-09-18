@@ -1,4 +1,4 @@
-import type { Block, BlockKind, GridRect, SectionLayout, StoryDocument } from './types'
+import type { Block, BlockKind, GridRect, SectionLayout, StoryDocument, TileStyle } from './types'
 
 export const GRID = { cols: 12, rows: 8 } as const
 
@@ -65,10 +65,18 @@ const DEFAULTS: Record<SectionKind, Record<string, GridRect>> = {
   },
 }
 
-function cloneLayout(layout: SectionLayout): SectionLayout {
+export function cloneLayout(layout: SectionLayout): SectionLayout {
   const tiles: Record<string, GridRect> = {}
   for (const [k, r] of Object.entries(layout.tiles)) tiles[k] = { ...r }
-  return { cols: 12, rows: 8, tiles }
+  const next: SectionLayout = { cols: 12, rows: 8, tiles }
+  if (layout.styles) {
+    const styles: Record<string, TileStyle> = {}
+    for (const [k, s] of Object.entries(layout.styles)) {
+      styles[k] = { ...s, ...(s.box ? { box: { ...s.box } } : {}), ...(s.button ? { button: { ...s.button } } : {}) }
+    }
+    if (Object.keys(styles).length) next.styles = styles
+  }
+  return next
 }
 
 export function defaultLayout(kind: SectionKind): SectionLayout {

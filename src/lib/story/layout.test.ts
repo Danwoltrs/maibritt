@@ -73,6 +73,18 @@ describe('alignmentFor', () => {
   })
 })
 
+describe('styles ride along with the layout', () => {
+  it('clone and the setters carry styles; the maths ignores them', () => {
+    const withStyle = { ...defaultLayout('text'), styles: { body: { font: 'caveat' } } }
+    expect(moveTile(withStyle, 'body', 1, 0).styles).toEqual({ body: { font: 'caveat' } })
+    expect(resizeTile(withStyle, 'body', 1, 0).styles).toEqual({ body: { font: 'caveat' } })
+    expect(readingOrder(withStyle)).toEqual(readingOrder(defaultLayout('text')))
+    const { doc, chapterId } = addChapter(createEmptyDocument(), 'One')
+    const d = insertBlock(doc, chapterId, 0, { id: 'a', kind: 'text', heading: '', body: '' })
+    expect(setBlockLayout(d, chapterId, 'a', withStyle).chapters[0].blocks[0].layout?.styles).toEqual({ body: { font: 'caveat' } })
+  })
+})
+
 describe('layout setters', () => {
   const text = (id: string): TextBlock => ({ id, kind: 'text', heading: id, body: '' })
   it('set and remove the opening layout', () => {

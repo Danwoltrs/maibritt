@@ -22,7 +22,23 @@ export type VideoSource =
   | { type: 'link'; provider: 'youtube' | 'vimeo'; videoId: string; url: string }
 
 export type GridRect = { x: number; y: number; w: number; h: number }
-export type SectionLayout = { cols: 12; rows: 8; tiles: Record<string, GridRect> }
+
+export type TileStyle = {
+  font?: string
+  color?: string
+  scale?: number
+  align?: 'left' | 'center' | 'right'
+  indent?: number
+  box?: { background?: string; padding?: number; radius?: number }
+  button?: { background?: string; label?: string }
+}
+
+export type SectionLayout = {
+  cols: 12
+  rows: 8
+  tiles: Record<string, GridRect>
+  styles?: Record<string, TileStyle>
+}
 type WithLayout = { layout?: SectionLayout }
 
 export type Mark = 'bold' | 'italic' | 'underline'
