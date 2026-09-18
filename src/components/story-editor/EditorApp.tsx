@@ -13,7 +13,7 @@ import { PhotosFlow } from './PhotosFlow'
 import { RecordFlow } from './RecordFlow'
 import { VideoFlow } from './VideoFlow'
 import { LookScreen } from './look/LookScreen'
-import { ArrangeScreen } from './arrange/ArrangeScreen'
+import { DesignScreen } from './design/DesignScreen'
 
 export function EditorApp() {
   const load = useEditorStore((s) => s.load)
@@ -66,7 +66,7 @@ export function EditorApp() {
     case 'look':
       return <LookScreen onBack={back} />
     case 'arrange':
-      return <ArrangeScreen target={screen.target} onBack={back} />
+      return <DesignScreen target={screen.target} onBack={back} />
     default:
       return null
   }
