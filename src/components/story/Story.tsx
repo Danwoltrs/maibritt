@@ -1,11 +1,14 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { Fragment, useCallback, useRef } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import type { Block, StoryDocument, WordKey } from '@/lib/story/types'
 import { chapterLabel, voiceLabel, wordsFor } from '@/lib/story/words'
 import { SoundProvider, useSound } from './SoundProvider'
 import { StoryChrome } from './StoryChrome'
 import { StoryTheme } from './StoryTheme'
+import { StoryMenu } from './StoryMenu'
+import { AddHere } from './AddHere'
 import { Opening } from './Opening'
 import { TextBlock } from './blocks/TextBlock'
 import { PhotoBlock } from './blocks/PhotoBlock'
@@ -37,6 +40,10 @@ function renderBlock(block: Block, label: string, voice: string, words: Words) {
 
 function StoryBody({ document, preview }: { document: StoryDocument; preview: boolean }) {
   const { begin } = useSound()
+  const { user } = useAuth()
+  // The preview is meant to be exactly what visitors see, so her editing
+  // controls stay out of it.
+  const canEdit = !!user && !preview
   const firstChapter = useRef<HTMLDivElement>(null)
   const words = wordsFor(document.look)
   const voice = voiceLabel(document.opening.name, words.voiceLabel)
@@ -49,12 +56,20 @@ function StoryBody({ document, preview }: { document: StoryDocument; preview: bo
   return (
     <StoryTheme look={document.look}>
       <StoryChrome onDark={false} preview={preview} soundOn={words.soundOn} soundOff={words.soundOff} />
+      <StoryMenu onDark={false} preview={preview} canEdit={canEdit} />
       <Opening opening={document.opening} words={words} onBegin={onBegin} />
       {document.chapters.map((chapter, i) => (
         <div key={chapter.id} ref={i === 0 ? firstChapter : undefined}>
-          {chapter.blocks.map((block) => renderBlock(block, chapterLabel(i, chapter.title, words.chapterWord), voice, words))}
+          {chapter.blocks.map((block) => (
+            <Fragment key={block.id}>
+              {canEdit && <AddHere target={{ before: block.id }} />}
+              {renderBlock(block, chapterLabel(i, chapter.title, words.chapterWord), voice, words)}
+            </Fragment>
+          ))}
+          {canEdit && chapter.blocks.length === 0 && <AddHere target={{ end: chapter.id }} />}
         </div>
       ))}
+      {canEdit && document.chapters.length > 0 && <AddHere target={{ end: document.chapters[document.chapters.length - 1].id }} />}
     </StoryTheme>
   )
 }
